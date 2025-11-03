@@ -1,7 +1,6 @@
 <script setup>
-    import axios from 'axios';
     import { ref, watchEffect } from 'vue';
-    import { Link, router, useForm } from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';
     import Dropdown from '@/Components/Dropdown.vue';
     import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
     import DropdownItem from '@/Components/DropdownItem.vue';
@@ -20,8 +19,6 @@
 
         router.put('/contacts/favorite/' + contact.value.uuid, { favorite: contact.value.is_favorite });
     }
-
-    const form = useForm({'test': null});
 
     const deleteRow = async() => {
         router.visit('/contacts', {
@@ -75,7 +72,6 @@
                         </button>
                         <template #items>
                             <DropdownItemGroup>
-                                <!--<DropdownItem as="button" @click="openModal('edit')">Edit Contact</DropdownItem>-->
                                 <DropdownItem as="button" @click="deleteRow()">{{ $t('Delete') }}</DropdownItem>
                             </DropdownItemGroup>
                         </template>

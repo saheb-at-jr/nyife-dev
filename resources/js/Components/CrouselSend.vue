@@ -464,14 +464,6 @@ const viewTemplate = () => {
   emit("viewTemplate", false);
 };
 
-// onMounted(() => {
-//   templateOptions.value = transformOptions(props.templates);
-//   contactGroupOptions.value = [
-//     ...contactGroupOptions.value,
-//     ...transformOptions(props.contactGroups),
-//   ];
-// });
-
 
 onMounted(() => {
   // Filter templates with names starting with "carousel_"
@@ -492,9 +484,6 @@ onMounted(() => {
 
 <template>
   <div :class="'md:flex md:flex-grow-1'">
-    
-    
-
     <form
       
       @submit.prevent="handleSubmit()"

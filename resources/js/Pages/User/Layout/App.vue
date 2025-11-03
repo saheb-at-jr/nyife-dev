@@ -225,7 +225,7 @@ const currentLanguage = computed(() => usePage().props.currentLanguage);
                 </div>
             </header>
             <Separator orientation="horizontal" />
-            <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div class="flex flex-1 flex-col gap-4 pt-0">
                 <slot :user="user" :toggleNavBar="toggleTopBar" @testEmit="doSomething"></slot>
             </div>
         </SidebarInset>

@@ -359,14 +359,6 @@ const viewTemplate = () => {
   emit("viewTemplate", false);
 };
 
-// onMounted(() => {
-//   templateOptions.value = transformOptions(props.templates);
-//   contactGroupOptions.value = [
-//     ...contactGroupOptions.value,
-//     ...transformOptions(props.contactGroups),
-//   ];
-// });
-
 
 onMounted(() => {
   // Filter templates with names starting with "carousel_"

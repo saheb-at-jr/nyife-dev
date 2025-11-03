@@ -1,6 +1,5 @@
 <script setup>
     import { ref, watchEffect, computed } from 'vue';
-    import axios from 'axios';
     import { router, useForm, Link, usePage } from '@inertiajs/vue3'
     import AlertModal from '@/Components/AlertModal.vue';
     import Dropdown from '@/Components/Dropdown.vue';
@@ -8,7 +7,6 @@
     import DropdownItem from '@/Components/DropdownItem.vue';
     import FormSelectCombo from '@/Components/FormSelectCombo.vue';
     import FormTextArea from '@/Components/FormTextArea.vue';
-    import FormToggleSwitch from '@/Components/FormToggleSwitch.vue';
     import Modal from '@/Components/Modal.vue';
     import { trans } from 'laravel-vue-i18n';
 
@@ -31,10 +29,6 @@
 
     const emit = defineEmits(['toggleView', 'deleteThread', 'closeThread']);
 
-    const closeThread = () => {
-        emit('closeThread', true);
-    }
-
     const toggleView = () => {
         displayContact.value = !displayContact.value;
         emit('toggleView', displayContact.value);
@@ -49,9 +43,6 @@
         });
     }
 
-    const form = useForm({
-        'status' : ticketState
-    });
 
     const form2 = useForm({
         'notes': null,

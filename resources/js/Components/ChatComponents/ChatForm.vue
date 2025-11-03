@@ -11,7 +11,6 @@
     const processingAISuggestions = ref(false);
     const formTextInput = ref(null);
     const isRecording = ref(false);
-    const mediaRecorder = ref(null);
     const audioChunks = ref([]);
     const recordingTime = ref(0);
     const timerInterval = ref(null);
@@ -290,12 +289,6 @@
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = seconds % 60;
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-    };
-
-    const handleAudioLoaded = () => {
-        if (audioPlayer.value) {
-            audioDuration.value = Math.floor(audioPlayer.value.duration);
-        }
     };
 
     const getSuggestion = async() => {

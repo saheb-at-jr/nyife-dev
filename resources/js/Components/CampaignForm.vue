@@ -102,9 +102,7 @@ const chooseOption = (option) => {
     });
 
     const loadTemplate = async() => {
-        // console.log("this is prop of campaing page",props);
-        
-        try {
+                try {
             const response = await axios.get('/templates/' + form.template);
             if(response){
                 const metadata = JSON.parse(response.data.metadata);
@@ -130,8 +128,6 @@ const chooseOption = (option) => {
                 } else {
                     form.header.parameters = [];
                 }
-
-                //console.log(metadata);
                 
                 form.body.text = extractComponent(metadata, 'BODY', 'text');
                 const bodyExamples = extractComponent(metadata, 'BODY', 'example');
@@ -164,10 +160,8 @@ const chooseOption = (option) => {
                     form.buttons = [];
                 }
 
-                //console.log(form.buttons)
             }
         } catch (error) {
-            //console.error('Error fetching data:', error);
         }
     }
 
