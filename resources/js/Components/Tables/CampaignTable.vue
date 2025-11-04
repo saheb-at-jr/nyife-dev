@@ -211,6 +211,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
 import DropdownItem from '@/Components/DropdownItem.vue';
 
+
 const props = defineProps({
     rows: {
         type: Object,
@@ -307,6 +308,11 @@ const viewMode = ref('list'); // 'grid' or 'list'
 </script>
 
 <template>
+    <div class="mb-3 flex items-center justify-end">
+        <Link href="/campaigns/create"
+            class="max-w-min text-nowrap bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:block hidden">
+        {{ $t('Create campaign') }}</Link>
+    </div>
     <!-- Search and Filter Bar -->
     <div class="mb-6 space-y-4">
         <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">

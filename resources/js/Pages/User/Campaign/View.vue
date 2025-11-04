@@ -166,99 +166,132 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-                        <div
-                            class="group bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-gray-100 hover:shadow-xl hover:shadow-blue-200/50 transition-all duration-300 hover:-translate-y-1">
-                            <div class="flex flex-col items-center text-center">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                    </svg>
+                        <div class="group relative">
+                            <div
+                                class="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
+                            </div>
+                            <div
+                                class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/10">
+
+                                <div class="flex flex-col items-center text-center">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
+                                        props.campaign.total_message_count }}</h2>
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{
+                                        $t('Messages') }}
+                                    </h4>
                                 </div>
-                                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{{
-                                    props.campaign.total_message_count }}</h2>
-                                <h4 class="text-xs md:text-sm text-gray-600 font-medium capitalize">{{ $t('Messages') }}
-                                </h4>
                             </div>
                         </div>
 
-                        <div
-                            class="group bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-gray-100 hover:shadow-xl hover:shadow-purple-200/50 transition-all duration-300 hover:-translate-y-1">
-                            <div class="flex flex-col items-center text-center">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="#9333ea" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <line x1="22" y1="2" x2="11" y2="13" />
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                                    </svg>
+                        <div class="group relative">
+                            <div
+                                class="absolute -inset-0.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
+                            </div>
+                            <div
+                                class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/10">
+                                <div class="flex flex-col items-center text-center">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13" />
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
+                                        props.campaign.total_sent_count }}</h2>
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t('Sent') }}
+                                    </h4>
                                 </div>
-                                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{{
-                                    props.campaign.total_sent_count }}</h2>
-                                <h4 class="text-xs md:text-sm text-gray-600 font-medium capitalize">{{ $t('Sent') }}
-                                </h4>
                             </div>
                         </div>
 
-                        <div
-                            class="group bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-gray-100 hover:shadow-xl hover:shadow-green-200/50 transition-all duration-300 hover:-translate-y-1">
-                            <div class="flex flex-col items-center text-center">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
+                        <div class="group relative col-span-2 lg:col-span-1">
+                            <div
+                                class="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-green-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
+                            </div>
+                            <div
+                                class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-emerald-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/10">
+                                <div class="flex flex-col items-center text-center">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
+                                        props.campaign.total_delivered_count }}</h2>
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{
+                                        $t('Delivered')
+                                        }}</h4>
                                 </div>
-                                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{{
-                                    props.campaign.total_delivered_count }}</h2>
-                                <h4 class="text-xs md:text-sm text-gray-600 font-medium capitalize">{{ $t('Delivered')
-                                }}</h4>
+                            </div>
+
+                        </div>
+
+
+                        <div class="group relative">
+                            <div
+                                class="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
+                            </div>
+                            <div
+                                class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/10">
+                                <div class="flex flex-col items-center text-center">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
+                                        props.campaign.total_read_count }}</h2>
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t('Read') }}
+                                    </h4>
+                                </div>
                             </div>
                         </div>
 
-                        <div
-                            class="group bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-gray-100 hover:shadow-xl hover:shadow-cyan-200/50 transition-all duration-300 hover:-translate-y-1">
-                            <div class="flex flex-col items-center text-center">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                                    </svg>
-                                </div>
-                                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{{
-                                    props.campaign.total_read_count }}</h2>
-                                <h4 class="text-xs md:text-sm text-gray-600 font-medium capitalize">{{ $t('Read') }}
-                                </h4>
-                            </div>
-                        </div>
 
-                        <div
-                            class="group bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-gray-100 hover:shadow-xl hover:shadow-red-200/50 transition-all duration-300 hover:-translate-y-1">
-                            <div class="flex flex-col items-center text-center">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="15" y1="9" x2="9" y2="15" />
-                                        <line x1="9" y1="9" x2="15" y2="15" />
-                                    </svg>
+                        <div class="group relative">
+                            <div
+                                class="absolute -inset-0.5 bg-primary rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
+                            </div>
+                            <div
+                                class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/10">
+                                <div class="flex flex-col items-center text-center">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="15" y1="9" x2="9" y2="15" />
+                                            <line x1="9" y1="9" x2="15" y2="15" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
+                                        props.campaign.total_failed_count }}</h2>
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t(`Rejected
+                                        by
+                                        meta`) }}</h4>
                                 </div>
-                                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{{
-                                    props.campaign.total_failed_count }}</h2>
-                                <h4 class="text-xs md:text-sm text-gray-600 font-medium capitalize">{{ $t(`Rejected by
-                                    meta`) }}</h4>
                             </div>
                         </div>
                     </div>
+
 
                     <!-- Campaign Log Table -->
                     <div
