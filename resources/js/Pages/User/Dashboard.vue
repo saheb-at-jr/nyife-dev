@@ -116,6 +116,11 @@
       </div>
 
       <!-- Stats Dashboard -->
+      <div class="flex items-center gap-2 mb-4">
+        <ChartNoAxesCombined class="w-5 h-5 text-green-500" />
+        <h3 class="text-gray-900 font-semibold text-lg">Stats</h3>
+      </div>
+      <!-- Stats Dashboard -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         <!-- Contacts -->
         <div class="group relative">
@@ -589,7 +594,8 @@ import {
   Activity, Zap, CreditCard, Shield, ShieldAlert, MessageCircle,
   UsersRound, Rocket, Inbox, Plus, X, Check, LayoutDashboard,
   ArrowUpRight, Calendar, ArrowUpCircle, ArrowDownCircle, ChevronRight,
-  PlusIcon
+  PlusIcon,
+  ChartNoAxesCombined
 } from 'lucide-vue-next';
 
 const props = defineProps({

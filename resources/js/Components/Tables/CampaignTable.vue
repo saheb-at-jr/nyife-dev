@@ -308,11 +308,7 @@ const viewMode = ref('list'); // 'grid' or 'list'
 </script>
 
 <template>
-    <div class="mb-3 flex items-center justify-end">
-        <Link href="/campaigns/create"
-            class="max-w-min text-nowrap bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:block hidden">
-        {{ $t('Create campaign') }}</Link>
-    </div>
+
     <!-- Search and Filter Bar -->
     <div class="mb-6 space-y-4">
         <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -350,37 +346,46 @@ const viewMode = ref('list'); // 'grid' or 'list'
                 </div>
             </div>
 
-            <!-- View Toggle -->
-            <div class="flex items-center gap-2 bg-white rounded-2xl p-1.5 shadow-lg border-2 border-violet-100">
-                <button @click="viewMode = 'list'" :class="[
-                    'px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300',
-                    viewMode === 'list' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 hover:bg-gray-50'
-                ]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="inline-block">
-                        <line x1="8" y1="6" x2="21" y2="6" />
-                        <line x1="8" y1="12" x2="21" y2="12" />
-                        <line x1="8" y1="18" x2="21" y2="18" />
-                        <line x1="3" y1="6" x2="3.01" y2="6" />
-                        <line x1="3" y1="12" x2="3.01" y2="12" />
-                        <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                </button>
-                <button @click="viewMode = 'grid'" :class="[
-                    'px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300',
-                    viewMode === 'grid' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 hover:bg-gray-50'
-                ]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="inline-block">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                    </svg>
-                </button>
+            <div class="flex justify-center items-center gap-4">
+                <!-- Create Campaign Button -->
+                <div class="">
+                    <Link href="/campaigns/create"
+                        class="max-w-min text-nowrap bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:block hidden">
+                    {{ $t('Create campaign') }}</Link>
+                </div>
+                <!-- View Toggle -->
+                <div class="flex items-center gap-2 bg-white rounded-2xl p-1.5 shadow-lg border-2 border-violet-100">
+                    <button @click="viewMode = 'list'" :class="[
+                        'px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300',
+                        viewMode === 'list' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 hover:bg-gray-50'
+                    ]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="inline-block">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                    </button>
+                    <button @click="viewMode = 'grid'" :class="[
+                        'px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300',
+                        viewMode === 'grid' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 hover:bg-gray-50'
+                    ]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="inline-block">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                    </button>
+                </div>
             </div>
+
         </div>
     </div>
 

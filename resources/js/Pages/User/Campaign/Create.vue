@@ -1,8 +1,8 @@
 <template>
     <AppLayout>
-        <div class="md:flex md:flex-col bg-white border-l py-4 text-[#000] overflow-y-hidden">
-            <div class="flex justify-between px-8 border-b pb-2 capitalize">
-                <div>
+        <div class="md:flex md:flex-col bg-white border-l text-[#000] overflow-y-hidden">
+            <div class="flex justify-between px-8 py-6 border-b pb-2 capitalize">
+                <!-- <div>
                     <h2 class="text-xl mb-1">{{ $t('New campaign') }}</h2>
                     <p class="flex items-center text-sm leading-6 text-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
@@ -11,10 +11,20 @@
                         </svg>
                         <span class="ml-1 mt-1">{{ $t('Create campaign') }}</span>
                     </p>
+                </div> -->
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff5100] to-[#ff7a3d] flex items-center justify-center shadow-lg shadow-[#ff5100]/25">
+                            <Megaphone class="w-6 h-6 text-white" />
+                        </div>
+                        {{ $t('New campaign') }}
+                    </h1>
+                    <p class="text-gray-600">{{ $t('Create campaign') }}</p>
                 </div>
                 <div class="space-x-2 flex items-center">
                     <Link href="/campaigns"
-                        class="rounded-md bg-black px-3 py-2 text-sm text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        class="bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:block hidden">
                     {{ $t('Back') }}</Link>
                 </div>
             </div>
@@ -26,6 +36,7 @@
 import AppLayout from "./../Layout/App.vue";
 import CampaignForm from '@/Components/CampaignForm.vue';
 import { Link } from "@inertiajs/vue3";
+import { Megaphone } from "lucide-vue-next";
 import 'vue3-toastify/dist/index.css';
 const props = defineProps(['templates', 'contactGroups', 'settings']);
 </script>

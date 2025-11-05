@@ -165,10 +165,13 @@ import TableBodyRowItem from '@/Components/TableBodyRowItem.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
 import DropdownItem from '@/Components/DropdownItem.vue';
-import { ref } from 'vue';
-import { FileText, MoreVertical, Edit, Trash2, CheckCircle2, XCircle, Clock, Eye, Calendar, Tag } from 'lucide-vue-next';
+import { FileText, Edit, Trash2, CheckCircle2, XCircle, Clock, Eye, Calendar, Tag } from 'lucide-vue-next';
 
 const props = defineProps({
+    viewMode: {
+        type: String,
+        default: 'list'
+    },
     rows: {
         type: Object,
         required: true,
@@ -249,47 +252,12 @@ const getCategoryColor = (category) => {
     return colors[category?.toLowerCase()] || 'bg-gray-100 text-gray-700';
 }
 
-const viewMode = ref('list'); // 'grid' or 'list'
 </script>
 
 <template>
     <div class="min-h-screen">
-        <!-- View Toggle -->
-        <div v-if="rows.data.length > 0" class="mb-6 flex justify-end">
-            <div class="flex items-center gap-2 bg-white rounded-2xl p-1.5 shadow-lg border-2 border-primary/10">
-                <button @click="viewMode = 'list'" :class="[
-                    'px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300',
-                    viewMode === 'list' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 hover:bg-gray-50'
-                ]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="inline-block">
-                        <line x1="8" y1="6" x2="21" y2="6" />
-                        <line x1="8" y1="12" x2="21" y2="12" />
-                        <line x1="8" y1="18" x2="21" y2="18" />
-                        <line x1="3" y1="6" x2="3.01" y2="6" />
-                        <line x1="3" y1="12" x2="3.01" y2="12" />
-                        <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                </button>
-                <button @click="viewMode = 'grid'" :class="[
-                    'px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300',
-                    viewMode === 'grid' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 hover:bg-gray-50'
-                ]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="inline-block">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
         <!-- Grid View -->
-        <div v-if="viewMode === 'grid' && rows.data.length > 0"
+        <div v-if="props.viewMode === 'grid' && rows.data.length > 0"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div v-for="(item, index) in rows.data" :key="index"
                 class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-transparent hover:border-primary/20 transform hover:-translate-y-2">
@@ -386,7 +354,7 @@ const viewMode = ref('list'); // 'grid' or 'list'
         </div>
 
         <!-- List View (Table) -->
-        <div v-if="viewMode === 'list' && rows.data.length > 0"
+        <div v-if="props.viewMode === 'list' && rows.data.length > 0"
             class="bg-white rounded-3xl shadow-xl border-2 border-primary/10 p-4 overflow-hidden">
             <div class="overflow-x-auto">
                 <Table :rows="rows">
@@ -565,14 +533,12 @@ const viewMode = ref('list'); // 'grid' or 'list'
 
 .line-clamp-2 {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
 .line-clamp-3 {
     display: -webkit-box;
-    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

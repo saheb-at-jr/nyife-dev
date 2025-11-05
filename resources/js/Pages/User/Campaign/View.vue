@@ -173,7 +173,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             <div
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/10">
 
-                                <div class="flex flex-col items-center text-center">
+                                <div class="flex flex-col items-start text-center">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -184,7 +184,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_message_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{
                                         $t('Messages') }}
                                     </h4>
                                 </div>
@@ -197,7 +197,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             </div>
                             <div
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/10">
-                                <div class="flex flex-col items-center text-center">
+                                <div class="flex flex-col items-start text-center">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -209,7 +209,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_sent_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t('Sent') }}
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{ $t('Sent') }}
                                     </h4>
                                 </div>
                             </div>
@@ -221,7 +221,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             </div>
                             <div
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-emerald-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/10">
-                                <div class="flex flex-col items-center text-center">
+                                <div class="flex flex-col items-start text-center">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -232,7 +232,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_delivered_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{
                                         $t('Delivered')
                                         }}</h4>
                                 </div>
@@ -247,7 +247,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             </div>
                             <div
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/10">
-                                <div class="flex flex-col items-center text-center">
+                                <div class="flex flex-col items-start text-center">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -258,7 +258,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_read_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t('Read') }}
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{ $t('Read') }}
                                     </h4>
                                 </div>
                             </div>
@@ -271,7 +271,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             </div>
                             <div
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/10">
-                                <div class="flex flex-col items-center text-center">
+                                <div class="flex flex-col items-start text-center">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -284,7 +284,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_failed_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t(`Rejected
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{ $t(`Rejected
                                         by
                                         meta`) }}</h4>
                                 </div>
