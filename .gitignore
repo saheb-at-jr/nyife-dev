@@ -11,6 +11,7 @@
 /resources/js/wayfinder
 /v2.8
 /vendor
+/lang/php_en.json
 .DS_Store
 .env
 .env.backup
