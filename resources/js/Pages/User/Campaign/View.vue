@@ -331,8 +331,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                         </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <h3
-                                            class="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1 capitalize">
+                                        <h3 class="text-xs font-semibold text-blue-700 tracking-wide mb-1 capitalize">
                                             {{ $t('Campaign name') }}</h3>
                                         <p class="text-sm font-medium text-gray-900 break-words capitalize">{{
                                             props.campaign?.name }}</p>
@@ -355,8 +354,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                         </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <h3
-                                            class="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1 capitalize">
+                                        <h3 class="text-xs font-semibold text-purple-700 tracking-wide mb-1 capitalize">
                                             {{ $t('Template') }}</h3>
                                         <p class="text-sm font-medium text-gray-900 break-words capitalize">{{
                                             props.campaign?.template?.name }}</p>
@@ -379,8 +377,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                         </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <h3
-                                            class="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1 capitalize">
+                                        <h3 class="text-xs font-semibold text-green-700 tracking-wide mb-1 capitalize">
                                             {{ $t('Recipients') }}</h3>
                                         <p class="text-sm font-medium text-gray-900 break-words capitalize">
                                             {{ props.campaign.contact_group_id === '0' ? 'All Contacts' :
@@ -403,8 +400,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                         </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <h3
-                                            class="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-1 capitalize">
+                                        <h3 class="text-xs font-semibold text-orange-700 tracking-wide mb-1 capitalize">
                                             {{ $t('Time scheduled') }}</h3>
                                         <p class="text-sm font-medium text-gray-900 break-words">{{
                                             props.campaign.scheduled_at }}</p>

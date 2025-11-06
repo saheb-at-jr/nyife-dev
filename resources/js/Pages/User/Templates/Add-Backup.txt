@@ -594,7 +594,7 @@
                   {{
                     $t(
                       `It's recommended to set a custom validity period that your authentication message must be delivered
-                  by before it expires. If a message is not delivered within this time frame, you will not be charged
+                  by before it expires.If a message is not delivered within this time frame, you will not be charged
                   and your customer will not see the message.`
                     )
                   }}
@@ -814,7 +814,8 @@
             </div>
           </div>
         </div>
-        <div v-if="selectedType === 'template'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20 overflow-y-auto">
+        <div v-if="selectedType === 'template'" class="md:w-[50%] py-20 px-4 md:px-20 overflow-y-auto"
+          style="background-image: url('/images/whatsapp-bg-02.png')">
           <div
             class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left w-[25em]">
             <div v-if="form.header.format != 'TEXT'" class="mb-4 bg-[#ccd0d5] flex justify-center py-8 rounded">
@@ -886,7 +887,8 @@
           </div>
         </div>
 
-        <div v-if="selectedType === 'carousel'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20 overflow-y-auto">
+        <div v-if="selectedType === 'carousel'" class="md:w-[50%] py-20 px-4 md:px-20 overflow-y-auto"
+          style="background-image: url('/images/whatsapp-bg-02.png')">
           <!-- Message Preview -->
           <div class="w-full max-w-sm mx-auto p-4 bg-[#ece5dd] rounded shadow-md">
             <!-- Message Bubble -->
@@ -923,7 +925,8 @@
 
         </div>
 
-        <div v-if="selectedType === 'flow'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20">
+        <div v-if="selectedType === 'flow'" class="md:w-[50%] py-20 px-4 md:px-20 "
+          style="background-image: url('/images/whatsapp-bg-02.png')">
           <div style="max-width: 50%;"
             class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left ">
             <div v-if="form.header.format != 'TEXT'" class="mb-4 bg-[#ccd0d5] flex justify-center py-8 rounded">

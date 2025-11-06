@@ -1229,7 +1229,8 @@ onMounted(() => {
                             </div>
 
                             <!-- WhatsApp Preview -->
-                            <div class="chat-bg pt-4 rounded-2xl overflow-hidden h-[calc(100vh-380px)] aspect-[12/16]">
+                            <div
+                                class="w-full chat-bg pt-4 rounded-2xl overflow-hidden h-[calc(100vh-380px)] aspect-[12/16]">
                                 <div class="overflow-y-auto h-full p-4">
                                     <WhatsappTemplate :parameters="form" :visible="form.template ? true : false" />
 
