@@ -1,7 +1,7 @@
 <template>
     <AppLayout v-slot:default="slotProps">
-        <div class="md:flex md:flex-grow md:overflow-hidden">
-            <div class="md:w-[30%] md:flex flex-col h-full bg-white border-r border-l" :class="contact ? 'hidden' : ''">
+        <div class="max-w-[calc(100vw-265px)] md:h-[calc(100vh-64px)] md:flex md:flex-grow md:overflow-hidden">
+            <div class="md:w-[30%] md:flex flex-col bg-white border-r border-l" :class="contact ? 'hidden' : ''">
                 <ChatTable :rows="rows" :filters="props.filters" :rowCount="props.rowCount"
                     :ticketingIsEnabled="ticketingIsEnabled" :status="props?.status"
                     :chatSortDirection="props.chat_sort_direction" />
@@ -14,10 +14,11 @@
                 <div v-if="contact && !displayTemplate" class="flex-1 overflow-y-auto" ref="scrollContainer2">
                     <ChatThread v-if="!displayContactInfo && !loadingThread && !displayTemplate" :contactId="contact.id"
                         :initialMessages="chatThread" :hasMoreMessages="hasMoreMessages" :initialNextPage="nextPage" />
-                    <Contact v-if="displayContactInfo && !displayTemplate" class="bg-white h-full"
+                    <Contact v-if="displayContactInfo && !displayTemplate" class="bg-white h-full pb-8"
                         :fields="props.fields" :contact="contact" :locationSettings="props.locationSettings" />
                 </div>
-                <div v-if="contact && !displayContactInfo && !formLoading && !displayTemplate" class="w-full py-4">
+                <div v-if="contact && !displayContactInfo && !formLoading && !displayTemplate"
+                    class="w-full py-4 mb-12">
                     <ChatForm :contact="contact" :simpleForm="simpleForm" :chatLimitReached="isChatLimitReached"
                         @viewTemplate="displayTemplate = true;" />
                 </div>

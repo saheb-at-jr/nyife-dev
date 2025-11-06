@@ -893,8 +893,8 @@ onMounted(() => {
     <component v-if="userChoice === 'flow'" :is="FlowTemplate" v-bind="sharedProps" />
     <component v-else :is="userChoice === 'carousel' ? Backup : 'div'" v-bind="sharedProps">
         <template v-if="userChoice === 'template'">
-            <div
-                class="w-full lg:h-screen lg:max-h-[calc(100vh-170px)] bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50 flex flex-col lg:flex-row overflow-hidden">
+            <div class="w-full lg:h-screen bg-[#EEEEEE] flex flex-col lg:flex-row overflow-hidden"
+                :class="isCampaignFlow ? `lg:max-h-[calc(100vh-170px)]` : `lg:max-h-[calc(100vh-145px)]`">
                 <!-- Left Panel - Form -->
                 <div class="w-full lg:w-1/2 overflow-y-auto">
                     <!-- Not Connected State -->
@@ -935,15 +935,15 @@ onMounted(() => {
                         <div v-if="displayTitle" class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
-                                    <div
+                                    <!-- <div
                                         class="w-10 h-10 bg-gradient-to-br from-[#ff5100] to-[#ff6422] rounded-xl flex items-center justify-center">
-                                        <Send class="w-5 h-5 text-white" />
-                                    </div>
-                                    <h3 class="text-xl font-bold text-slate-800">{{ $t('Send Template Message') }}
+                                        <Send class="w-4 h-4 text-white" />
+                                    </div> -->
+                                    <h3 class="text-sm font-bold text-slate-800">{{ $t('Send Template Message') }}
                                     </h3>
                                 </div>
                                 <button @click="viewTemplate()" type="button"
-                                    class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2">
+                                    class="px-3 py-1.5 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2">
                                     <X class="w-4 h-4" />
                                     <span class="hidden md:inline">Cancel</span>
                                 </button>
@@ -960,7 +960,7 @@ onMounted(() => {
                             <FormInput v-if="isCampaignFlow" v-model="form.name" :name="$t('Campaign name')"
                                 :type="'text'" :error="form.errors.name" :required="true" :class="'w-full'" />
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 gap-4">
                                 <FormSelect v-model="form.template" @update:modelValue="loadTemplate"
                                     :options="templateOptions" :required="true" :error="form.errors.template"
                                     :name="$t('Template')" :placeholder="$t('Select template')" />
@@ -1168,8 +1168,7 @@ onMounted(() => {
                         </div>
 
                         <!-- Action Buttons -->
-                        <div
-                            class="flex items-center justify-end space-x-3 pt-4 sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pb-6">
+                        <div class="flex items-center justify-end space-x-3 sticky bottom-0 bg-white p-6 rounded-2xl">
                             <Link v-if="displayCancelBtn" href="/campaigns"
                                 class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300">
                             {{ $t('Cancel') }}
@@ -1202,15 +1201,15 @@ onMounted(() => {
                 <div
                     class="w-full lg:w-1/2 bg-gradient-to-br from-slate-100 via-orange-50/20 to-slate-100 p-4 flex items-center justify-center relative">
                     <!-- Background Decorations -->
-                    <div
+                    <div v-if="isCampaignFlow"
                         class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#ff5100]/5 to-transparent rounded-full blur-3xl">
                     </div>
-                    <div
+                    <div v-if="isCampaignFlow"
                         class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-orange-200/20 to-transparent rounded-full blur-3xl">
                     </div>
 
                     <!-- Preview Container -->
-                    <div class="lg:fixed lg:z-10">
+                    <div class="lg:sticky top-0 lg:z-10">
                         <div class="text-center my-6">
                             <div
                                 class="inline-flex items-center space-x-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-slate-200 mb-3">

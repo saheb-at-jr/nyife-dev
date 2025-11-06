@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
     import axios from 'axios';
     import { router } from '@inertiajs/vue3';
     import { ref } from 'vue';
@@ -116,4 +116,164 @@
             </form>
         </div>
     </Modal>
+</template> -->
+
+<!-- ========================================== NEW UI CODE ==================================== -->
+
+
+<script setup>
+import axios from 'axios';
+import { router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import Modal from '@/Components/Modal.vue';
+import FormInput from '@/Components/FormInput.vue';
+import FormImage from '@/Components/FormImage.vue';
+import FormSelect from '@/Components/FormSelect.vue';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
+const props = defineProps({
+    modelValue: Boolean,
+    label: String,
+    url: String,
+    form: Object,
+    formInputs: Array,
+})
+
+const form = ref(props.form);
+const isLoading = ref(false);
+const errorMessages = ref({});
+
+const submitForm = async (event) => {
+    isLoading.value = true;
+    errorMessages.value = {};
+
+    try {
+        const formData = new FormData();
+
+        Object.keys(form.value).forEach((key) => {
+            const value = form.value[key];
+
+            if (Array.isArray(value)) {
+                value.forEach((item) => {
+                    formData.append(key + '[]', item);
+                });
+            } else {
+                formData.append(key, value);
+            }
+        });
+
+        const response = await axios.post(props.url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        if (response.status === 200 && response.data.success) {
+            handleSuccessResponse(response);
+        } else {
+            handleFailedResponse(response);
+        }
+    } catch (error) {
+        handleError(error);
+    } finally {
+        setTimeout(() => {
+            isLoading.value = false;
+        }, 1000);
+    }
+};
+
+const handleSuccessResponse = (response) => {
+    setTimeout(() => {
+        onClose();
+        router.reload();
+        toast(response.data.message, {
+            autoClose: 3000,
+        });
+        emit('callback', response.data);
+    }, 1000);
+};
+
+const handleFailedResponse = (response) => {
+    setTimeout(() => {
+        if (response.data.errors) {
+            errorMessages.value = response.data.errors;
+        }
+    }, 1000);
+};
+
+const handleError = (error) => {
+    setTimeout(() => {
+        errorMessages.value = error.response.data.errors;
+    }, 1000);
+};
+
+const emit = defineEmits(['update:modelValue', 'callback']);
+function onClose() {
+    emit('update:modelValue', false);
+}
+</script>
+
+<template>
+    <Modal :label="label" :isOpen="modelValue">
+        <div class="mt-6">
+            <form @submit.prevent="submitForm()" class="space-y-6">
+                <!-- Dynamic Form Fields -->
+                <div class="grid gap-6 sm:grid-cols-6">
+                    <template v-for="(input, index) in formInputs" :key="index">
+                        <FormInput v-if="input.inputType == 'FormInput'" v-model="form[input.name]"
+                            :error="errorMessages?.[input.name]?.[0]" :name="input.label" :type="input.type"
+                            :class="input.className" />
+                        <FormSelect v-else-if="input.inputType == 'FormSelect'" v-model="form[input.name]"
+                            :error="errorMessages?.[input.name]?.[0]" :options="input.options" :name="input.label"
+                            :class="input.className" :placeholder="input.placeholder" />
+                        <FormImage v-else-if="input.inputType == 'FormImage'" v-model="form[input.name]"
+                            :error="errorMessages?.[input.name]?.[0]" :options="input.options" :label="input.label"
+                            :class="input.className" />
+                    </template>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" @click.self="onClose"
+                        class="flex-1 px-6 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">
+                        {{ $t('Cancel') }}
+                    </button>
+                    <button type="submit" :disabled="isLoading" :class="[
+                        'flex-1 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2',
+                        isLoading ? 'bg-[#ff5100]/70 cursor-not-allowed' : 'bg-[#ff5100] hover:bg-[#e64900]'
+                    ]">
+                        <svg v-if="isLoading" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                            viewBox="0 0 24 24" class="animate-spin">
+                            <path fill="currentColor"
+                                d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z"
+                                opacity=".5" />
+                            <path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z">
+                                <animateTransform attributeName="transform" dur="1s" from="0 12 12"
+                                    repeatCount="indefinite" to="360 12 12" type="rotate" />
+                            </path>
+                        </svg>
+                        <span v-else>{{ $t('Save') }}</span>
+                        <span v-if="isLoading">{{ $t('Saving...') }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </Modal>
 </template>
+
+<style scoped>
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+</style>

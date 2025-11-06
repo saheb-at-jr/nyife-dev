@@ -1,15 +1,13 @@
-<script setup>
-    import { computed, ref, watchEffect, onMounted, onUpdated } from 'vue';
+<!-- <script setup>
+    import { ref, watchEffect, onMounted, onUpdated } from 'vue';
     import debounce from 'lodash/debounce';
-    import { Link, router, usePage } from "@inertiajs/vue3";
+    import { Link, router } from "@inertiajs/vue3";
     import ContactImportModal from '@/Components/ContactImportModal.vue';
     import ExportModal from '@/Components/ExportModal.vue';
     import Dropdown from '@/Components/Dropdown.vue';
     import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
     import DropdownItem from '@/Components/DropdownItem.vue';
-    import Modal from '@/Components/Modal.vue';
     import Pagination from '@/Components/Pagination.vue';
-    import { trans } from 'laravel-vue-i18n';
 
     const props = defineProps(['rows', 'filters', 'type']);
 
@@ -282,4 +280,326 @@
     <ContactImportModal :type="type" v-model:modelValue="isOpenModal"/>
     <ExportModal :type="type" v-model:modelValue="isExportModalOpen"/>
 </template>
-  
+   -->
+
+
+   <!-- ========================================== NEW UI CODE ==================================== -->
+
+   <script setup>
+import { ref, watchEffect, onMounted, onUpdated } from 'vue';
+import debounce from 'lodash/debounce';
+import { Link, router } from "@inertiajs/vue3";
+import ContactImportModal from '@/Components/ContactImportModal.vue';
+import ExportModal from '@/Components/ExportModal.vue';
+import Dropdown from '@/Components/Dropdown.vue';
+import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
+import DropdownItem from '@/Components/DropdownItem.vue';
+import Pagination from '@/Components/Pagination.vue';
+
+const props = defineProps(['rows', 'filters', 'type']);
+
+const params = ref({
+    id: props.filters?.id,
+    search: props.filters?.search,
+    page: props.filters?.page
+});
+
+const isOpenModal = ref(false);
+const isExportModalOpen = ref(false);
+const isSearching = ref(false);
+const emit = defineEmits(['callback']);
+const bulkCheckbox = ref(false);
+const selectedCount = ref(0);
+const checkedContacts = ref([]);
+const checkedGroups = ref([]);
+
+function getRow(value) {
+    params.value.id = value;
+    const filteredParams = Object.fromEntries(
+        Object.entries(params.value).filter(([_, value]) => value !== null)
+    );
+    emit('callback', filteredParams);
+}
+
+const clearSearch = () => {
+    params.value.search = null;
+    runSearch();
+}
+
+const search = debounce(() => {
+    params.value.page = null;
+    isSearching.value = true;
+    runSearch();
+}, 1000);
+
+const runSearch = () => {
+    const filteredParams = Object.fromEntries(
+        Object.entries(params.value).filter(([_, value]) => value !== null)
+    );
+    router.visit(props.type === 'contact' ? '/contacts' : '/contact-groups', {
+        method: 'get',
+        data: filteredParams,
+    })
+}
+
+function saveCheckedItems() {
+    if(props.type === 'contact'){
+        localStorage.setItem('checkedContacts', JSON.stringify(checkedContacts.value));
+    } else {
+        localStorage.setItem('checkedGroups', JSON.stringify(checkedGroups.value));
+    }
+}
+
+function loadCheckedItems() {
+    if(props.type === 'contact'){
+        const savedItems = localStorage.getItem('checkedContacts');
+        checkedContacts.value = savedItems ? JSON.parse(savedItems) : [];
+    } else {
+        const savedItems = localStorage.getItem('checkedGroups');
+        checkedGroups.value = savedItems ? JSON.parse(savedItems) : [];
+    }
+}
+
+function updateCheckedItems(uuid, isChecked) {
+    if(props.type === 'contact'){
+        const index = checkedContacts.value.indexOf(uuid);
+        if (isChecked && index === -1) {
+            checkedContacts.value.push(uuid);
+        } else if (!isChecked && index !== -1) {
+            checkedContacts.value.splice(index, 1);
+        }
+    } else {
+        const index = checkedGroups.value.indexOf(uuid);
+        if (isChecked && index === -1) {
+            checkedGroups.value.push(uuid);
+        } else if (!isChecked && index !== -1) {
+            checkedGroups.value.splice(index, 1);
+        }
+    }
+    saveCheckedItems();
+}
+
+function toggleCheckbox(contactUuid) {
+    const contact = props.rows.data.find(contact => contact.uuid === contactUuid);
+    contact.isChecked = !contact.isChecked;
+    updateCheckedItems(contactUuid, contact.isChecked);
+    updateBulkCheckboxState();
+    updateSelectedCount();
+}
+
+function toggleAllCheckboxes() {
+    bulkCheckbox.value = !bulkCheckbox.value;
+    props.rows.data.forEach(row => {
+        row.isChecked = bulkCheckbox.value;
+        updateCheckedItems(row.uuid, bulkCheckbox.value);
+    });
+    updateSelectedCount();
+}
+
+function applyCheckedState() {
+    props.rows.data.forEach(row => {
+        row.isChecked = props.type === 'contact' ? checkedContacts.value.includes(row.uuid) : checkedGroups.value.includes(row.uuid);
+    });
+    updateBulkCheckboxState();
+    updateSelectedCount();
+}
+
+function updateBulkCheckboxState() {
+    bulkCheckbox.value = props.rows.data.length > 0 && props.rows.data.every(row => row.isChecked);
+}
+
+function updateSelectedCount() {
+    selectedCount.value = props.type === 'contact' ? checkedContacts.value.length : checkedGroups.value.length;
+}
+
+function deleteItems(value){
+    const itemsToDelete = props.type === 'contact' ? checkedContacts.value : checkedGroups.value;
+    router.visit(props.type === 'contact' ? '/contacts' : '/contact-groups', {
+        method: 'delete',
+        data: { 'uuids': value === 'all' ? [] : itemsToDelete },
+        preserveState: true,
+        onSuccess: () => {
+            localStorage.removeItem(props.type === 'contact' ? 'checkedContacts' : 'checkedGroups');
+            if(props.type === 'contact'){
+                checkedContacts.value = [];
+            } else {
+                checkedGroups.value = [];
+            }
+        }
+    })
+}
+
+onMounted(() => {
+    loadCheckedItems();
+    applyCheckedState();
+});
+
+onUpdated(() => {
+    applyCheckedState();
+});
+
+watchEffect(() => {
+    params.value.page = props.filters?.page;
+    applyCheckedState();
+});
+</script>
+
+<template>
+    <!-- Search Bar -->
+    <div class="p-4">
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="text-gray-400">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 15l6 6m-11-4a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z"/>
+                </svg>
+            </div>
+            <input 
+                @input="search" 
+                v-model="params.search" 
+                type="text" 
+                class="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-0 rounded-xl text-sm focus:ring-2 focus:ring-[#ff5100] focus:bg-white transition-all" 
+                :placeholder="type === 'contact' ? $t('Search name or phone or email') : $t('Search name')"
+            >
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <button v-if="isSearching === false && params.search" @click="clearSearch" type="button" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2zm3.7 12.3c.4.4.4 1 0 1.4c-.4.4-1 .4-1.4 0L12 13.4l-2.3 2.3c-.4.4-1 .4-1.4 0c-.4-.4-.4-1 0-1.4l2.3-2.3l-2.3-2.3c-.4-.4-.4-1 0-1.4c.4-.4 1-.4 1.4 0l2.3 2.3l2.3-2.3c.4-.4 1-.4 1.4 0c.4.4.4 1 0 1.4L13.4 12l2.3 2.3z"/>
+                    </svg>
+                </button>
+                <span v-if="isSearching" class="text-[#ff5100]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                        <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+                            <animateTransform attributeName="transform" calcMode="discrete" dur="2.4s" repeatCount="indefinite" type="rotate" values="0 12 12;90 12 12;180 12 12;270 12 12"/>
+                            <animate attributeName="opacity" dur="0.6s" keyTimes="0;0.5;1" repeatCount="indefinite" values="1;1;0"/>
+                        </circle>
+                    </svg>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selection Bar -->
+    <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-y border-gray-100">
+        <div class="flex items-center gap-3">
+            <label @click="toggleAllCheckboxes($event)" class="cursor-pointer flex items-center gap-2 group">
+                <div class="w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all" 
+                    :class="bulkCheckbox ? 'bg-[#ff5100] border-[#ff5100]' : 'border-gray-300 group-hover:border-[#ff5100]'">
+                    <svg v-if="bulkCheckbox" class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-700">
+                    <span v-if="selectedCount == 0">{{ $t('Select all') }}</span>
+                    <span v-else class="text-[#ff5100]">{{ selectedCount }} {{ $t('selected') }}</span>
+                </span>
+            </label>
+        </div>
+        
+        <Dropdown :align="'right'">
+            <button class="p-2 hover:bg-white rounded-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" class="text-gray-600">
+                    <path fill="currentColor" d="M8 2.5a1.22 1.22 0 0 1 1.25 1.17A1.21 1.21 0 0 1 8 4.84a1.21 1.21 0 0 1-1.25-1.17A1.22 1.22 0 0 1 8 2.5m0 8.66a1.17 1.17 0 1 1-1.25 1.17A1.21 1.21 0 0 1 8 11.16m0-4.33a1.17 1.17 0 1 1 0 2.34a1.17 1.17 0 1 1 0-2.34"/>
+                </svg>
+            </button>
+            <template #items>
+                <DropdownItemGroup>
+                    <DropdownItem as="button" @click="isOpenModal = true">{{ $t('Import rows') }}</DropdownItem>
+                    <DropdownItem as="button" @click="isExportModalOpen = true">{{ $t('Export') }}</DropdownItem>
+                    <DropdownItem v-if="selectedCount > 0" as="button" @click="deleteItems()">{{ $t('Delete selected') }}</DropdownItem>
+                    <DropdownItem as="button" @click="deleteItems('all')">{{ $t('Delete all') }}</DropdownItem>
+                </DropdownItemGroup>
+            </template>
+        </Dropdown>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-100">
+        <div class="flex">
+            <Link href="/contacts" 
+                class="flex-1 py-4 text-center text-sm font-medium transition-all relative"
+                :class="$page.url.startsWith('/contacts') ? 'text-[#ff5100]' : 'text-gray-500 hover:text-gray-700'">
+                <span>{{ $t('All contacts') }}</span>
+                <div v-if="$page.url.startsWith('/contacts')" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#ff5100]"></div>
+            </Link>
+            <Link href="/contact-groups" 
+                class="flex-1 py-4 text-center text-sm font-medium transition-all relative"
+                :class="$page.url.startsWith('/contact-groups') ? 'text-[#ff5100]' : 'text-gray-500 hover:text-gray-700'">
+                <span>{{ $t('Groups') }}</span>
+                <div v-if="$page.url.startsWith('/contact-groups')" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#ff5100]"></div>
+            </Link>
+        </div>
+    </div>
+
+    <!-- Contact List -->
+    <div class="flex-grow overflow-y-auto h-[calc(100vh-340px)]">
+        <div v-if="type === 'contact'" 
+            v-for="(contact, index) in rows.data" 
+            :key="index"
+            @click="getRow(contact.uuid)" 
+            class="group flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-all"
+            :class="contact.isChecked ? 'bg-orange-50/50' : ''">
+            
+            <label @click.stop="toggleCheckbox(contact.uuid)" class="cursor-pointer flex-shrink-0">
+                <div class="w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all" 
+                    :class="contact.isChecked ? 'bg-[#ff5100] border-[#ff5100]' : 'border-gray-300 group-hover:border-[#ff5100]'">
+                    <svg v-if="contact.isChecked" class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </label>
+            
+            <div class="flex-shrink-0">
+                <img v-if="contact.avatar" class="rounded-full h-12 w-12 object-cover ring-2 ring-gray-100" :src="contact.avatar">
+                <div v-else class="rounded-full bg-gradient-to-br from-[#ff5100] to-orange-400 text-white flex justify-center items-center h-12 w-12 font-semibold text-lg">
+                    {{ contact.first_name?.substring(0, 1) }}
+                </div>
+            </div>
+            
+            <div class="flex-1 min-w-0">
+                <h3 class="font-medium text-gray-900 truncate">{{ contact?.full_name }}</h3>
+                <p class="text-slate-500 text-sm truncate">{{ contact.formatted_phone_number }}</p>
+            </div>
+            
+            <div class="flex-shrink-0">
+                <svg v-if="contact.is_favorite" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#ff5100" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21z"/>
+                </svg>
+            </div>
+        </div>
+
+        <div v-else-if="type === 'group'" 
+            v-for="(row, key) in rows.data" 
+            :key="key"
+            @click="getRow(row.uuid)" 
+            class="group flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-all"
+            :class="row.isChecked ? 'bg-orange-50/50' : ''">
+            
+            <label @click.stop="toggleCheckbox(row.uuid)" class="cursor-pointer flex-shrink-0">
+                <div class="w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all" 
+                    :class="row.isChecked ? 'bg-[#ff5100] border-[#ff5100]' : 'border-gray-300 group-hover:border-[#ff5100]'">
+                    <svg v-if="row.isChecked" class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </label>
+            
+            <div class="flex-shrink-0">
+                <div class="rounded-full bg-gradient-to-br from-[#ff5100] to-orange-400 text-white flex justify-center items-center h-12 w-12 capitalize font-semibold text-lg">
+                    {{ row.name.substring(0, 1) }}
+                </div>
+            </div>
+            
+            <div class="flex-1 min-w-0">
+                <h3 class="font-medium text-gray-900">{{ row.name }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="p-4 border-t border-gray-100 bg-white">
+        <Pagination :pagination="rows.meta"/>
+    </div>
+
+    <ContactImportModal :type="type" v-model:modelValue="isOpenModal"/>
+    <ExportModal :type="type" v-model:modelValue="isExportModalOpen"/>
+</template>
