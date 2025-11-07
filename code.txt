@@ -13,1191 +13,1732 @@ you can use vue lucide icon if you want to use it.
 INDEX PAGE UI CODE :
 
 <template>
-    <AppLayout>
-        <div class="md:bg-inherit bg-white md:flex md:flex-grow capitalize">
-            <div class="md:w-[30%] flex-col h-full bg-white border-r border-l md:flex"
-                :class="$page.url === '/contacts/add' || contact ? 'hidden' : ''">
-                <div class="px-4 pt-4">
-                    <div class="flex justify-between mt-2">
-                        <div class="flex space-x-1 text-xl">
-                            <h2>{{ $t('Contacts') }}</h2>
-                            <span class="text-slate-500">{{ props.rowCount }}</span>
-                        </div>
-                        <div class="flex space-x-2 items-center">
-                            <Link href="/contacts/add" title="Add Contact">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
-                                <g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd">
-                                    <path
-                                        d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12Zm10-8a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z" />
-                                    <path
-                                        d="M13 7a1 1 0 1 0-2 0v4H7a1 1 0 1 0 0 2h4v4a1 1 0 1 0 2 0v-4h4a1 1 0 1 0 0-2h-4V7Z" />
-                                </g>
-                            </svg>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-                <ContactTable :rows="props.rows" :filters="props.filters" :type="'contact'" @callback="handleContact" />
+    <AppLayout v-slot:default="slotProps">
+        <div class="max-w-[calc(100vw-265px)] md:h-[calc(100vh-64px)] md:flex md:flex-grow md:overflow-hidden">
+            <div class="md:w-[30%] md:flex flex-col bg-white border-r border-l" :class="contact ? 'hidden' : ''">
+                <ChatTable :rows="rows" :filters="props.filters" :rowCount="props.rowCount"
+                    :ticketingIsEnabled="ticketingIsEnabled" :status="props?.status"
+                    :chatSortDirection="props.chat_sort_direction" />
             </div>
-            <div class="md:w-[70%] bg-cover md:h-[100vh] md:overflow-y-hidden">
-                <div v-if="contact">
-                    <ContactInfo v-if="!editContact" class="pt-20" :contact="contact" :fields="props.fields"
-                        :locationSettings="locationSettings" />
-                    <ContactForm v-else :contactGroups="props.contactGroups" :contact="props.contact"
-                        :fields="props.fields" :locationSettings="locationSettings" />
+            <div class="min-w-0 bg-cover flex flex-col chat-bg"
+                :class="contact ? 'h-screen md:w-[70%]' : 'md:h-screen md:w-[70%]'">
+                <ChatHeader v-if="contact" :ticketingIsEnabled="ticketingIsEnabled" :contact="contact"
+                    :displayContactInfo="displayContactInfo" :ticket="ticket" :addon="addon"
+                    @toggleView="toggleContactView" @deleteThread="deleteThread" @closeThread="closeThread" />
+                <div v-if="contact && !displayTemplate" class="flex-1 overflow-y-auto" ref="scrollContainer2">
+                    <ChatThread v-if="!displayContactInfo && !loadingThread && !displayTemplate" :contactId="contact.id"
+                        :initialMessages="chatThread" :hasMoreMessages="hasMoreMessages" :initialNextPage="nextPage" />
+                    <Contact v-if="displayContactInfo && !displayTemplate" class="bg-white h-full pb-8"
+                        :fields="props.fields" :contact="contact" :locationSettings="props.locationSettings" />
                 </div>
-                <div v-else>
-                    <div v-if="$page.url === '/contacts/add'">
-                        <ContactForm :contactGroups="props.contactGroups" :contact="props.contact"
-                            :fields="props.fields" :locationSettings="locationSettings" />
-                    </div>
-                    <div v-else>
-                        <div class="md:flex justify-center pt-20 hidden">
-                            <div class="border pt-20 py-10 w-[30em] rounded-xl bg-white">
-                                <h2 class="text-center text-2xl text-slate-500 mb-6">{{ $t('Select contact') }}</h2>
-                                <div class="flex justify-center">
-                                    <div class="border-r border-slate-500 h-10"></div>
-                                </div>
-                                <h2 class="text-center text-slate-600">{{ $t('Or') }}</h2>
-                                <div class="flex justify-center">
-                                    <div class="border-r border-slate-500 h-10"></div>
-                                </div>
-                                <div class="flex justify-center space-x-4 mt-6">
-                                    <Link href="/contacts/add"
-                                        class="bg-primary rounded-lg text-sm text-white p-2 px-8 text-center">{{ $t(`Add
-                                    contact`) }}</Link>
-                                    <button @click="isOpenModal = true"
-                                        class="bg-primary rounded-lg text-sm text-white p-2 px-8 text-center">{{
-                                            $t('Bulk upload') }}</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div v-if="contact && !displayContactInfo && !formLoading && !displayTemplate"
+                    class="w-full py-4 mb-12">
+                    <ChatForm :contact="contact" :simpleForm="simpleForm" :chatLimitReached="isChatLimitReached"
+                        @viewTemplate="displayTemplate = true;" />
+                </div>
+                <div v-if="displayTemplate" class="flex-1 overflow-y-hidden">
+                    <CampaignForm v-if="displayTemplate" class="bg-white h-full" :contact="contact.uuid"
+                        :templates="templates" :contactGroups="[]" :settings="props.settings" :displayCancelBtn="false"
+                        :displayTitle="true" :isCampaignFlow="false" :scheduleTemplate="false"
+                        :sendText="'Send Message'" @viewTemplate="displayTemplate = false;" />
                 </div>
             </div>
         </div>
+        <button class="hidden" ref="toggleNavbarBtn" @click="slotProps.toggleNavBar"></button>
     </AppLayout>
-
-    <ContactImportModal :type="'contact'" v-model:modelValue="isOpenModal" />
 </template>
+
 <script setup>
 import AppLayout from "./../Layout/App.vue";
-import { ref } from 'vue';
-import { Link } from "@inertiajs/vue3";
-import ContactForm from '@/Components/ContactComponents/CreateForm.vue';
-import ContactImportModal from '@/Components/ContactImportModal.vue';
-import ContactInfo from '@/Components/ContactInfo.vue';
-import ContactTable from '@/Components/Tables/ContactTable.vue';
-import { router } from '@inertiajs/vue3';
+import { default as axios } from 'axios';
+import { ref, onMounted, watch } from 'vue';
+import CampaignForm from '@/Components/CampaignForm.vue';
+import ChatForm from '@/Components/ChatComponents/ChatForm.vue';
+import ChatHeader from '@/Components/ChatComponents/ChatHeader.vue';
+import ChatTable from '@/Components/ChatComponents/ChatTable.vue';
+import ChatThread from '@/Components/ChatComponents/ChatThread.vue';
+import Contact from '@/Components/ContactInfo.vue';
+import { getEchoInstance } from '../../../echo';
 
-const props = defineProps({ rows: Object, filters: Object, rowCount: Number, contactGroups: Object, contact: Object, editContact: Boolean, fields: Object, locationSettings: String, flash: Object });
-const isOpenModal = ref(false);
+const props = defineProps({
+    rows: Array,
+    rowCount: Number,
+    pusherSettings: Object,
+    organizationId: Number,
+    isChatLimitReached: Boolean,
+    toggleNavBar: Function,
+    state: String,
+    demoNumber: String,
+    settings: Object,
+    status: String,
+    chatThread: Array,
+    hasMoreMessages: Boolean,
+    nextPage: Number,
+    addon: Object,
+    contact: Object,
+    ticket: Object,
+    chat_sort_direction: String,
+    filters: Object,
+    templates: Array,
+    fields: Array,
+    locationSettings: Object,
+    simpleForm: Boolean
+});
 
-const handleContact = (value) => {
-    router.visit('/contacts', {
+const rows = ref(props.rows);
+const scrollContainer2 = ref(null);
+const loadingThread = ref(false);
+const displayContactInfo = ref(false);
+const displayTemplate = ref(false);
+const formLoading = ref(false);
+const isChatLimitReached = ref(props.isChatLimitReached);
+const toggleNavbarBtn = ref(null);
+const config = ref(props.settings.metadata);
+const settings = ref(config.value ? JSON.parse(config.value) : null);
+const ticketingIsEnabled = ref(settings.value?.tickets?.active ?? false);
+const chatThread = ref(props.chatThread);
+const contact = ref(props.contact);
+
+watch(() => props.rows, (newRows) => {
+    rows.value = newRows;
+});
+
+function toggleContactView(value) {
+    displayContactInfo.value = value;
+}
+
+const scrollToBottom = () => {
+    const container = scrollContainer2.value;
+    if (container) {
+        container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth',
+        });
+    }
+};
+
+const closeThread = () => {
+    toggleNavbarBtn.value.click();
+    contact.value = null;
+}
+
+const deleteThread = async () => {
+    chatThread.value = [];
+    await axios.delete('/chats/' + contact.value.uuid);
+}
+
+const updateChatThread = (chat) => {
+    const wamId = chat[0].value.wam_id;
+    const wamIdExists = chatThread.value.some(existingChat => existingChat[0].value.wam_id === wamId);
+
+    if (!wamIdExists && chat[0].value.deleted_at == null) {
+        chatThread.value.push(chat);
+        setTimeout(scrollToBottom, 100);
+    }
+}
+
+const updateSidePanel = async (chat) => {
+    if (contact.value && contact.value.id == chat[0].value.contact_id) {
+        updateChatThread(chat);
+    }
+
+    try {
+        const response = await axios.get('/chats');
+        if (response?.data?.result) {
+            rows.value = response.data.result;
+        }
+    } catch (error) {
+        console.error('Error updating side panel:', error);
+    }
+}
+
+onMounted(() => {
+    const echo = getEchoInstance(
+        props.pusherSettings['pusher_app_key'],
+        props.pusherSettings['pusher_app_cluster']
+    );
+
+    echo.channel('chats.ch' + props.organizationId)
+        .listen('NewChatEvent', (event) => {
+            updateSidePanel(event.chat);
+        });
+
+    scrollToBottom();
+});
+</script>
+
+ChatTable Ui Code :
+
+<script setup>
+import { ref, watch } from 'vue';
+import debounce from 'lodash/debounce';
+import { Link, router } from "@inertiajs/vue3";
+import Pagination from '@/Components/Pagination.vue';
+import TicketStatusToggle from '@/Components/TicketStatusToggle.vue';
+import SortDirectionToggle from '@/Components/SortDirectionToggle.vue';
+
+const props = defineProps({
+    rows: {
+        type: Object,
+        required: true,
+    },
+    filters: {
+        type: Object
+    },
+    rowCount: {
+        type: Number,
+        required: true,
+    },
+    ticketingIsEnabled: {
+        type: Boolean
+    },
+    status: {
+        type: String,
+    },
+    chatSortDirection: {
+        type: String
+    }
+});
+
+const isSearching = ref(false);
+const emit = defineEmits(['view']);
+
+const contentType = (metadata) => {
+    const chatData = JSON.parse(metadata);
+    return chatData.type;
+}
+
+const content = (metadata) => {
+    return JSON.parse(metadata);
+}
+
+const getExtension = (fileFormat) => {
+    const formatMap = {
+        'text/plain': 'TXT',
+        'application/pdf': 'PDF',
+        'application/vnd.ms-powerpoint': 'PPT',
+        'application/msword': 'DOC',
+        'application/vnd.ms-excel': 'XLS',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+    };
+
+    return formatMap[fileFormat] || 'Unknown';
+};
+
+const getContactDisplayName = (metadata) => {
+    const contacts = JSON.parse(metadata).contacts;
+    if (contacts.length === 1) {
+        const contact = contacts[0];
+        return contact.name.formatted_name || `${contact.name.first_name} ${contact.name.last_name}`;
+    } else if (contacts.length > 1) {
+        const firstName = contacts[0].name.first_name;
+        const otherContactsCount = contacts.length - 1;
+        return `${firstName} and ${otherContactsCount} other contacts`;
+    } else {
+        return 'No contacts available';
+    }
+}
+
+const formatTime = (time) => {
+    if (!time) {
+        return "Invalid time";
+    } else {
+        const currentTime = new Date();
+        const targetTime = new Date(time);
+
+        // Check if the time is today
+        if (
+            targetTime.getDate() === currentTime.getDate() &&
+            targetTime.getMonth() === currentTime.getMonth() &&
+            targetTime.getFullYear() === currentTime.getFullYear()
+        ) {
+            return formatDate(targetTime, 'h:mm a');
+        }
+
+        // Check if the time is yesterday
+        const yesterday = new Date();
+        yesterday.setDate(currentTime.getDate() - 1);
+        if (
+            targetTime.getDate() === yesterday.getDate() &&
+            targetTime.getMonth() === yesterday.getMonth() &&
+            targetTime.getFullYear() === yesterday.getFullYear()
+        ) {
+            return 'Yesterday';
+        }
+
+        // If beyond yesterday, return the time in the format d/m/y
+        return formatDate(targetTime, 'd/m/y');
+    }
+};
+
+const formatDate = (date, format) => {
+    let options = null;
+    if (format === 'h:mm a') {
+        options = { hour12: true, hour: 'numeric', minute: 'numeric' };
+    } else {
+        options = { day: 'numeric', month: 'numeric', year: 'numeric' };
+    }
+
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+};
+
+const queryParamsString = window.location.search;
+
+// Watch for changes in the query parameters
+watch(() => queryParamsString,
+    (newQuery, oldQuery) => {
+        console.log('Query parameters changed:', newQuery);
+        // Perform actions based on query parameter changes
+    }
+);
+
+const params = ref({
+    search: props.filters.search,
+});
+
+const search = debounce(() => {
+    isSearching.value = true;
+    runSearch();
+}, 1000);
+
+const runSearch = () => {
+    const url = window.location.pathname;
+
+    router.visit(url, {
         method: 'get',
-        data: value,
+        data: params.value,
     })
+}
+
+const clearSearch = () => {
+    params.value.search = null;
+    runSearch();
 }
 </script>
 
 
-GROUPS UI CODE : 
+<script>
+export default {
+    data() {
+        return {
+            days: 2,
+            customDays: null,
+            loading: false,
+        };
+    },
+    methods: {
+        exportExcel() {
+            let exportDays = this.days;
+            if (this.days === 'custom') {
+                if (!this.customDays || this.customDays < 1 || this.customDays > 30) {
+                    alert('Please enter a number between 1 and 30');
+                    return;
+                }
+                exportDays = this.customDays;
+            }
+
+            this.loading = true;
+
+            // Build URL
+            const url = `/chats?export=excel&days=${exportDays}`;
+            window.location.href = url; // trigger download
+
+            // Reset loading after a short delay (optional)
+            setTimeout(() => { this.loading = false; }, 3000);
+        }
+    }
+}
+</script>
+
 
 <template>
-    <AppLayout>
-        <div class="bg-white md:bg-inherit md:flex md:flex-grow capitalize">
-            <div class="md:w-[30%] md:flex flex-col h-full bg-white border-r border-l" :class="group ? 'hidden' : ''">
-                <div class="px-4 pt-4">
-                    <div class="flex justify-between mt-2">
-                        <div class="flex space-x-1 text-xl">
-                            <h2>{{ $t('Groups') }}</h2>
-                            <span class="text-slate-500 ">{{ props.rowCount }}</span>
+    <div class="px-4 py-4 border-b">
+        <div class="flex items-center justify-between space-x-1 text-xl">
+            <div class="flex space-x-1">
+                <h2>{{ $t('Chats') }}</h2>
+                <span class="text-slate-500">{{ rowCount }}</span>
+            </div>
+        </div>
+        <div class="bg-slate-50 rounded-md mt-3 flex items-center py-[2px]">
+            <div class="pl-3 py-2">
+                <svg class="text-slate-600" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                    viewBox="0 0 24 24">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2" d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0-14 0m18 11l-6-6" />
+                </svg>
+            </div>
+            <input @input="search" v-model="params.search"
+                class="w-full bg-slate-50 outline-none rounded-xl py-2 pl-2 mr-2 text-sm" type="text"
+                :placeholder="$t('Search name or number...')">
+            <button v-if="isSearching === false && params.search" @click="clearSearch" type="button" class="pr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor"
+                        d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2zm3.7 12.3c.4.4.4 1 0 1.4c-.4.4-1 .4-1.4 0L12 13.4l-2.3 2.3c-.4.4-1 .4-1.4 0c-.4-.4-.4-1 0-1.4l2.3-2.3l-2.3-2.3c-.4-.4-.4-1 0-1.4c.4-.4 1-.4 1.4 0l2.3 2.3l2.3-2.3c.4-.4 1-.4 1.4 0c.4.4.4 1 0 1.4L13.4 12l2.3 2.3z" />
+                </svg>
+            </button>
+            <span v-if="isSearching" class="pr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+                        <animateTransform attributeName="transform" calcMode="discrete" dur="2.4s"
+                            repeatCount="indefinite" type="rotate" values="0 12 12;90 12 12;180 12 12;270 12 12" />
+                        <animate attributeName="opacity" dur="0.6s" keyTimes="0;0.5;1" repeatCount="indefinite"
+                            values="1;1;0" />
+                    </circle>
+                    <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+                        <animateTransform attributeName="transform" begin="0.2s" calcMode="discrete" dur="2.4s"
+                            repeatCount="indefinite" type="rotate" values="30 12 12;120 12 12;210 12 12;300 12 12" />
+                        <animate attributeName="opacity" begin="0.2s" dur="0.6s" keyTimes="0;0.5;1"
+                            repeatCount="indefinite" values="1;1;0" />
+                    </circle>
+                    <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+                        <animateTransform attributeName="transform" begin="0.4s" calcMode="discrete" dur="2.4s"
+                            repeatCount="indefinite" type="rotate" values="60 12 12;150 12 12;240 12 12;330 12 12" />
+                        <animate attributeName="opacity" begin="0.4s" dur="0.6s" keyTimes="0;0.5;1"
+                            repeatCount="indefinite" values="1;1;0" />
+                    </circle>
+                </svg>
+            </span>
+        </div>
+
+        <p class="mb-2 text-gray-600 text-sm">
+            Here you can download <span class="font-medium">responded inbound chats</span> as an Excel file.
+            Choose a time range (last 1 day, 2 days, or set a custom number of days up to 30), then click
+            <b>Download</b>.
+        </p>
+
+        <!-- ✅ Button to download Excel -->
+        <form @submit.prevent="exportExcel" ref="exportForm" class="flex items-center">
+            <select v-model="days" ref="daysSelect"
+                class="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="1">Last 1 day</option>
+                <option value="2">Last 2 days</option>
+                <option value="custom">Custom</option>
+            </select>
+
+            <input type="number" v-if="days === 'custom'" v-model.number="customDays" min="1" max="30"
+                class="ml-2 w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Days" />
+
+            <button
+                class="ml-4 px-2 py-1 text-sm bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
+                type="submit" :disabled="loading">
+                {{ loading ? 'Downloading...' : 'Download' }}
+            </button>
+        </form>
+
+        <div v-if="ticketingIsEnabled" class="grid grid-cols-2 mt-4 items-center w-full">
+            <TicketStatusToggle :status="status" :rowCount="rowCount" />
+            <div class="flex ml-auto gap-x-1">
+                <SortDirectionToggle :direction="props.chatSortDirection" :url="'/chats/update-sort-direction'" />
+            </div>
+        </div>
+    </div>
+    <div class="flex-grow overflow-y-auto h-[65vh]" ref="scrollContainer">
+        <Link :href="'/chats/' + contact.uuid + '?page=' + props.rows.meta.current_page"
+            class="block border-b group-hover:pr-0" :class="contact.unread_messages > 0 ? 'bg-green-50' : ''"
+            v-for="(contact, index) in rows.data" :key="index">
+        <div class="flex space-x-2 hover:bg-gray-50 cursor-pointer py-3 px-4">
+            <div class="w-[15%]">
+                <img v-if="contact.avatar" class="rounded-full w-10 h-10" :src="contact.avatar">
+                <div v-else class="rounded-full w-10 h-10 flex items-center justify-center bg-slate-200 capitalize">{{
+                    contact.full_name.substring(0, 1) }}</div>
+            </div>
+            <div class="w-[85%]">
+                <div class="flex justify-between">
+                    <h3 class="truncate">{{ contact.full_name }}</h3>
+                    <span class="self-center text-slate-500 text-xs">{{ formatTime(contact?.last_chat?.created_at)
+                        }}</span>
+                </div>
+                <div v-if="contact?.last_chat?.deleted_at === null" class="flex justify-between">
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'text'"
+                        class="text-slate-500 text-xs truncate self-end"> {{
+                            content(contact?.last_chat?.metadata).text.body }}</div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'button'"
+                        class="text-slate-500 text-xs truncate self-end"> {{
+                            content(contact?.last_chat?.metadata).button.text }}</div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'interactive'"
+                        class="text-slate-500 text-xs truncate self-end"> {{
+                            content(contact?.last_chat?.metadata).interactive?.button_reply?.title ||
+                            content(contact?.last_chat?.metadata).interactive?.list_reply?.title }}</div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'image'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                <path fill="currentColor"
+                                    d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.9 13.98l2.1 2.53l3.1-3.99c.2-.26.6-.26.8.01l3.51 4.68a.5.5 0 0 1-.4.8H6.02c-.42 0-.65-.48-.39-.81L8.12 14c.19-.26.57-.27.78-.02z" />
+                            </svg>
+                            <span class="ml-2">{{ $t('Photo') }}</span>
                         </div>
-                        <div class="flex space-x-2 items-center">
-                            <span @click="openModal()" class="cursor-pointer" title="Add Contact">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
-                                    <g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd">
-                                        <path
-                                            d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12Zm10-8a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z" />
-                                        <path
-                                            d="M13 7a1 1 0 1 0-2 0v4H7a1 1 0 1 0 0 2h4v4a1 1 0 1 0 2 0v-4h4a1 1 0 1 0 0-2h-4V7Z" />
-                                    </g>
-                                </svg>
+                    </div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'document'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                <path fill="currentColor" fill-rule="evenodd"
+                                    d="M14.25 2.5a.25.25 0 0 0-.25-.25H7A2.75 2.75 0 0 0 4.25 5v14A2.75 2.75 0 0 0 7 21.75h10A2.75 2.75 0 0 0 19.75 19V9.147a.25.25 0 0 0-.25-.25H15a.75.75 0 0 1-.75-.75V2.5Zm.75 9.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5h6Zm0 4a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5h6Z"
+                                    clip-rule="evenodd" />
+                                <path fill="currentColor"
+                                    d="M15.75 2.824c0-.184.193-.301.336-.186c.121.098.23.212.323.342l3.013 4.197c.068.096-.006.22-.124.22H16a.25.25 0 0 1-.25-.25V2.824Z" />
+                            </svg>
+                            <span class="ml-2">{{ getExtension(contact?.last_chat?.media.type) }} {{ $t('File')
+                                }}</span>
+                        </div>
+                    </div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'video'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                                <path fill="currentColor"
+                                    d="M3.5 2.5A2.5 2.5 0 0 0 1 5v6a2.5 2.5 0 0 0 2.5 2.5h5A2.5 2.5 0 0 0 11 11V5a2.5 2.5 0 0 0-2.5-2.5h-5Zm10.684 1.61L12 5.893v4.215l2.184 1.78a.5.5 0 0 0 .816-.389v-7a.5.5 0 0 0-.816-.387Z" />
+                            </svg>
+                            <span class="ml-2">{{ $t('Video') }}</span>
+                        </div>
+                    </div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'audio'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512">
+                                <path fill="currentColor"
+                                    d="M256 80C149.9 80 62.4 159.4 49.6 262c9.4-3.8 19.6-6 30.4-6c26.5 0 48 21.5 48 48v128c0 26.5-21.5 48-48 48c-44.2 0-80-35.8-80-80V288C0 146.6 114.6 32 256 32s256 114.6 256 256v112c0 44.2-35.8 80-80 80c-26.5 0-48-21.5-48-48V304c0-26.5 21.5-48 48-48c10.8 0 21 2.1 30.4 6C449.6 159.4 362.1 80 256 80z" />
+                            </svg>
+                            <span class="ml-2">{{ $t('Audio') }}</span>
+                        </div>
+                    </div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'sticker'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256">
+                                <path fill="currentColor"
+                                    d="M168 32H88a56.06 56.06 0 0 0-56 56v80a56.06 56.06 0 0 0 56 56h48a8.07 8.07 0 0 0 2.53-.41c26.23-8.75 76.31-58.83 85.06-85.06A8.07 8.07 0 0 0 224 136V88a56.06 56.06 0 0 0-56-56Zm-32 175.42V176a40 40 0 0 1 40-40h31.42c-9.26 21.55-49.87 62.16-71.42 71.42Z" />
+                            </svg>
+                            <span class="ml-2">{{ $t('Sticker') }}</span>
+                        </div>
+                    </div>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'contacts'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                                <path fill="currentColor"
+                                    d="M3 14s-1 0-1-1s1-4 6-4s6 3 6 4s-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z" />
+                            </svg>
+                            <span class="ml-2">
+                                {{ getContactDisplayName(contact?.last_chat?.metadata) }}
                             </span>
                         </div>
                     </div>
-                </div>
-                <ContactTable :rows="props.rows" :filters="props.filters" :type="'group'" @callback="handleGroup" />
-            </div>
-            <div class="md:w-[70%] bg-cover md:h-[100vh] flex justify-center overflow-y-scroll ">
-                <div v-if="group">
-                    <ContactGroupInfo :group="group" />
-                </div>
-                <div v-else class="md:block pt-20 hidden">
-                    <div class="border py-10 w-[30em] rounded-xl bg-white">
-                        <h2 class="text-center text-2xl text-slate-500 mb-6">{{ $t('Select group') }}</h2>
-                        <div class="flex justify-center">
-                            <div class="border-r border-slate-500 h-10"></div>
-                        </div>
-                        <h2 class="text-center text-slate-600">{{ $t('Or') }}</h2>
-                        <div class="flex justify-center">
-                            <div class="border-r border-slate-500 h-10"></div>
-                        </div>
-                        <div class="flex justify-center space-x-4 mt-6">
-                            <button @click="openModal()"
-                                class="bg-primary rounded-lg text-sm text-white p-2 px-8 text-center capitalize">{{
-                                    $t('Add group') }}</button>
-                            <button @click="isOpenModal = true"
-                                class="bg-primary rounded-lg text-sm text-white p-2 px-8 text-center">{{ $t(`Bulk
-                                upload`) }}</button>
+                    <div v-if="contentType(contact?.last_chat?.metadata) === 'location'"
+                        class="text-slate-500 text-xs truncate self-end">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                                <path fill="currentColor"
+                                    d="M9.156 14.544C10.899 13.01 14 9.876 14 7A6 6 0 0 0 2 7c0 2.876 3.1 6.01 4.844 7.544a1.736 1.736 0 0 0 2.312 0ZM6 7a2 2 0 1 1 4 0a2 2 0 0 1-4 0Z" />
+                            </svg>
+                            <span class="ml-2">{{ $t('Location') }}</span>
                         </div>
                     </div>
+                    <span v-if="contact.unread_messages > 0"
+                        class="bg-green-600 text-white rounded-md py-[1px] px-[8px] min-w-10 text-[10px] flex items-center justify-center">{{
+                            contact.unread_messages }}</span>
                 </div>
             </div>
         </div>
-    </AppLayout>
-    <!-- Form Modal Component-->
-    <FormModal v-model="isOpenFormModal" :label="$t('Add group')" :url="formUrl" :form="form" :formInputs="formInputs"
-        @callback="handleCallback" />
-
-    <ContactGroupImportModal :type="'group'" v-model:modelValue="isOpenModal" />
+        </Link>
+    </div>
+    <div class="px-4 pb-4">
+        <Pagination class="mt-3" :pagination="rows.meta" />
+    </div>
 </template>
-<script setup>
-import AppLayout from "./../Layout/App.vue";
-import { ref } from 'vue';
-import ContactGroupInfo from '@/Components/ContactGroupInfo.vue';
-import ContactGroupImportModal from '@/Components/ContactImportModal.vue';
-import ContactTable from '@/Components/Tables/ContactTable.vue';
-import FormModal from '@/Components/FormModal.vue';
-import { router } from '@inertiajs/vue3';
-import { trans } from 'laravel-vue-i18n';
 
-const props = defineProps({ rows: Object, filters: Object, rowCount: Number, group: Object });
-const isOpenModal = ref(false);
-const currentUrl = window.location.href;
-const isOpenFormModal = ref(false);
-const formUrl = ref(currentUrl);
-const form = ref({
-    name: '',
-});
-
-const initialFormInputs = [
-    {
-        inputType: 'FormInput',
-        name: 'name',
-        label: trans('name'),
-        type: 'text',
-        className: 'sm:col-span-6',
-    },
-];
-
-const formInputs = initialFormInputs;
-
-const openModal = () => {
-    isOpenFormModal.value = true;
-    form.value.name = '';
-}
-
-const handleGroup = (value) => {
-    router.visit('/contact-groups', {
-        method: 'get',
-        data: value,
-    })
-}
-
-const handleCallback = (res) => {
-    group.value = res.data;
-    form.value.name = res.data.name;
-}
-</script>
-
-
-CONTACT TAVBLE UI CODE :
+ChatHeader Ui Code : 
 
 <script setup>
-    import { ref, watchEffect, onMounted, onUpdated } from 'vue';
-    import debounce from 'lodash/debounce';
-    import { Link, router } from "@inertiajs/vue3";
-    import ContactImportModal from '@/Components/ContactImportModal.vue';
-    import ExportModal from '@/Components/ExportModal.vue';
+    import { ref, watchEffect, computed } from 'vue';
+    import { router, useForm, Link, usePage } from '@inertiajs/vue3'
+    import AlertModal from '@/Components/AlertModal.vue';
     import Dropdown from '@/Components/Dropdown.vue';
     import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
     import DropdownItem from '@/Components/DropdownItem.vue';
-    import Pagination from '@/Components/Pagination.vue';
+    import FormSelectCombo from '@/Components/FormSelectCombo.vue';
+    import FormTextArea from '@/Components/FormTextArea.vue';
+    import Modal from '@/Components/Modal.vue';
+    import { trans } from 'laravel-vue-i18n';
 
-    const props = defineProps(['rows', 'filters', 'type']);
+    const props = defineProps(['contact', 'displayContactInfo', 'ticketingIsEnabled', 'ticket', 'addon']);
 
-    const params = ref({
-        id: props.filters?.id,
-        search: props.filters?.search,
-        page: props.filters?.page
-    });
-    
+    const accountUser = computed(() => usePage().props.auth.user);
+    const showAlert = ref(false);
+    const displayContact = ref(props.displayContactInfo);
+    const ticketState = ref(null);
     const isOpenModal = ref(false);
-    const isExportModalOpen = ref(false);
-    const isSearching = ref(false);
-    const emit = defineEmits(['callback']);
-    const bulkCheckbox = ref(false);
-    const selectedCount = ref(0);
-    const checkedContacts = ref([]);
-    const checkedGroups = ref([]);
-
-    function getRow(value) {
-        params.value.id = value;
-
-        const filteredParams = Object.fromEntries(
-            Object.entries(params.value).filter(([_, value]) => value !== null)
-        );
-
-        emit('callback', filteredParams);
-    }
-
-    const clearSearch = () => {
-        params.value.search = null;
-        runSearch();
-    }
-
-    const search = debounce(() => {
-        params.value.page = null;
-        isSearching.value = true;
-        runSearch();
-    }, 1000);
-
-    const runSearch = () => {
-        const filteredParams = Object.fromEntries(
-            Object.entries(params.value).filter(([_, value]) => value !== null)
-        );
-
-        router.visit(props.type === 'contact' ? '/contacts' : '/contact-groups', {
-            method: 'get',
-            data: filteredParams,
-        })
-    }
-
-    // Save checked items to local storage
-    function saveCheckedItems() {
-        if(props.type === 'contact'){
-            localStorage.setItem('checkedContacts', JSON.stringify(checkedContacts.value));
-        } else {
-            localStorage.setItem('checkedGroups', JSON.stringify(checkedGroups.value));
-        }
-    }
-
-    // Load checked items from local storage
-    function loadCheckedItems() {
-        if(props.type === 'contact'){
-            const savedItems = localStorage.getItem('checkedContacts');
-            checkedContacts.value = savedItems ? JSON.parse(savedItems) : [];
-        } else {
-            const savedItems = localStorage.getItem('checkedGroups');
-            checkedGroups.value = savedItems ? JSON.parse(savedItems) : [];
-        }
-    }
-
-    // Function to update checked items array
-    function updateCheckedItems(uuid, isChecked) {
-        if(props.type === 'contact'){
-            const index = checkedContacts.value.indexOf(uuid);
-
-            if (isChecked && index === -1) {
-                checkedContacts.value.push(uuid);
-            } else if (!isChecked && index !== -1) {
-                checkedContacts.value.splice(index, 1);
-            }
-        } else {
-            const index = checkedGroups.value.indexOf(uuid);
-
-            if (isChecked && index === -1) {
-                checkedGroups.value.push(uuid);
-            } else if (!isChecked && index !== -1) {
-                checkedGroups.value.splice(index, 1);
-            }
-        }
-
-        saveCheckedItems();
-    }
-
-    // Function to toggle individual checkbox
-    function toggleCheckbox(contactUuid) {
-        const contact = props.rows.data.find(contact => contact.uuid === contactUuid);
-        contact.isChecked = !contact.isChecked;
-        updateCheckedItems(contactUuid, contact.isChecked);
-        updateBulkCheckboxState();
-        updateSelectedCount();
-    }
-
-    // Function to toggle all checkboxes
-    function toggleAllCheckboxes() {
-        bulkCheckbox.value = !bulkCheckbox.value;
-        props.rows.data.forEach(row => {
-            row.isChecked = bulkCheckbox.value;
-            updateCheckedItems(row.uuid, bulkCheckbox.value);
-        });
-        updateSelectedCount();
-    }
-
-    // Function to apply checked state from local storage
-    function applyCheckedState() {
-        props.rows.data.forEach(row => {
-            row.isChecked = props.type === 'contact' ? checkedContacts.value.includes(row.uuid) : checkedGroups.value.includes(row.uuid);
-        });
-        updateBulkCheckboxState();
-        updateSelectedCount();
-    }
-
-    // Function to update bulk checkbox state
-    function updateBulkCheckboxState() {
-        bulkCheckbox.value = props.rows.data.length > 0 && props.rows.data.every(row => row.isChecked);
-    }
-
-    // Function to update selected count based on checked items array
-    function updateSelectedCount() {
-        selectedCount.value = props.type === 'contact' ? checkedContacts.value.length : checkedGroups.value.length;
-    }
-
-    function deleteItems(value){
-        const itemsToDelete = props.type === 'contact' ? checkedContacts.value : checkedGroups.value;
-
-        router.visit(props.type === 'contact' ? '/contacts' : '/contact-groups', {
-            method: 'delete',
-            data: { 'uuids': value === 'all' ? [] : itemsToDelete },
-            preserveState: true,
-            onSuccess: () => {
-                localStorage.removeItem(props.type === 'contact' ? 'checkedContacts' : 'checkedGroups');
-                if(props.type === 'contact'){
-                    checkedContacts.value = [];
-                } else {
-                    checkedGroups.value = [];
-                }
-            }
-        })
-    }
-
-    // Lifecycle hooks
-    onMounted(() => {
-        loadCheckedItems();
-        applyCheckedState();
-    });
-
-    onUpdated(() => {
-        applyCheckedState();
+    const user = ref({ 
+        'label' : props.ticket?.user ? props.ticket?.user?.full_name  : trans('Unassigned'),
+        'value' : props.ticket?.user ? props.ticket?.user?.id  : 0, 
     });
 
     watchEffect(() => {
-        params.value.page = props.filters?.page;
-        applyCheckedState();
+        displayContact.value = props.displayContactInfo;
+        ticketState.value = props.ticket?.status;
     });
+
+    const emit = defineEmits(['toggleView', 'deleteThread', 'closeThread']);
+
+    const toggleView = () => {
+        displayContact.value = !displayContact.value;
+        emit('toggleView', displayContact.value);
+    }
+
+    const deleteThread = () => {
+        router.visit('/chats/' + props.contact.uuid, {
+            method: 'delete',
+            onFinish: () => {
+                showAlert.value = false
+            }
+        });
+    }
+
+
+    const form2 = useForm({
+        'notes': null,
+        'contact': null
+    });
+
+    const form3 = useForm({
+        'ai_assistant': props.contact?.ai_assistance_enabled,
+    });
+
+    const changeTicketStatus = (value) => {
+        router.put('/tickets/' + props.contact.uuid + '/update', {
+            'status' : value
+        }, {})
+    }
+
+    const changeTicketAgent = () => {
+        router.put('/tickets/' + props.contact.uuid + '/assign', {
+            'id' : user.value.value
+        }, {})
+    }
+
+    function loadUsers(query, setOptions) {
+        fetch("/team?search=" + query, {
+                headers: {
+                    'Accept': 'application/json' // Ensure that the request accepts JSON
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                setOptions(result.rows);
+            })
+            .catch(error => {
+                console.error("Error fetching agents:", error);
+            });
+    }
+
+    const submitForm = () => {
+        form2.contact = props.contact.uuid;
+
+        form2.post('/notes', {
+            preserveState: false,
+            onSuccess: () => {
+                form2.reset();
+                isOpenModal.value = false;
+            }
+        });
+    }
+
+    const submitForm3 = () => {
+        form3.ai_assistant = !form3.ai_assistant;
+
+        form3.post('/automation/contact/' + props.contact.uuid, {
+            preserveState: true,
+        });
+    }
 </script>
 <template>
-    <div class="px-4 pb-2">
-        <div class="border border-[#f0f2f5] rounded-md mt-6 flex items-center py-[2px] md:py-[2px]">
-            <span class="pl-3 py-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 15l6 6m-11-4a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z"/></svg>
-            </span>
-            <input 
-                @input="search" 
-                v-model="params.search" 
-                type="text" 
-                class="w-full outline-none rounded-xl py-2 pl-2 mr-2 text-sm" 
-                :placeholder="type === 'contact' ? $t('Search name or phone or email') : $t('Search name')"
-            >
-            <button v-if="isSearching === false && params.search" @click="clearSearch" type="button" class="pr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2zm3.7 12.3c.4.4.4 1 0 1.4c-.4.4-1 .4-1.4 0L12 13.4l-2.3 2.3c-.4.4-1 .4-1.4 0c-.4-.4-.4-1 0-1.4l2.3-2.3l-2.3-2.3c-.4-.4-.4-1 0-1.4c.4-.4 1-.4 1.4 0l2.3 2.3l2.3-2.3c.4-.4 1-.4 1.4 0c.4.4.4 1 0 1.4L13.4 12l2.3 2.3z"/></svg>
-            </button>
-            <span v-if="isSearching" class="pr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0"><animateTransform attributeName="transform" calcMode="discrete" dur="2.4s" repeatCount="indefinite" type="rotate" values="0 12 12;90 12 12;180 12 12;270 12 12"/><animate attributeName="opacity" dur="0.6s" keyTimes="0;0.5;1" repeatCount="indefinite" values="1;1;0"/></circle><circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0"><animateTransform attributeName="transform" begin="0.2s" calcMode="discrete" dur="2.4s" repeatCount="indefinite" type="rotate" values="30 12 12;120 12 12;210 12 12;300 12 12"/><animate attributeName="opacity" begin="0.2s" dur="0.6s" keyTimes="0;0.5;1" repeatCount="indefinite" values="1;1;0"/></circle><circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0"><animateTransform attributeName="transform" begin="0.4s" calcMode="discrete" dur="2.4s" repeatCount="indefinite" type="rotate" values="60 12 12;150 12 12;240 12 12;330 12 12"/><animate attributeName="opacity" begin="0.4s" dur="0.6s" keyTimes="0;0.5;1" repeatCount="indefinite" values="1;1;0"/></circle></svg>
-            </span>
-        </div>
-    </div>
-    <div class="flex justify-between px-4 border-b">
-        <div class="flex items-center space-x-2">
-            <label @click="toggleAllCheckboxes($event)" for="myCheckbox" class="cursor-pointer">
-                <div class="w-4 h-4 border border-gray-400 rounded-md flex items-center justify-center" :class="{ 'bg-secondary': bulkCheckbox }">
-                    <svg v-if="bulkCheckbox" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
+    <div class="h-20 bg-white border-b border-1 flex items-center justify-between px-4 md:px-4">
+        <div class="flex items-center gap-x-4 cursor-pointer w-3/4">
+            <Link href="/chats" class="sm:block md:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H7.14l3.63-4.36a1 1 0 1 0-1.54-1.28l-5 6a1.19 1.19 0 0 0-.09.15c0 .05 0 .08-.07.13A1 1 0 0 0 4 12a1 1 0 0 0 .07.36c0 .05 0 .08.07.13a1.19 1.19 0 0 0 .09.15l5 6A1 1 0 0 0 10 19a1 1 0 0 0 .64-.23a1 1 0 0 0 .13-1.41L7.14 13H19a1 1 0 0 0 0-2"/></svg>
+            </Link>
+            <div @click="toggleView">
+                <img v-if="contact.avatar" class="rounded-full w-14 h-14" :src="contact.avatar">
+                <div v-else class="rounded-full w-10 h-10 flex items-center justify-center bg-slate-100">{{ contact.full_name.substring(0, 1) }}</div>
+            </div>
+            <div class="flex items-center w-full gap-x-8">
+                <div>
+                    <div class="flex items-center" @click="toggleView">
+                        <span>{{ contact.full_name }}</span>
+                    </div>
+                    <div class="w-full flex items-center text-xs">
+                        <span @click="toggleView">{{ contact.formatted_phone_number }}</span>
+                    </div>
                 </div>
-            </label>
-            <label @click="toggleAllCheckboxes($event)" class="cursor-pointer text-sm">
-                <span v-if="selectedCount == 0">{{ $t('Select all') }} ({{ selectedCount }})</span>
-                <span v-else-if="selectedCount > 0">{{ selectedCount }} {{ $t('selected') }}</span>
-            </label>
+                <FormSelectCombo v-if="ticketingIsEnabled && accountUser.teams[0]['role'] != 'agent'" v-model="user" :name="''" :loadOptions="loadUsers" :class="'col-span-1 md:block hidden'" :placeholder="'Select Agent'" @update:modelValue="changeTicketAgent()"/>
+            </div>
         </div>
         <div>
-            <div class="float-right">
-                <Dropdown :align="'right'" class="mt-2">
-                    <button class="inline-flex w-full justify-center rounded-md text-sm font-medium text-black hbg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-                        <span class="hover:shadow-md bg-slate-50 rounded-full w-[fit-content] p-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="black" d="M8 2.5a1.22 1.22 0 0 1 1.25 1.17A1.21 1.21 0 0 1 8 4.84a1.21 1.21 0 0 1-1.25-1.17A1.22 1.22 0 0 1 8 2.5m0 8.66a1.17 1.17 0 1 1-1.25 1.17A1.21 1.21 0 0 1 8 11.16m0-4.33a1.17 1.17 0 1 1 0 2.34a1.17 1.17 0 1 1 0-2.34"/></svg>
+            <div class="flex items-center space-x-4">
+                <button v-if="ticketState === 'open' && ticketingIsEnabled" @click="changeTicketStatus('closed')" class="text-sm md:inline-flex hidden justify-center rounded-md border border-transparent bg-red-800 px-4 py-1 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">{{ $t('Mark as closed') }}</button>
+                <button v-if="ticketState === 'closed' && ticketingIsEnabled" @click="changeTicketStatus('open')" class="text-sm md:inline-flex hidden justify-center rounded-md border border-transparent bg-primary px-4 py-1 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">{{ $t('Mark as open') }}</button>
+
+                <Dropdown v-if="!displayContact">
+                    <button type="button" class="inline-flex w-full justify-center items-center rounded-md text-sm font-medium text-black hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
+                        <span class="bg-slate-200 p-1 rounded-full cursor-pointer flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.75a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5Z"/></svg>
                         </span>
                     </button>
                     <template #items>
                         <DropdownItemGroup>
-                            <DropdownItem as="button" @click="isOpenModal = true">{{ $t('Import rows') }}</DropdownItem>
-                            <DropdownItem as="button" @click="isExportModalOpen = true">{{ $t('Export') }}</DropdownItem>
-                            <DropdownItem v-if="selectedCount > 0" as="button" @click="deleteItems()">{{ $t('Delete selected') }}</DropdownItem>
-                            <DropdownItem as="button" @click="deleteItems('all')">{{ $t('Delete all') }}</DropdownItem>
+                            <DropdownItem @click="isOpenModal = true;" as="button">{{ $t('Add notes') }}</DropdownItem>
+                            <DropdownItem v-if="ticketState === 'open' && ticketingIsEnabled" @click="changeTicketStatus('closed')" as="button">{{ $t('Mark as closed') }}</DropdownItem>
+                            <DropdownItem v-if="ticketState === 'closed' && ticketingIsEnabled" @click="changeTicketStatus('open')" as="button">{{ $t('Mark as open') }}</DropdownItem>
+                            <DropdownItem @click="showAlert = true" as="button">{{ $t('Clear chat') }}</DropdownItem>
                         </DropdownItemGroup>
                     </template>
                 </Dropdown>
-            </div>
-        </div>
-    </div>
-    <div class="h-[5vh]">
-        <div class="flex justify-between text-sm border-b">
-            <Link href="/contacts" class="pt-3 w-1/2 text-center pb-1 hover:bg-slate-50" :class="{ 'bg-gray-50 border-b-2 border-slate-700': $page.url.startsWith('/contacts') }">{{ $t('All contacts') }}</Link>
-            <Link href="/contact-groups" class="pt-3 w-1/2 text-center pb-1 hover:bg-slate-50" :class="{ 'bg-gray-50 border-b-2 border-slate-700': $page.url.startsWith('/contact-groups') }">{{ $t('Groups') }}</Link>
-        </div>
-    </div>
-    <div class="flex-grow overflow-y-auto h-[65vh]" ref="scrollContainer">
-            <div v-if="type === 'contact'" @click="getRow(contact.uuid)" class="flex space-x-2 hover:bg-gray-50 cursor-pointer px-4 py-3 border-b" :class="contact.isChecked ? 'bg-gray-50' : ''" v-for="(contact, index) in rows.data" :key="index">
-            <div>
-                <label @click.stop="toggleCheckbox(contact.uuid)" for="myCheckbox" class="cursor-pointer">
-                    <div class="w-4 h-4 border border-gray-400 rounded-md flex items-center justify-center mt-1" :class="{ 'bg-secondary': contact.isChecked }">
-                        <svg v-if="contact.isChecked" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                </label>
-            </div>
-            <div class="w-[15%]">
-                <img v-if="contact.avatar" class="rounded-full h-12 w-12" :src="contact.avatar">
-                <div v-else class="rounded-full bg-secondary/10 text-secondary flex justify-center items-center h-12 w-12">{{ contact.first_name?.substring(0, 1) }}</div>
-            </div>
-            <div class="w-[75%]">
-                <h3>{{ contact?.full_name }}</h3>
-                <p class="text-slate-500 text-xs truncate">{{ contact.formatted_phone_number }}</p>
-            </div>
-            <div class="w-[10%]">
-                <svg v-if="contact.is_favorite" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#FFD700" d="M9.153 5.408C10.42 3.136 11.053 2 12 2c.947 0 1.58 1.136 2.847 3.408l.328.588c.36.646.54.969.82 1.182c.28.213.63.292 1.33.45l.636.144c2.46.557 3.689.835 3.982 1.776c.292.94-.546 1.921-2.223 3.882l-.434.507c-.476.557-.715.836-.822 1.18c-.107.345-.071.717.001 1.46l.066.677c.253 2.617.38 3.925-.386 4.506c-.766.582-1.918.051-4.22-1.009l-.597-.274c-.654-.302-.981-.452-1.328-.452c-.347 0-.674.15-1.328.452l-.596.274c-2.303 1.06-3.455 1.59-4.22 1.01c-.767-.582-.64-1.89-.387-4.507l.066-.676c.072-.744.108-1.116 0-1.46c-.106-.345-.345-.624-.821-1.18l-.434-.508c-1.677-1.96-2.515-2.941-2.223-3.882c.293-.941 1.523-1.22 3.983-1.776l.636-.144c.699-.158 1.048-.237 1.329-.45c.28-.213.46-.536.82-1.182z"/></svg>
-            </div>
-        </div>
-        <div v-else-if="type === 'group'" @click="getRow(row.uuid)" class="flex space-x-2 hover:bg-gray-50 cursor-pointer px-4 py-3 border-b" :class="row.isChecked ? 'bg-gray-50' : ''" v-for="(row, key) in rows.data" :key="key">
-            <div>
-                <label @click.stop="toggleCheckbox(row.uuid)" for="myCheckbox" class="cursor-pointer">
-                    <div class="w-4 h-4 border border-gray-400 rounded-md flex items-center justify-center mt-1" :class="{ 'bg-secondary': row.isChecked }">
-                        <svg v-if="row.isChecked" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                </label>
-            </div>
-            <div class="w-[15%]">
-                <div class="rounded-full bg-secondary/10 text-secondary flex justify-center items-center h-12 w-12 capitalize">{{ row.name.substring(0, 1) }}</div>
-            </div>
-            <div class="w-[85%] flex items-center">
-                <h3>{{ row.name }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="px-4 pb-4">
-        <Pagination class="mt-3" :pagination="rows.meta"/>
-    </div>
-    <ContactImportModal :type="type" v-model:modelValue="isOpenModal"/>
-    <ExportModal :type="type" v-model:modelValue="isExportModalOpen"/>
-</template>
-  
-
-  CREATE FORM UI CODE :
-
-  <script setup>
-    import { ref } from 'vue';
-    import { Link, useForm } from "@inertiajs/vue3";
-    import FormCheckbox from '@/Components/FormCheckbox.vue';
-    import FormInput from '@/Components/FormInput.vue';
-    import FormPhoneInput from '@/Components/FormPhoneInput.vue';
-    import FormSelect from '@/Components/FormSelect.vue';
-    import FormTextArea from '@/Components/FormTextArea.vue';
-    import { trans } from 'laravel-vue-i18n';
-
-    const props = defineProps(['contactGroups', 'contact', 'fields', 'locationSettings']);
-    const fileUrl = props.contact?.avatar ? ref(props.contact?.avatar) : ref(null);
-    const inputFields = props.fields;
-
-    const defaultFields = inputFields.reduce((acc, field) => {
-        acc[field.name] = "";
-        return acc;
-    }, {});
-
-    const getAddressDetail = (value, key) => {
-        const address = JSON.parse(value);
-        return address?.[key] ?? '';
-    }
-
-    const form = useForm({
-        first_name: props.contact?.first_name ?? null,
-        last_name: props.contact?.last_name ?? null,
-        phone: props.contact?.phone ?? null,
-        email: props.contact?.email ?? null,
-        group: props.contact?.contact_groups ? props.contact.contact_groups.map(group => group.uuid || group) : [],
-        file: null,
-        street: props.contact?.address ? getAddressDetail(props.contact?.address, 'street') : null,
-        city: props.contact?.address ? getAddressDetail(props.contact?.address, 'city') : null,
-        state: props.contact?.address ? getAddressDetail(props.contact?.address, 'state') : null,
-        zip: props.contact?.address ? getAddressDetail(props.contact?.address, 'zip') : null,
-        country: props.contact?.address ? getAddressDetail(props.contact?.address, 'country') : null,
-        metadata: props.contact?.metadata ? JSON.parse(props.contact?.metadata) : defaultFields,
-    });
-
-    const contactGroupOptions = () => {
-        return props.contactGroups.map((option) => ({
-            value: option.uuid,
-            label: option.name,
-        }));
-    };
-
-    const handleFileUpload = (event) => {
-        const fileSizeLimit = 5 * 1024 * 1024; ///5MB
-        const file = event.target.files[0];
-
-        if (file && file.size > fileSizeLimit) {
-            // Handle file size exceeding the limit
-            alert(trans('file size exceeds the limit. Max allowed size:') + ' ' + fileSizeLimit + 'b');
-            // Clear the file input
-            event.target.value = null;
-        } else {
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-                fileUrl.value = e.target.result;
-            };
-
-            form.file = file;
-
-            // Start reading the file
-            reader.readAsDataURL(file);
-        }
-    }
-
-    const submitForm = () => {
-        if(!props.contact){
-            form.post('/contacts');
-        } else {
-            form.post('/contacts/' + props.contact.uuid);
-        }
-    }
-
-    const transformOptions = (optionsString) => {
-        return optionsString.split(", ").map(option => ({ label: option, value: option }));
-    };
-</script>
-<template>
-    <div class="h-20 bg-white border-b border-1 md:flex items-center justify-between px-10 hidden">
-        <div>
-            <h1 v-if="!props.contact" class="text-xl">{{ $t('Add contact') }}</h1>
-            <h1 v-else class="text-xl">{{ $t('Edit contact') }}</h1>
-        </div>
-        <div>
-            <Link v-if="!props.contact" href="/contacts" class="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">{{ $t('Cancel') }}</Link>
-            <Link v-else :href="'/contacts/' + props.contact.uuid" class="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">{{ $t('Back') }}</Link>
-        </div>
-    </div>
-    <div class="flex justify-center md:h-[90vh] md:overflow-y-scroll">
-        <form @submit.prevent="submitForm()" class="w-[30em]">
-            <div class="flex justify-center items-center">
-                <div class="rounded-full w-40 h-40 m-4">
-                    <svg v-if="fileUrl === null" class="text-gray-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
-                    </svg>
-                    <img v-else class="w-40 h-40 rounded-full object-cover" :src="fileUrl" alt="Contact Image">
-                </div>
-                <input type="file" class="sr-only" :accept="'.jpg, .png'" id="file-upload" @change="handleFileUpload">
-                <label for="file-upload" class="cursor-pointer inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">{{ $t('Upload image') }}</label>
-            </div>
-            <div class="grid gap-x-6 gap-y-4 sm:grid-cols-6 pb-6 border-b">
-                <FormInput v-model="form.first_name" :name="$t('First name')" :error="form.errors.first_name" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormInput v-model="form.last_name" :name="$t('Last name')" :error="form.errors.last_name" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormPhoneInput v-model="form.phone" :name="$t('Phone')" :error="form.errors.phone" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormInput v-model="form.email" :name="$t('Email')" :error="form.errors.email" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormSelect v-model="form.group" :name="$t('Group')" :error="form.errors.group" :options="contactGroupOptions()" :type="'text'" :class="'sm:col-span-6'" :multiple="true"/>
-            </div>
-            <div v-if="locationSettings === 'before' && props.fields.length > 0">
-                <div class="grid gap-x-6 gap-y-4 sm:grid-cols-2 mt-4 pb-6 border-b">
-                    <div v-for="(input, index) in props.fields" :key="index" :class="input.type != 'input' ? 'sm:col-span-2' : 'sm:col-span-1'">
-                        <FormInput v-if="input.type === 'input'" v-model="form.metadata[input.name]" :name="input.name" :label="$t(input.name)" :type="input.value" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                        <FormTextArea v-if="input.type === 'textarea'" v-model="form.metadata[input.name]" :name="input.name" :label="$t(input.name)" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                        <FormSelect v-if="input.type === 'select'" v-model="form.metadata[input.name]" :name="input.name" :options="transformOptions(input.value)" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                        <FormCheckbox v-if="input.type === 'checkbox'" v-model="form.metadata[input.name]" :name="input.name" :label="input.name" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                    </div>
-                </div>
-            </div>
-            <div class="grid gap-x-6 gap-y-4 sm:grid-cols-6 pt-4 pb-6">
-                <FormInput v-model="form.street" :name="$t('Street')" :error="form.errors.street" :type="'text'" :class="'sm:col-span-6'"/>
-                <FormInput v-model="form.city" :name="$t('City')" :error="form.errors.city" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormInput v-model="form.state" :name="$t('State')" :error="form.errors.state" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormInput v-model="form.zip" :name="$t('Zip code')" :error="form.errors.zip" :type="'text'" :class="'sm:col-span-3'"/>
-                <FormInput v-model="form.country" :name="$t('Country')" :error="form.errors.country" :type="'text'" :class="'sm:col-span-3'"/>
-            </div>
-            <div v-if="locationSettings === 'after' && props.fields.length > 0">
-                <div class="grid gap-x-6 gap-y-4 sm:grid-cols-2 mb-8 pt-4 border-t">
-                    <div v-for="(input, index) in props.fields" :key="index" :class="input.type != 'input' ? 'sm:col-span-2' : 'sm:col-span-1'">
-                        <FormInput v-if="input.type === 'input'" v-model="form.metadata[input.name]" :name="input.name" :label="$t(input.name)" :type="input.value" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                        <FormTextArea v-if="input.type === 'textarea'" v-model="form.metadata[input.name]" :name="input.name" :label="$t(input.name)" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                        <FormSelect v-if="input.type === 'select'" v-model="form.metadata[input.name]" :name="input.name" :options="transformOptions(input.value)" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                        <FormCheckbox v-if="input.type === 'checkbox'" v-model="form.metadata[input.name]" :name="input.name" :label="input.name" :class="'sm:col-span-2'" :required="input.required === 1 ? true : false"/>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4 mb-10 pb-10 flex">
-                <Link href="/contacts" class="inline-flex justify-center rounded-md border border-transparent bg-slate-50 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">{{ $t('Cancel') }}</Link>
-                <button :class="'inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'">
-                    <span>{{ $t('Save') }}</span>
-                </button>
-            </div>
-        </form>
-    </div>
-</template>
-
-CONTACT IMPORT MODAL UI CODE :
-
-<script setup>
-    import { computed, ref, watch } from 'vue';
-    import { router, usePage } from "@inertiajs/vue3";
-    import Modal from '@/Components/Modal.vue';
-    import { trans } from 'laravel-vue-i18n';
-
-    const props = defineProps(['type', 'modelValue']);
-    const emit = defineEmits(['update:modelValue']);
-    const flashResponse = computed(() => usePage().props.flash.status);
-    
-    const modalLabel = props.type === 'contact' ? trans('Import contacts') : trans('Import contact groups');
-    const isOpenModal = ref(props.modelValue);
-    const fileName = ref(null);
-    const progressStatus = ref(null);
-    const showFailedTable = ref(false);
-
-    watch(() => props.modelValue, (newValue) => {
-        isOpenModal.value = newValue;
-    });
-    
-    const handleFileUpload = (event) => {
-        event.preventDefault();
-        const file = event.target.files[0];
-        uploadFile(file);  
-    }
-
-    const handleDrop = (event) => {
-        event.preventDefault();
-        const file = event.dataTransfer.files[0];
-        uploadFile(file);  
-    };
-
-    function uploadFile(file){
-        if (!['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(file.type)) {
-            alert(trans('please select a CSV or XLSX file'));
-            return;
-        }
-
-        fileName.value = file.name;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // Use Inertia router to send the POST request
-        router.post(props.type === 'contact' ? '/contacts/import' : '/contact-groups/import', formData, {
-            forceFormData: true,
-            onProgress: event => {
-                progressStatus.value = 'pending';
-            },
-            onSuccess: () => {
-                progressStatus.value = 'complete';
-            },
-            onError: (errors) => {
-                progressStatus.value = null;
-            }
-        });
-    }
-
-    function closeModal(){
-        isOpenModal.value = false;
-        emit('update:modelValue', false);
-        setTimeout(() => {
-            progressStatus.value = null;
-        }, 500);
-    }
-
-    function toggleFailedTable() {
-        showFailedTable.value = !showFailedTable.value;
-    }
-</script>
-<template>
-    <!-- Import Modal-->
-    <Modal :label="modalLabel" :isOpen="isOpenModal">
-        <div v-if="type === 'contact'" class="text-sm text-slate-600 mt-4">{{ $t('Upload a csv/xlsx to import your contact data. For the phone field ensure that you start with the contact\'s country code.') }}</div>
-        <div v-else class="text-sm text-slate-600">{{ $t('Upload a csv/xlsx to import your contact groups data.') }}</div>
-        <div class="text-sm text-slate-600 underline flex mt-4 mb-6">
-            <a :href="type === 'contact' ? '/contacts/template' : '/contact-groups.xlsx'">{{ $t('Click here to download sample template') }}</a>
-        </div>
-        <div class="max-w-md w-full gap-y-8">
-            <div class="space-y-6">
-                <div v-if="progressStatus == null || progressStatus == 'complete'" @dragover.prevent @drop="handleDrop" class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                    <input type="file" class="sr-only" accept=".csv,.xlsx" ref="fileInput" id="file-upload" @change="handleFileUpload($event)"/>
-                    <div class="text-center">
-                        <div>
-                            <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path fill="currentColor" d="m15.393 4.054l-.502.557l.502-.557Zm3.959 3.563l-.502.557l.502-.557Zm2.302 2.537l-.685.305l.685-.305ZM3.172 20.828l.53-.53l-.53.53Zm17.656 0l-.53-.53l.53.53ZM14 21.25h-4v1.5h4v-1.5ZM2.75 14v-4h-1.5v4h2.5Zm18.5-.437V14h2.5v-.437h-1.5ZM14.891 4.61l3.959 3.563l1.003-1.115l-3.958-3.563l-1.004 1.115Zm7.859 8.952c0-1.689.015-2.758-.41-3.714l-1.371.61c.266.598.281 1.283.281 3.104h2.5Zm-3.9-5.389c1.353 1.218 1.853 1.688 2.119 2.285l1.37-.61c-.426-.957-1.23-1.66-2.486-2.79L18.85 8.174ZM10.03 2.75c1.582 0 2.179.012 2.71.216l.538-1.4c-.852-.328-1.78-.316-3.248-.316v1.5Zm5.865.746c-1.086-.977-1.765-1.604-2.617-1.93l-.537 1.4c.532.204.98.592 2.15 1.645l1.004-1.115ZM10 21.25c-1.907 0-3.261-.002-4.29-.14c-1.005-.135-1.585-.389-2.008-.812l-1.06 1.06c.748.75 1.697 1.081 2.869 1.239c1.15.155 2.625.153 4.489.153v-1.5ZM1.25 14c0 1.864-.002 3.338.153 4.489c.158 1.172.49 2.121 1.238 2.87l1.06-1.06c-.422-.424-.676-1.004-.811-2.01c-.138-1.027-.14-2.382-.14-4.289h-1.5ZM14 22.75c1.864 0 3.338.002 4.489-.153c1.172-.158 2.121-.49 2.87-1.238l-1.06-1.06c-.424.422-1.004.676-2.01.811c-1.027.138-2.382.14-4.289.14v1.5ZM21.25 14c0 1.907-.002 3.262-.14 4.29c-.135 1.005-.389 1.585-.812 2.008l1.06 1.06c.75-.748 1.081-1.697 1.239-2.869c.155-1.15.153-2.625.153-4.489h-1.5Zm-18.5-4c0-1.907.002-3.261.14-4.29c.135-1.005.389-1.585.812-2.008l-1.06-1.06c-.75.748-1.081 1.697-1.239 2.869C1.248 6.661 1.25 8.136 1.25 10h2.5Zm7.28-8.75c-1.875 0-3.356-.002-4.511.153c-1.177.158-2.129.49-2.878 1.238l1.06 1.06c.424-.422 1.005-.676 2.017-.811c1.033-.138 2.395-.14 4.312-.14v-1.5Z"/><path stroke="currentColor" stroke-width="1.5" d="M13 2.5V5c0 2.357 0 3.536.732 4.268C14.464 10 15.643 10 18 10h4"/></g></svg>
-                            <div class="flex text-sm text-gray-600">
-                                <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                    <span>{{ $t('Click to upload a file') }}</span>
-                                </label>
-                                <p class="pl-1">{{ $t('Or drag and drop') }}</p>
-                            </div>
-                            <p class="text-xs text-gray-500">{{ $t('CSV/XLSX files only') }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                    <div>
-                        <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24"><path fill="none" stroke="black" stroke-dasharray="15" stroke-dashoffset="15" stroke-linecap="round" stroke-width="2" d="M12 3C16.9706 3 21 7.02944 21 12"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="15;0"/><animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></path></svg>
-                        <div class="text-center mb-2 text-sm text-gray-500">Upload In Progress</div>
-                        <div class="rounded-md p-1 bg-slate-50 text-center text-sm">{{ fileName }}</div>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="mt-2" v-if="progressStatus == 'complete'">
-                        <div v-if="flashResponse.import_summary.successful_imports" class="bg-green-50 px-2 py-2 flex rounded-md justify-between items-center mb-1">
-                            <div class="mt-1 text-sm">
-                                <div class="text-green-800 flex items-center gap-x-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M14.25 8.75c-.5 2.5-2.385 4.854-5.03 5.38A6.25 6.25 0 0 1 3.373 3.798C5.187 1.8 8.25 1.25 10.75 2.25"/><path d="m5.75 7.75l2.5 2.5l6-6.5"/></g></svg>
-                                    {{ flashResponse.import_summary.successful_imports + '/' + flashResponse.import_summary.total_imports }} {{ $t('rows added successfully!') }}
-                                </div>
-                            </div>
-                        </div>
-                        <div v-if="flashResponse.import_summary.duplicate_entries" class="bg-red-50 px-2 py-2 flex rounded-md justify-between items-center mb-1">
-                            <div class="mt-1 text-sm">
-                                <div class="text-red-600 flex items-center gap-x-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M15.71 8.29a1 1 0 0 0-1.42 0L12 10.59l-2.29-2.3a1 1 0 0 0-1.42 1.42l2.3 2.29l-2.3 2.29a1 1 0 0 0 0 1.42a1 1 0 0 0 1.42 0l2.29-2.3l2.29 2.3a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.42L13.41 12l2.3-2.29a1 1 0 0 0 0-1.42m3.36-3.36A10 10 0 1 0 4.93 19.07A10 10 0 1 0 19.07 4.93m-1.41 12.73A8 8 0 1 1 20 12a7.95 7.95 0 0 1-2.34 5.66"/></svg>
-                                    {{ flashResponse.import_summary.duplicate_entries }} duplicates found
-                                </div>
-                            </div>
-                        </div>
-                        <div v-if="flashResponse.import_summary.invalid_format_entries" class="bg-red-50 px-2 py-2 flex rounded-md justify-between items-center mb-1">
-                            <div class="mt-1 text-sm">
-                                <div class="text-red-600 flex items-center gap-x-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M15.71 8.29a1 1 0 0 0-1.42 0L12 10.59l-2.29-2.3a1 1 0 0 0-1.42 1.42l2.3 2.29l-2.3 2.29a1 1 0 0 0 0 1.42a1 1 0 0 0 1.42 0l2.29-2.3l2.29 2.3a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.42L13.41 12l2.3-2.29a1 1 0 0 0 0-1.42m3.36-3.36A10 10 0 1 0 4.93 19.07A10 10 0 1 0 19.07 4.93m-1.41 12.73A8 8 0 1 1 20 12a7.95 7.95 0 0 1-2.34 5.66"/></svg>
-                                    {{ flashResponse.import_summary.invalid_format_entries }} formatting issues found
-                                </div>
-                            </div>
-                        </div>
-                        <div v-if="flashResponse.import_summary.failed_limit_entries" class="bg-red-50 px-2 py-2 flex rounded-md justify-between items-center mb-1">
-                            <div class="mt-1 text-sm">
-                                <div class="text-red-600 flex items-center gap-x-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M15.71 8.29a1 1 0 0 0-1.42 0L12 10.59l-2.29-2.3a1 1 0 0 0-1.42 1.42l2.3 2.29l-2.3 2.29a1 1 0 0 0 0 1.42a1 1 0 0 0 1.42 0l2.29-2.3l2.29 2.3a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.42L13.41 12l2.3-2.29a1 1 0 0 0 0-1.42m3.36-3.36A10 10 0 1 0 4.93 19.07A10 10 0 1 0 19.07 4.93m-1.41 12.73A8 8 0 1 1 20 12a7.95 7.95 0 0 1-2.34 5.66"/></svg>
-                                    {{ flashResponse.import_summary.failed_limit_entries }} failed due to contact limit
-                                </div>
-                            </div>
-                        </div>
-                        <div v-if="flashResponse.import_summary.failed_rows_details && flashResponse.import_summary.failed_rows_details.length > 0">
-                            <div class="mt-2">
-                                <div class="bg-slate-50 text-sm grid grid-cols-2 p-1 py-2 rounded-md border-b-2 border-white">
-                                    <div class="col-1 pl-2">{{ $t('Row') }}</div>
-                                    <div class="col-1 flex justify-between items-center">
-                                        <span>{{ $t('Error') }}</span>
-                                        <button @click="toggleFailedTable" class="bg-primary text-white text-[11px] rounded px-2">{{ showFailedTable ? $t('Hide') : $t('Show') }}</button>
-                                    </div>
-                                </div>
-                                <div v-if="showFailedTable" class="bg-red-50 text-[12px] grid grid-cols-2 border-white border-r border-l border-b p-1 rounded-md" v-for="(item, index) in flashResponse.import_summary.failed_rows_details" :key="index">
-                                    <div class="col-1 pl-2">{{ item.row }}</div>
-                                    <div class="col-1">{{ item.error }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div v-if="progressStatus == null || progressStatus == 'complete'" class="mt-5">
-            <div class="flex justify-center mt-2 w-full">
-                <button type="button" @click="closeModal()" class="w-full inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm text-white hover:text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">{{ $t('Close') }}</button>
-            </div>
-        </div>
-    </Modal>
-</template>
-
-CONTACT INFO UI CODE :
-
-<script setup>
-    import { ref, watchEffect } from 'vue';
-    import { Link, router } from '@inertiajs/vue3';
-    import Dropdown from '@/Components/Dropdown.vue';
-    import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
-    import DropdownItem from '@/Components/DropdownItem.vue';
-    import { trans } from 'laravel-vue-i18n';
-    
-    const props = defineProps(['contact', 'fields', 'locationSettings']);
-    const contact = ref(props.contact);
-    const metadata = (props.contact.metadata !== null && props.contact.metadata !== '') ? JSON.parse(props.contact.metadata) : {};
-
-    watchEffect(() => {
-        contact.value = props.contact;
-    });
-
-    const favorite = async() => {
-        contact.value.is_favorite = !contact.value.is_favorite;
-
-        router.put('/contacts/favorite/' + contact.value.uuid, { favorite: contact.value.is_favorite });
-    }
-
-    const deleteRow = async() => {
-        router.visit('/contacts', {
-            method: 'delete',
-            data: { 'uuids': [ contact.value.uuid ]},
-            preserveState: true
-        })
-    }
-
-    const getAddressDetail = (value, key) => {
-        const address = JSON.parse(value);
-        return address?.[key] && address?.[key] != 'Not Set' ? address?.[key] : trans('not set');
-    }
-</script>
-<template>
-    <div class="px-20 overflow-y-scroll h-screen">
-        <div class="flex justify-center space-x-8 items-center pb-6 pr-20 border-gray-300 border-b">
-            <div>
-                <div class="rounded-full p-1">
-                    <img v-if="contact.avatar" class="rounded-full w-40 h-40" :src="contact.avatar">
-                    <div v-else class="rounded-full w-40 h-40">
-                        <svg class="text-gray-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            <div>
-                <h1 class="text-3xl">{{ contact.full_name }}</h1>
-                <div class="text-slate-500 truncate flex items-center">
-                    <span class="text-sm">{{ contact.formatted_phone_number }}</span>
-                </div>
-                <div class="flex space-x-3 mt-4">
-                    <button class="bg-gray-200 h-9 px-4 rounded-md flex items-center">
-                        <Link :href="'/contacts/' + contact.uuid + '?edit=true'" class="text-[14px]">{{ $t('Edit') }}</Link>
-                    </button>
-                    <button class="bg-gray-200 h-9 px-4 rounded-md flex items-center">
-                        <Link :href="'/chats/' + contact.uuid" class="text-[14px]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 256 256"><path fill="currentColor" d="M216 80h-32V48a16 16 0 0 0-16-16H40a16 16 0 0 0-16 16v128a8 8 0 0 0 13 6.22L72 154v30a16 16 0 0 0 16 16h93.59L219 230.22a8 8 0 0 0 5 1.78a8 8 0 0 0 8-8V96a16 16 0 0 0-16-16M66.55 137.78L40 159.25V48h128v88H71.58a8 8 0 0 0-5.03 1.78M216 207.25l-26.55-21.47a8 8 0 0 0-5-1.78H88v-32h80a16 16 0 0 0 16-16V96h32Z"></path></svg>
-                        </Link>
-                    </button>
-                    <button @click="favorite()" class="bg-gray-200 h-9 px-4 rounded-md">
-                        <svg v-if="contact.is_favorite === 0 || contact.is_favorite === false" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M9.153 5.408C10.42 3.136 11.053 2 12 2c.947 0 1.58 1.136 2.847 3.408l.328.588c.36.646.54.969.82 1.182c.28.213.63.292 1.33.45l.636.144c2.46.557 3.689.835 3.982 1.776c.292.94-.546 1.921-2.223 3.882l-.434.507c-.476.557-.715.836-.822 1.18c-.107.345-.071.717.001 1.46l.066.677c.253 2.617.38 3.925-.386 4.506c-.766.582-1.918.051-4.22-1.009l-.597-.274c-.654-.302-.981-.452-1.328-.452c-.347 0-.674.15-1.329.452l-.595.274c-2.303 1.06-3.455 1.59-4.22 1.01c-.767-.582-.64-1.89-.387-4.507l.066-.676c.072-.744.108-1.116 0-1.46c-.106-.345-.345-.624-.821-1.18l-.434-.508c-1.677-1.96-2.515-2.941-2.223-3.882c.293-.941 1.523-1.22 3.983-1.776l.636-.144c.699-.158 1.048-.237 1.329-.45c.28-.213.46-.536.82-1.182l.328-.588Z"/></svg>
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="#031b4d" stroke="#031b4d" stroke-width="1.5" d="M9.153 5.408C10.42 3.136 11.053 2 12 2c.947 0 1.58 1.136 2.847 3.408l.328.588c.36.646.54.969.82 1.182c.28.213.63.292 1.33.45l.636.144c2.46.557 3.689.835 3.982 1.776c.292.94-.546 1.921-2.223 3.882l-.434.507c-.476.557-.715.836-.822 1.18c-.107.345-.071.717.001 1.46l.066.677c.253 2.617.38 3.925-.386 4.506c-.766.582-1.918.051-4.22-1.009l-.597-.274c-.654-.302-.981-.452-1.328-.452c-.347 0-.674.15-1.329.452l-.595.274c-2.303 1.06-3.455 1.59-4.22 1.01c-.767-.582-.64-1.89-.387-4.507l.066-.676c.072-.744.108-1.116 0-1.46c-.106-.345-.345-.624-.821-1.18l-.434-.508c-1.677-1.96-2.515-2.941-2.223-3.882c.293-.941 1.523-1.22 3.983-1.776l.636-.144c.699-.158 1.048-.237 1.329-.45c.28-.213.46-.536.82-1.182l.328-.588Z"/></svg>
-                    </button>
-                    <Dropdown class="h-100" :align="'right'">
-                        <button class="h-9 bg-gray-200 py-2 px-3 rounded-md flex items-center">
-                            <span class="">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16"><path fill="currentColor" d="M4 8a2 2 0 1 1-4 0a2 2 0 0 1 4 0Zm6 0a2 2 0 1 1-4 0a2 2 0 0 1 4 0Zm4 2a2 2 0 1 0 0-4a2 2 0 0 0 0 4Z"/></svg>
-                            </span>
-                        </button>
-                        <template #items>
-                            <DropdownItemGroup>
-                                <DropdownItem as="button" @click="deleteRow()">{{ $t('Delete') }}</DropdownItem>
-                            </DropdownItemGroup>
-                        </template>
-                    </Dropdown>
-                </div>
-            </div>
-        </div>
-        <div class="pr-20 border-gray-300 border-b py-4">
-            <div class="grid grid-cols-2 space-x-8 text-[14px]">
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Full name') }}</span>
-                </div>
-                <div>
-                    <span>{{ contact.full_name }}</span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Group') }}</span>
-                </div>
-                <div>
-                    <span class="">
-                        {{ contact.contact_groups?.length ? contact.contact_groups.map(group => group.name).join(', ') : $t('not set') }}
-                    </span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Email') }}</span>
-                </div>
-                <div>
-                    <span>{{ contact.email ?? $t('not set') }}</span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Contact') }}</span>
-                </div>
-                <div>
-                    <span>{{ contact.formatted_phone_number }}</span>
-                </div>
-            </div>
-        </div>
-        <div v-if="locationSettings === 'before' && fields.length > 0" class="pr-20 border-gray-300 border-b py-4">
-            <div v-for="(input, index) in props.fields" class="grid grid-cols-2 space-x-8 text-[14px]">
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t(input.name) }}</span>
-                </div>
-                <div>
-                    <span v-if="metadata && metadata[input.name] != null">{{ metadata[input.name] }}</span>
-                    <span v-else class="p-1 bg-slate-100 text-xs rounded-md text-gray-600">{{ $t('not set') }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="pr-20 py-4">
-            <div class="grid grid-cols-2 space-x-8 text-[14px]">
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Street') }}</span>
-                </div>
-                <div>
-                    <span>{{ getAddressDetail(contact.address, 'street') }}</span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('City') }}</span>
-                </div>
-                <div>
-                    <span>{{ getAddressDetail(contact.address, 'city') }}</span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('State') }}</span>
-                </div>
-                <div>
-                    <span>{{ getAddressDetail(contact.address, 'state') }}</span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Zip code') }}</span>
-                </div>
-                <div>
-                    <span>{{ getAddressDetail(contact.address, 'zip') }}</span>
-                </div>
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t('Country') }}</span>
-                </div>
-                <div>
-                    <span>{{ getAddressDetail(contact.address, 'country') }}</span>
-                </div>
-            </div>
-        </div>
-        <div v-if="locationSettings === 'after' && fields.length > 0" class="pr-20 border-gray-300 border-t py-4">
-            <div v-for="(input, index) in props.fields" class="grid grid-cols-2 space-x-8 text-[14px]">
-                <div class="text-right text-slate-500 pb-2">
-                    <span>{{ $t(input.name) }}</span>
-                </div>
-                <div>
-                    <span v-if="metadata && metadata[input.name] != null">{{ metadata[input.name] }}</span>
-                    <span v-else class="p-1 bg-slate-100 text-xs rounded-md text-gray-600">{{ $t('not set') }}</span>
+                <div v-else @click="toggleView" class="bg-slate-200 p-2 rounded-lg text-sm cursor-pointer">
+                    <span>{{ $t('Back') }}</span>
                 </div>
             </div>
         </div>
     </div>
-</template>
-
-
-CONTACT GROUP INFO UI CODE :
-
-<script setup>
-    import { ref, watchEffect } from 'vue';
-    import { router, useForm } from '@inertiajs/vue3';
-    import FormModal from '@/Components/FormModal.vue';
-    import { trans } from 'laravel-vue-i18n';
-    
-    const props = defineProps(['group']);
-    const group = ref(props.group);
-
-    watchEffect(() => {
-        group.value = props.group;
-    });
-
-    const isOpenFormModal = ref(false);
-    const form = ref({
-        name: group.value.name,
-    });
-
-    const formInputs = [
-        {
-            inputType: 'FormInput',
-            name: 'name',
-            label: trans('name'),
-            type: 'text',
-            className: 'sm:col-span-6',
-        },
-    ];
-
-    const form2 = useForm({'test': null});
-
-    const deleteRow = async() => {
-        router.visit('/contact-groups', {
-            method: 'delete',
-            data: { 'uuids': [ group.value.uuid ]},
-            preserveState: true
-        })
-    }
-
-    const openModal = () => {
-        isOpenFormModal.value = true;
-    }
-</script>
-<template>
-    <div>
-        <div class="pt-20">
-            <div class="flex justify-center space-x-8 items-center pb-6 pr-20 border-gray-300 border-b">
-                <div>
-                    <div class="rounded-full p-1 bg-white">
-                        <div class="rounded-full text-3xl flex justify-center items-center h-24 w-24 capitalize">{{ group.name.substring(0, 1) }}</div>
-                    </div>
-                </div>
-                <div>
-                    <h1 class="text-3xl">{{ group.name }}</h1>
-                    <div class="flex space-x-3 mt-4">
-                        <button class="bg-gray-200 py-2 px-4 h-9 rounded-md flex items-center" @click="openModal('edit')">
-                            <span class="text-[14px]">{{ $t('Edit') }}</span>
-                        </button>
-                        <button @click="deleteRow()" class="bg-gray-200 py-2 px-4 h-9 rounded-md flex items-center">
-                            <span class="text-[14px]">{{ $t('Delete') }}</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="pr-20 border-gray-300 border-b py-4">
-                <div class="grid grid-cols-2 space-x-8 text-[14px]">
-                    <div class="text-right text-slate-500 pb-2">
-                        <span>{{ $t('Group name') }}</span>
-                    </div>
-                    <div>
-                        <span>{{ group.name }}</span>
-                    </div>
-                    <div class="text-right text-slate-500 pb-2">
-                        <span>{{ $t('Total contacts') }}</span>
-                    </div>
-                    <div>
-                        <span class="p-1 bg-gray-50 text-xs rounded-lg text-gray-600">{{ group.contact_count }}</span>
-                    </div>
-                </div>
+    <div v-if="addon == 1" class="flex justify-between items-center bg-white border-b border-1 py-2 px-4 md:px-4">
+        <div class="text-sm py-1 px-3 rounded-md flex items-center gap-x-2 w-[fit-content]" :class="form3.ai_assistant ? 'bg-green-50' : 'bg-red-50'">
+            <span :class="form3.ai_assistant ? 'text-green-500' : 'text-red-500'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"/></svg>
+            </span>
+            <span>{{ $t('AI Assistant') }}</span>
+        </div>
+        <div class="flex items-center gap-x-2">
+            <span class="text-[13px]">{{ $t('Enable/disable AI assistant') }}</span>
+            <div class="w-12 h-6 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer" :class="{ 'bg-primary': form3.ai_assistant}" @click="submitForm3()">
+                <div class="bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out" :class="{ 'translate-x-6': form3.ai_assistant }"></div>
             </div>
         </div>
     </div>
-    <FormModal 
-        v-model="isOpenFormModal" 
-        :label="$t('Edit group')" 
-        :url="'/contact-groups/' + group?.uuid" 
-        :form="form"
-        :formInputs="formInputs"
-    />
-</template>
 
-FORM MODAL UI CODE :
-
-<script setup>
-    import axios from 'axios';
-    import { router } from '@inertiajs/vue3';
-    import { ref } from 'vue';
-    import Modal from '@/Components/Modal.vue';
-    import FormInput from '@/Components/FormInput.vue';
-    import FormImage from '@/Components/FormImage.vue';
-    import FormSelect from '@/Components/FormSelect.vue';
-    import { toast } from 'vue3-toastify';
-    import 'vue3-toastify/dist/index.css';
-
-    const props = defineProps({
-        modelValue: Boolean,
-        label: String,
-        url: String,
-        form: Object,
-        formInputs: Array,
-    })
-
-    const form = ref(props.form);
-    const isLoading = ref(false);
-    const errorMessages = ref({});
-
-    const submitForm = async (event) => {
-        isLoading.value = true;
-        errorMessages.value = {};
-
-        try {
-            const formData = new FormData();
-
-            Object.keys(form.value).forEach((key) => {
-                const value = form.value[key];
-
-                if (Array.isArray(value)) {
-                    // Handle arrays (e.g., file inputs)
-                    value.forEach((item) => {
-                        formData.append(key + '[]', item);
-                    });
-                } else {
-                    // Handle other form fields
-                    formData.append(key, value);
-                }
-            });
-
-            const response = await axios.post(props.url,  formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data', // Set content type to handle file uploads
-                },
-            });
-
-            if (response.status === 200 && response.data.success) {
-                handleSuccessResponse(response);
-            } else {
-                handleFailedResponse(response);
-            }
-        } catch (error) {
-            handleError(error);
-        } finally {
-            setTimeout(() => {
-                isLoading.value = false;
-            }, 1000);
-        }
-    };
-
-    const handleSuccessResponse = (response) => {
-        setTimeout(() => {
-            onClose();
-            router.reload();
-            toast(response.data.message, {
-                autoClose: 3000,
-            });
-            emit('callback', response.data);
-        }, 1000);
-    };
-
-    const handleFailedResponse = (response) => {
-        setTimeout(() => {
-            if (response.data.errors) {
-                errorMessages.value = response.data.errors;
-            }
-        }, 1000);
-    };
-
-    const handleError = (error) => {
-        setTimeout(() => {
-            errorMessages.value = error.response.data.errors;
-        }, 1000);
-    };
-
-    const emit = defineEmits(['update:modelValue', 'callback']);
-    function onClose() {
-        emit('update:modelValue', false);
-    }
-</script>
-<template>
-    <Modal :label="label" :isOpen=modelValue>
+    <Modal :label="'Add Note'" :isOpen="isOpenModal">
         <div class="mt-5 grid grid-cols-1 gap-x-6 gap-y-4">
-            <form @submit.prevent="submitForm()" class="grid gap-x-6 gap-y-4 sm:grid-cols-6">
-
-                <template v-for="(input, index) in formInputs" :key="index">
-                    <FormInput v-if="input.inputType == 'FormInput'" v-model="form[input.name]" :error="errorMessages?.[input.name]?.[0]" :name="input.label" :type="input.type" :class="input.className"/>
-                    <FormSelect v-else-if="input.inputType == 'FormSelect'" v-model="form[input.name]" :error="errorMessages?.[input.name]?.[0]" :options="input.options" :name="input.label" :class="input.className" :placeholder="input.placeholder"/>
-                    <FormImage v-else-if="input.inputType == 'FormImage'" v-model="form[input.name]" :error="errorMessages?.[input.name]?.[0]" :options="input.options" :label="input.label" :class="input.className"/>
-                </template>
-
+            <form @submit.prevent="submitForm()" class="">
+                <FormTextArea v-model="form2.notes" :error="form2.errors.note" :name="''" :class="'col-span-2'"/>
                 <div class="mt-4 flex">
-                    <button type="button" @click.self="onClose" class="inline-flex justify-center rounded-md border border-transparent bg-slate-50 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">{{ $t('Cancel') }}</button>
+                    <button type="button" @click.self="isOpenModal = false" class="inline-flex justify-center rounded-md border border-transparent bg-slate-50 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">{{ $t('Cancel') }}</button>
                     <button 
-                        :class="['inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2', { 'opacity-50': isLoading }]"
-                        :disabled="isLoading"
+                        :class="['inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2', { 'opacity-50': form2.processing }]"
+                        :disabled="form2.processing"
                     >
-                        <svg v-if="isLoading" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z" opacity=".5"/><path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z"><animateTransform attributeName="transform" dur="1s" from="0 12 12" repeatCount="indefinite" to="360 12 12" type="rotate"/></path></svg>
+                        <svg v-if="form2.processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z" opacity=".5"/><path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z"><animateTransform attributeName="transform" dur="1s" from="0 12 12" repeatCount="indefinite" to="360 12 12" type="rotate"/></path></svg>
                         <span v-else>{{ $t('Save') }}</span>
                     </button>
                 </div>
             </form>
         </div>
     </Modal>
+
+    <AlertModal 
+        v-model="showAlert" 
+        :label="$t('Clear chat')" 
+        :description="$t('Are you sure you want to delete this thread? You can\'t undo this action')" 
+        @confirm="deleteThread" />
+</template>
+
+ChatThread Ui Code :
+
+<script setup>
+import { ref } from 'vue';
+import { default as axios } from 'axios';
+import ChatBubble from '@/Components/ChatComponents/ChatBubble.vue';
+
+const props = defineProps({
+    contactId: {
+        type: Number,
+        required: true
+    },
+    initialMessages: {
+        type: Array,
+        required: true
+    },
+    hasMoreMessages: {
+        type: Boolean,
+        required: true
+    },
+    initialNextPage: {
+        type: Number,
+        required: true
+    }
+});
+
+const messages = ref(props.initialMessages);
+const loading = ref(false);
+const nextPage = ref(props.initialNextPage);
+const hasMore = ref(props.hasMoreMessages);
+
+const loadMoreMessages = async () => {
+    if (loading.value || !hasMore.value) return;
+
+    loading.value = true;
+    try {
+        const response = await axios.get(`/chats/${props.contactId}/messages?page=${nextPage.value}`);
+        messages.value = [...response.data.messages, ...messages.value];
+        hasMore.value = response.data.hasMoreMessages;
+        nextPage.value = response.data.nextPage;
+    } catch (error) {
+        console.error('Error loading messages:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+</script>
+
+<template>
+    <div class="py-4 md:py-4 relative px-6 md:px-10">
+        <div v-if="hasMore" class="text-center py-2">
+            <div v-if="loading"
+                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                Loading...
+            </div>
+            <button v-else @click="loadMoreMessages"
+                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+                Load More Messages
+            </button>
+        </div>
+
+        <div v-for="(chat, index) in messages" :key="index" class="flex flex-grow flex-col"
+            :class="chat[0].type === 'ticket' ? 'justify-center' : 'justify-end'">
+            <ChatBubble v-if="chat[0].type === 'chat'" :content="chat[0].value" :type="chat[0].value.type" />
+            <div v-if="chat[0].type === 'ticket'" class="py-2">
+                <div class="text-center font-light text-sm border-b border-t py-2 border-dashed border-black">
+                    <div>{{ chat[0].value.description }} </div>
+                    <div class="text-xs">{{ chat[0].value.created_at }}</div>
+                </div>
+            </div>
+            <div v-if="chat[0].type === 'notes'" class="py-2 bg-orange-100 my-2 rounded-lg p-2 w-[fit-content] ml-auto">
+                <div class="text-right font-light text-sm">
+                    <div>{{ chat[0].value.content }}</div>
+                    <div class="flex items-center justify-between mt-2 space-x-4">
+                        <p class="text-gray-500 text-xs text-right leading-none">{{ chat[0].value.created_at }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+ChatBubble Ui Code :
+
+<script setup>
+    import { usePage } from "@inertiajs/vue3";
+    import { ref, computed } from 'vue';
+    import { GoogleMap, Marker } from "vue3-google-map";
+    import Modal from '@/Components/Modal.vue';
+    
+    const props = defineProps({
+        content: Object,
+        type: String,
+    })
+
+    const downloading = ref(false);
+
+    const downloadClicked = () => {
+        downloading.value = true;
+        setTimeout(() => {
+            downloading.value = false;
+        }, 2000);
+    };
+
+    const getExtension = (fileFormat) => {
+        const formatMap = {
+            'text/plain': 'TXT',
+            'application/pdf': 'PDF',
+            'application/powerpoint': 'PPT',
+            'application/vnd.ms-powerpoint': 'PPT',
+            'application/msword': 'DOC',
+            'application/vnd.ms-excel': 'XLS',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+        };
+
+        return formatMap[fileFormat] || 'Unknown';
+    };
+
+    const formatFileSize = (sizeInBytes) => {
+        if (sizeInBytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = parseInt(Math.floor(Math.log(sizeInBytes) / Math.log(k)));
+        return Math.round((sizeInBytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    };
+
+    const getContactDisplayName = (metadata) => {
+        const contacts = JSON.parse(metadata).contacts;
+        if (contacts.length === 1) {
+            const contact = contacts[0];
+            return contact.name.formatted_name || `${contact.name.first_name} ${contact.name.last_name}`;
+        } else if (contacts.length > 1) {
+            const firstName = contacts[0].name.first_name;
+            const otherContactsCount = contacts.length - 1;
+            return `${firstName} and ${otherContactsCount} other contacts`;
+        } else {
+            return 'No contacts available';
+        }
+    }
+
+    const location = (metadata) => {
+        const item = JSON.parse(metadata);
+        return { lat: item.location.latitude, lng: item.location.longitude };;
+    }
+
+    const getValueByKey = (key) => {
+        const config = computed(() => usePage().props.config);
+
+        const found = config.value.find(item => item.key === key);
+        return found ? found.value : '';
+    };
+
+    const chatStatus = (logs) => {
+        let status = 'sent';
+
+        logs.forEach(log => {
+            const metadata = JSON.parse(log.metadata);
+            const logStatus = metadata.status;
+
+            if (logStatus === 'failed') {
+                status = 'failed';
+                return;
+            } else if (logStatus === 'read') {
+                status = 'read'; // If a log is marked as 'read', it's the highest priority
+            } else if (logStatus === 'delivered' && status !== 'read') {
+                status = 'delivered'; // If 'read' hasn't been found yet, 'delivered' takes precedence over 'sent'
+            }
+            // If only 'sent', the status will remain as 'sent'
+        });
+
+        return status;
+    };
+
+    const isModalOpen = ref(false);
+
+    const getErrors = (logIndex = 0) => {
+        try {
+            if (!props.content?.logs?.[logIndex]?.metadata) {
+                return [];
+            }
+            const metadata = JSON.parse(props.content.logs[logIndex].metadata);
+            return metadata.errors || [];
+        } catch (error) {
+            console.error("Error parsing metadata:", error);
+            return [];
+        }
+    };
+
+    const errors = getErrors();
+    const copiedRef = ref(null);
+
+    const copyItem = async (token) => {
+        copiedRef.value = token;
+
+        const tempInput = document.createElement("textarea");
+        tempInput.value = token;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+
+        setTimeout(() => {
+            copiedRef.value = null;
+        }, 2000);   
+    };
+</script>
+<template>
+    <div 
+        class="rounded-lg my-1 p-2 text-sm flex flex-col relative"
+        :class="props.type === 'outbound' ? 'ml-auto rounded-tr-none bg-[#d8fad4] speech-bubble-right' : 'mr-auto rounded-tl-none bg-white speech-bubble-left'">
+        <div>
+            <!--Text message formatting-->
+            <div v-if="JSON.parse(content.metadata).type === 'text'" class="max-w-[300px]">
+                <!-- Header -->
+                <div v-if="JSON.parse(content.metadata).header?.text">
+                    <p class="text-sm font-medium text-gray-900">{{ JSON.parse(content.metadata).header.text }}</p>
+                </div>
+                <!-- Body -->
+                <p class="normal-case whitespace-pre-wrap">{{ JSON.parse(content.metadata).text?.body }}</p>
+                <div v-if="JSON.parse(content.metadata)?.buttons" class="mr-auto text-sm text-[#00a5f4] flex flex-col relative max-w-[25em]">
+                    <div v-for="(item, index) in JSON.parse(content.metadata)?.buttons" :key="index" class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 my-[0.1em]">
+                        <span>
+                            <svg v-if="item.type === 'COPY_CODE'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12V1Z"/></svg>
+                            <svg v-else-if="item.type === 'PHONE_NUMBER'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><g fill="none"><path fill="currentColor" d="M20 16v4c-2.758 0-5.07-.495-7-1.325c-3.841-1.652-6.176-4.63-7.5-7.675C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3c1.324 3.045 3.659 6.023 7.5 7.675L16 15l4 1z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 18.675c1.93.83 4.242 1.325 7 1.325v-4l-4-1l-3 3.675zm0 0C9.159 17.023 6.824 14.045 5.5 11m0 0C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3z"/></g></svg>
+                            <img v-else-if="item.type === 'URL'" :src="'/images/icons/link.png'" class="h-4">
+                            <img v-else :src="'/images/icons/reply.png'" class="h-4">
+                        </span>
+                        <span>{{ item.text }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!--Unsupported Messages-->
+            <div v-if="JSON.parse(content.metadata).type === 'unsupported'" class="max-w-[300px]">
+                <span class="text-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3"/></svg>
+                </span>
+                <p class="normal-case whitespace-pre-wrap">{{ $t('Error code') }} : {{ JSON.parse(content.metadata).errors[0].code }}</p>
+                <p class="normal-case whitespace-pre-wrap">{{ JSON.parse(content.metadata).errors[0].error_data.details }}</p>
+            </div>
+
+            <!--Reply button formatting-->
+            <div v-if="JSON.parse(content.metadata).type === 'button'" class="max-w-[300px]">
+                <p class="normal-case whitespace-pre-wrap">{{ JSON.parse(content.metadata).button.text }}</p>
+            </div>
+
+            <!--Interactive button formatting-->
+            <div v-if="JSON.parse(content.metadata).type === 'interactive'" class="max-w-[300px]">
+                <div v-if="JSON.parse(content.metadata).interactive.type == 'button_reply'">
+                    <p class="normal-case whitespace-pre-wrap">{{ JSON.parse(content.metadata).interactive?.button_reply?.title }}</p>
+                </div>
+                <p v-if="JSON.parse(content.metadata).interactive.type == 'list_reply'" class="normal-case whitespace-pre-wrap">{{ JSON.parse(content.metadata).interactive?.list_reply?.title }}</p>
+                <p v-if="JSON.parse(content.metadata).interactive.type == 'list_reply'" class="normal-case whitespace-pre-wrap">{{ JSON.parse(content.metadata).interactive?.list_reply?.description }}</p>
+            </div>
+
+            <!--Image formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'image'">
+                <img v-if="content.media != null" :src="content?.media?.path" alt="Image" class="mb-2 max-w-[300px]" />
+                <div v-else class="text-slate-500 flex justify-center items-center space-x-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path d="M24 0v24H0V0h24ZM12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427c-.002-.01-.009-.017-.017-.018Zm.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093c.012.004.023 0 .029-.008l.004-.014l-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014l-.034.614c0 .012.007.02.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01l-.184-.092Z"/><path fill="currentColor" d="m13.299 3.148l8.634 14.954a1.5 1.5 0 0 1-1.299 2.25H3.366a1.5 1.5 0 0 1-1.299-2.25l8.634-14.954c.577-1 2.02-1 2.598 0ZM12 4.898L4.232 18.352h15.536L12 4.898ZM12 15a1 1 0 1 1 0 2a1 1 0 0 1 0-2Zm0-7a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Z"/></g></svg>
+                    {{ $t('Content not available') }}
+                </div>
+                <div v-if="JSON.parse(content.metadata).image?.caption" class="max-w-[300px]">{{ JSON.parse(content.metadata).image?.caption }}</div>
+                <div v-if="JSON.parse(content.metadata)?.buttons" class="mr-auto text-sm text-[#00a5f4] flex flex-col relative max-w-[25em]">
+                    <div v-for="(item, index) in JSON.parse(content.metadata)?.buttons" :key="index" class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 my-[0.1em]">
+                        <span>
+                            <svg v-if="item.type === 'COPY_CODE'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12V1Z"/></svg>
+                            <svg v-else-if="item.type === 'PHONE_NUMBER'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><g fill="none"><path fill="currentColor" d="M20 16v4c-2.758 0-5.07-.495-7-1.325c-3.841-1.652-6.176-4.63-7.5-7.675C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3c1.324 3.045 3.659 6.023 7.5 7.675L16 15l4 1z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 18.675c1.93.83 4.242 1.325 7 1.325v-4l-4-1l-3 3.675zm0 0C9.159 17.023 6.824 14.045 5.5 11m0 0C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3z"/></g></svg>
+                            <img v-else-if="item.type === 'URL'" :src="'/images/icons/link.png'" class="h-4">
+                            <img v-else :src="'/images/icons/reply.png'" class="h-4">
+                        </span>
+                        <span>{{ item.text }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!--Document formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'document'">
+                <div class="relative w-[300px]">
+                    <div class="flex space-x-2 w-full h-1/3 bg-white opacity-90 pt-2">
+                        <div>
+                            <svg v-if="getExtension(content?.media?.type) === 'PDF'" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 1024 1024"><path fill="red" d="m531.3 574.4l.3-1.4c5.8-23.9 13.1-53.7 7.4-80.7c-3.8-21.3-19.5-29.6-32.9-30.2c-15.8-.7-29.9 8.3-33.4 21.4c-6.6 24-.7 56.8 10.1 98.6c-13.6 32.4-35.3 79.5-51.2 107.5c-29.6 15.3-69.3 38.9-75.2 68.7c-1.2 5.5.2 12.5 3.5 18.8c3.7 7 9.6 12.4 16.5 15c3 1.1 6.6 2 10.8 2c17.6 0 46.1-14.2 84.1-79.4c5.8-1.9 11.8-3.9 17.6-5.9c27.2-9.2 55.4-18.8 80.9-23.1c28.2 15.1 60.3 24.8 82.1 24.8c21.6 0 30.1-12.8 33.3-20.5c5.6-13.5 2.9-30.5-6.2-39.6c-13.2-13-45.3-16.4-95.3-10.2c-24.6-15-40.7-35.4-52.4-65.8zM421.6 726.3c-13.9 20.2-24.4 30.3-30.1 34.7c6.7-12.3 19.8-25.3 30.1-34.7zm87.6-235.5c5.2 8.9 4.5 35.8.5 49.4c-4.9-19.9-5.6-48.1-2.7-51.4c.8.1 1.5.7 2.2 2zm-1.6 120.5c10.7 18.5 24.2 34.4 39.1 46.2c-21.6 4.9-41.3 13-58.9 20.2c-4.2 1.7-8.3 3.4-12.3 5c13.3-24.1 24.4-51.4 32.1-71.4zm155.6 65.5c.1.2.2.5-.4.9h-.2l-.2.3c-.8.5-9 5.3-44.3-8.6c40.6-1.9 45 7.3 45.1 7.4zm191.4-388.2L639.4 73.4c-6-6-14.1-9.4-22.6-9.4H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V311.3c0-8.5-3.4-16.7-9.4-22.7zM790.2 326H602V137.8L790.2 326zm1.8 562H232V136h302v216a42 42 0 0 0 42 42h216v494z"/></svg>
+                            <svg v-if="getExtension(content?.media?.type) === 'XLSX' || getExtension(content?.media?.type) === 'XLS'" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 32 32"><defs><linearGradient id="vscodeIconsFileTypeExcel0" x1="4.494" x2="13.832" y1="-2092.086" y2="-2075.914" gradientTransform="translate(0 2100)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#18884f"/><stop offset=".5" stop-color="#117e43"/><stop offset="1" stop-color="#0b6631"/></linearGradient></defs><path fill="#185c37" d="M19.581 15.35L8.512 13.4v14.409A1.192 1.192 0 0 0 9.705 29h19.1A1.192 1.192 0 0 0 30 27.809V22.5Z"/><path fill="#21a366" d="M19.581 3H9.705a1.192 1.192 0 0 0-1.193 1.191V9.5L19.581 16l5.861 1.95L30 16V9.5Z"/><path fill="#107c41" d="M8.512 9.5h11.069V16H8.512Z"/><path d="M16.434 8.2H8.512v16.25h7.922a1.2 1.2 0 0 0 1.194-1.191V9.391A1.2 1.2 0 0 0 16.434 8.2Z" opacity=".1"/><path d="M15.783 8.85H8.512V25.1h7.271a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191Z" opacity=".2"/><path d="M15.783 8.85H8.512V23.8h7.271a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191Z" opacity=".2"/><path d="M15.132 8.85h-6.62V23.8h6.62a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191Z" opacity=".2"/><path fill="url(#vscodeIconsFileTypeExcel0)" d="M3.194 8.85h11.938a1.193 1.193 0 0 1 1.194 1.191v11.918a1.193 1.193 0 0 1-1.194 1.191H3.194A1.192 1.192 0 0 1 2 21.959V10.041A1.192 1.192 0 0 1 3.194 8.85Z"/><path fill="#fff" d="m5.7 19.873l2.511-3.884l-2.3-3.862h1.847L9.013 14.6c.116.234.2.408.238.524h.017c.082-.188.169-.369.26-.546l1.342-2.447h1.7l-2.359 3.84l2.419 3.905h-1.809l-1.45-2.711A2.355 2.355 0 0 1 9.2 16.8h-.024a1.688 1.688 0 0 1-.168.351l-1.493 2.722Z"/><path fill="#33c481" d="M28.806 3h-9.225v6.5H30V4.191A1.192 1.192 0 0 0 28.806 3Z"/><path fill="#107c41" d="M19.581 16H30v6.5H19.581Z"/></svg>
+                            <svg v-if="getExtension(content?.media?.type) === 'DOC' || getExtension(content?.media?.type) === 'DOCX'" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 32 32"><defs><linearGradient id="vscodeIconsFileTypeWord0" x1="4.494" x2="13.832" y1="-1712.086" y2="-1695.914" gradientTransform="translate(0 1720)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2368c4"/><stop offset=".5" stop-color="#1a5dbe"/><stop offset="1" stop-color="#1146ac"/></linearGradient></defs><path fill="#41a5ee" d="M28.806 3H9.705a1.192 1.192 0 0 0-1.193 1.191V9.5l11.069 3.25L30 9.5V4.191A1.192 1.192 0 0 0 28.806 3Z"/><path fill="#2b7cd3" d="M30 9.5H8.512V16l11.069 1.95L30 16Z"/><path fill="#185abd" d="M8.512 16v6.5l10.418 1.3L30 22.5V16Z"/><path fill="#103f91" d="M9.705 29h19.1A1.192 1.192 0 0 0 30 27.809V22.5H8.512v5.309A1.192 1.192 0 0 0 9.705 29Z"/><path d="M16.434 8.2H8.512v16.25h7.922a1.2 1.2 0 0 0 1.194-1.191V9.391A1.2 1.2 0 0 0 16.434 8.2Z" opacity=".1"/><path d="M15.783 8.85H8.512V25.1h7.271a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191Z" opacity=".2"/><path d="M15.783 8.85H8.512V23.8h7.271a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191Z" opacity=".2"/><path d="M15.132 8.85h-6.62V23.8h6.62a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191Z" opacity=".2"/><path fill="url(#vscodeIconsFileTypeWord0)" d="M3.194 8.85h11.938a1.193 1.193 0 0 1 1.194 1.191v11.918a1.193 1.193 0 0 1-1.194 1.191H3.194A1.192 1.192 0 0 1 2 21.959V10.041A1.192 1.192 0 0 1 3.194 8.85Z"/><path fill="#fff" d="M6.9 17.988c.023.184.039.344.046.481h.028c.01-.13.032-.287.065-.47s.062-.338.089-.465l1.255-5.407h1.624l1.3 5.326a7.761 7.761 0 0 1 .162 1h.022a7.6 7.6 0 0 1 .135-.975l1.039-5.358h1.477l-1.824 7.748h-1.727l-1.237-5.126q-.054-.222-.122-.578t-.084-.52h-.021q-.021.189-.084.561c-.042.249-.075.432-.1.552L7.78 19.871H6.024L4.19 12.127h1.5l1.131 5.418a4.469 4.469 0 0 1 .079.443Z"/></svg>
+                            <svg v-if="getExtension(content?.media?.type) === 'PPT' || getExtension(content?.media?.type) === 'PPTX'" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 32 32"><defs><linearGradient id="vscodeIconsFileTypePowerpoint0" x1="4.494" x2="13.832" y1="-1748.086" y2="-1731.914" gradientTransform="translate(0 1756)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ca4c28"/><stop offset=".5" stop-color="#c5401e"/><stop offset="1" stop-color="#b62f14"/></linearGradient></defs><path fill="#ed6c47" d="M18.93 17.3L16.977 3h-.146A12.9 12.9 0 0 0 3.953 15.854V16Z"/><path fill="#ff8f6b" d="M17.123 3h-.146v13l6.511 2.6L30 16v-.146A12.9 12.9 0 0 0 17.123 3Z"/><path fill="#d35230" d="M30 16v.143A12.905 12.905 0 0 1 17.12 29h-.287a12.907 12.907 0 0 1-12.88-12.857V16Z"/><path d="M17.628 9.389V23.26a1.2 1.2 0 0 1-.742 1.1a1.16 1.16 0 0 1-.45.091H7.027a10.08 10.08 0 0 1-.521-.65a12.735 12.735 0 0 1-2.553-7.657v-.286A12.705 12.705 0 0 1 6.05 8.85a8.82 8.82 0 0 1 .456-.65h9.93a1.2 1.2 0 0 1 1.192 1.189Z" opacity=".1"/><path d="M16.977 10.04v13.871a1.15 1.15 0 0 1-.091.448a1.2 1.2 0 0 1-1.1.741H7.62q-.309-.314-.593-.65a10.08 10.08 0 0 1-.521-.65a12.735 12.735 0 0 1-2.553-7.657v-.286A12.705 12.705 0 0 1 6.05 8.85h9.735a1.2 1.2 0 0 1 1.192 1.19Z" opacity=".2"/><path d="M16.977 10.04v12.571a1.2 1.2 0 0 1-1.192 1.189H6.506a12.735 12.735 0 0 1-2.553-7.657v-.286A12.705 12.705 0 0 1 6.05 8.85h9.735a1.2 1.2 0 0 1 1.192 1.19Z" opacity=".2"/><path d="M16.326 10.04v12.571a1.2 1.2 0 0 1-1.192 1.189H6.506a12.735 12.735 0 0 1-2.553-7.657v-.286A12.705 12.705 0 0 1 6.05 8.85h9.084a1.2 1.2 0 0 1 1.192 1.19Z" opacity=".2"/><path fill="url(#vscodeIconsFileTypePowerpoint0)" d="M3.194 8.85h11.938a1.193 1.193 0 0 1 1.194 1.191v11.918a1.193 1.193 0 0 1-1.194 1.191H3.194A1.192 1.192 0 0 1 2 21.959V10.041A1.192 1.192 0 0 1 3.194 8.85Z"/><path fill="#fff" d="M9.293 12.028a3.287 3.287 0 0 1 2.174.636a2.27 2.27 0 0 1 .756 1.841a2.555 2.555 0 0 1-.373 1.376a2.49 2.49 0 0 1-1.059.935a3.607 3.607 0 0 1-1.591.334H7.687v2.8H6.141v-7.922ZM7.686 15.94h1.331a1.735 1.735 0 0 0 1.177-.351a1.3 1.3 0 0 0 .4-1.025q0-1.309-1.525-1.31H7.686v2.686Z"/></svg>
+                        </div>
+                        <div>
+                            <div>
+                                <p class="overflow-ellipsis overflow-hidden line-clamp-2 w-[200px]">{{ content?.media?.name }}</p>
+                            </div>
+                            <div class="flex items-center text-slate-500 text-[11px]">
+                                <!--<span>6 pages</span>
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><circle cx="12.1" cy="12.1" r="1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                </span>-->
+                                <span>{{ getExtension(content?.media?.type) }}</span>
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><circle cx="12.1" cy="12.1" r="1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                </span>
+                                <span>{{ formatFileSize(content?.media?.size) }}</span>
+                            </div>
+                        </div>
+                        <a :href="content?.media?.path" :download="content?.media?.name" target="_blank" @click="downloadClicked" class="flex justify-end w-full">
+                            <svg v-if="!downloading" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"><path fill="currentColor" d="M4.025 11.975q0 2.825 1.725 5t4.4 2.825q.375.1.6.425t.225.725q0 .4-.275.663t-.625.187q-3.5-.7-5.775-3.437t-2.275-6.388q0-3.65 2.288-6.387T10.1 2.15q.35-.075.625.188T11 3q0 .4-.225.725t-.6.425q-2.7.65-4.425 2.825t-1.725 5Zm8.95 1.15l1.85-1.85q.3-.3.725-.3t.725.3q.3.3.288.725t-.313.725L12.675 16.3q-.3.3-.7.3t-.7-.3L7.65 12.65q-.3-.3-.288-.713t.313-.712q.3-.3.713-.3t.712.3l1.875 1.9V8q0-.425.288-.713T11.975 7q.425 0 .713.288t.287.712v5.125Zm3.05 5.75q.375-.225.813-.2t.762.35q.3.3.25.713t-.4.637q-.8.5-1.675.863t-1.8.562q-.4.075-.7-.175t-.3-.675q0-.425.263-.75t.687-.45q.55-.15 1.075-.375t1.025-.5ZM13.975 4.2q-.425-.125-.7-.45T13 3q0-.425.288-.675t.687-.175q.95.2 1.838.562T17.5 3.6q.35.225.375.625t-.25.7q-.3.325-.738.35t-.812-.2q-.5-.275-1.025-.5T13.975 4.2Zm5.75 9.75q.125-.425.463-.7t.762-.275q.425 0 .688.325t.162.725q-.2.95-.575 1.812t-.9 1.663q-.225.35-.625.35t-.675-.275q-.3-.3-.337-.725t.187-.8q.275-.5.488-1.012t.362-1.088Zm-.85-6.075q-.225-.375-.188-.788t.338-.712q.275-.275.675-.263t.625.338q.55.8.925 1.688t.575 1.837q.075.4-.187.7t-.688.3q-.425 0-.762-.287t-.463-.713q-.15-.55-.363-1.075t-.487-1.025Z"/></svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"><path stroke-dasharray="2 4" stroke-dashoffset="6" d="M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21"><animate attributeName="stroke-dashoffset" dur="0.6s" repeatCount="indefinite" values="6;0"/></path><path stroke-dasharray="30" stroke-dashoffset="30" d="M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3"><animate fill="freeze" attributeName="stroke-dashoffset" begin="0.1s" dur="0.3s" values="30;0"/></path><path stroke-dasharray="10" stroke-dashoffset="10" d="M12 8v7.5"><animate fill="freeze" attributeName="stroke-dashoffset" begin="0.5s" dur="0.2s" values="10;0"/></path><path stroke-dasharray="6" stroke-dashoffset="6" d="M12 15.5l3.5 -3.5M12 15.5l-3.5 -3.5"><animate fill="freeze" attributeName="stroke-dashoffset" begin="0.7s" dur="0.2s" values="6;0"/></path></g></svg>
+                        </a>
+                    </div>
+                </div>
+                <div v-if="JSON.parse(content.metadata)?.buttons" class="mr-auto text-sm text-[#00a5f4] flex flex-col relative max-w-[25em]">
+                    <div v-for="(item, index) in JSON.parse(content.metadata)?.buttons" :key="index" class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 my-[0.1em]">
+                        <span>
+                            <svg v-if="item.type === 'COPY_CODE'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12V1Z"/></svg>
+                            <svg v-else-if="item.type === 'PHONE_NUMBER'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><g fill="none"><path fill="currentColor" d="M20 16v4c-2.758 0-5.07-.495-7-1.325c-3.841-1.652-6.176-4.63-7.5-7.675C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3c1.324 3.045 3.659 6.023 7.5 7.675L16 15l4 1z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 18.675c1.93.83 4.242 1.325 7 1.325v-4l-4-1l-3 3.675zm0 0C9.159 17.023 6.824 14.045 5.5 11m0 0C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3z"/></g></svg>
+                            <img v-else-if="item.type === 'URL'" :src="'/images/icons/link.png'" class="h-4">
+                            <img v-else :src="'/images/icons/reply.png'" class="h-4">
+                        </span>
+                        <span>{{ item.text }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!--Template formatting
+            <div v-else-if="JSON.parse(content.metadata).type === 'template'">
+                {{ JSON.parse(content.metadata) }}
+            </div>-->
+
+            <!--Location formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'location'">
+                <GoogleMap :api-key="getValueByKey('google_maps_api_key')" style="width: 300px; height: 200px" :center="location(content.metadata)" :zoom="15">
+                    <Marker :options="{ position: location(content.metadata) }" />
+                </GoogleMap>
+            </div>
+
+            <!--Sticker formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'sticker'">
+                <img v-if="content.media != null" :src="content?.media?.path" alt="Image" class="mb-2 max-w-[100px]" />
+                <div v-else class="text-slate-500 flex justify-center items-center space-x-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path d="M24 0v24H0V0h24ZM12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427c-.002-.01-.009-.017-.017-.018Zm.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093c.012.004.023 0 .029-.008l.004-.014l-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014l-.034.614c0 .012.007.02.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01l-.184-.092Z"/><path fill="currentColor" d="m13.299 3.148l8.634 14.954a1.5 1.5 0 0 1-1.299 2.25H3.366a1.5 1.5 0 0 1-1.299-2.25l8.634-14.954c.577-1 2.02-1 2.598 0ZM12 4.898L4.232 18.352h15.536L12 4.898ZM12 15a1 1 0 1 1 0 2a1 1 0 0 1 0-2Zm0-7a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Z"/></g></svg>
+                    {{ $t('Content not available') }}
+                </div>
+            </div>
+
+            <!--Contacts formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'contacts'">
+                <div class="flex space-x-3 w-[300px] items-center">
+                    <div class="rounded-full p-3 bg-slate-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><path fill="currentColor" d="M332.64 64.58C313.18 43.57 286 32 256 32c-30.16 0-57.43 11.5-76.8 32.38c-19.58 21.11-29.12 49.8-26.88 80.78C156.76 206.28 203.27 256 256 256s99.16-49.71 103.67-110.82c2.27-30.7-7.33-59.33-27.03-80.6ZM432 480H80a31 31 0 0 1-24.2-11.13c-6.5-7.77-9.12-18.38-7.18-29.11C57.06 392.94 83.4 353.61 124.8 326c36.78-24.51 83.37-38 131.2-38s94.42 13.5 131.2 38c41.4 27.6 67.74 66.93 76.18 113.75c1.94 10.73-.68 21.34-7.18 29.11A31 31 0 0 1 432 480Z"/></svg>
+                    </div>
+                    <div>
+                        {{ getContactDisplayName(content.metadata) }}
+                    </div>
+                </div>
+            </div>
+
+            <!--Audio formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'audio'">
+                <audio v-if="content.media != null" controls>
+                    <source :src="content?.media?.path">
+                    {{ $t('Your browser does not support the audio element') }}
+                </audio>
+                <div v-else class="text-slate-500 flex justify-center items-center space-x-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path d="M24 0v24H0V0h24ZM12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427c-.002-.01-.009-.017-.017-.018Zm.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093c.012.004.023 0 .029-.008l.004-.014l-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014l-.034.614c0 .012.007.02.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01l-.184-.092Z"/><path fill="currentColor" d="m13.299 3.148l8.634 14.954a1.5 1.5 0 0 1-1.299 2.25H3.366a1.5 1.5 0 0 1-1.299-2.25l8.634-14.954c.577-1 2.02-1 2.598 0ZM12 4.898L4.232 18.352h15.536L12 4.898ZM12 15a1 1 0 1 1 0 2a1 1 0 0 1 0-2Zm0-7a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Z"/></g></svg>
+                    {{ $t('Content not available') }}
+                </div>
+            </div>
+
+            <!--Video formatting-->
+            <div v-else-if="JSON.parse(content.metadata).type === 'video'">
+                <video v-if="content.media != null" controls width="300" class="max-h-[350px]">
+                    <source :src="content?.media?.path" type="video/mp4">
+                    {{ $t('Your browser does not support the video element') }}
+                </video>
+                <div v-else class="text-slate-500 flex justify-center items-center space-x-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path d="M24 0v24H0V0h24ZM12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427c-.002-.01-.009-.017-.017-.018Zm.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093c.012.004.023 0 .029-.008l.004-.014l-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014l-.034.614c0 .012.007.02.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01l-.184-.092Z"/><path fill="currentColor" d="m13.299 3.148l8.634 14.954a1.5 1.5 0 0 1-1.299 2.25H3.366a1.5 1.5 0 0 1-1.299-2.25l8.634-14.954c.577-1 2.02-1 2.598 0ZM12 4.898L4.232 18.352h15.536L12 4.898ZM12 15a1 1 0 1 1 0 2a1 1 0 0 1 0-2Zm0-7a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Z"/></g></svg>
+                    {{ $t('Content not available') }}
+                </div>
+                <div v-if="JSON.parse(content.metadata).video?.caption" class="max-w-[300px]">{{ JSON.parse(content.metadata).video?.caption }}</div>
+                <div v-if="JSON.parse(content.metadata)?.buttons" class="mr-auto text-sm text-[#00a5f4] flex flex-col relative max-w-[25em]">
+                    <div v-for="(item, index) in JSON.parse(content.metadata)?.buttons" :key="index" class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 my-[0.1em]">
+                        <span>
+                            <svg v-if="item.type === 'COPY_CODE'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12V1Z"/></svg>
+                            <svg v-else-if="item.type === 'PHONE_NUMBER'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><g fill="none"><path fill="currentColor" d="M20 16v4c-2.758 0-5.07-.495-7-1.325c-3.841-1.652-6.176-4.63-7.5-7.675C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3c1.324 3.045 3.659 6.023 7.5 7.675L16 15l4 1z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 18.675c1.93.83 4.242 1.325 7 1.325v-4l-4-1l-3 3.675zm0 0C9.159 17.023 6.824 14.045 5.5 11m0 0C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3z"/></g></svg>
+                            <img v-else-if="item.type === 'URL'" :src="'/images/icons/link.png'" class="h-4">
+                            <img v-else :src="'/images/icons/reply.png'" class="h-4">
+                        </span>
+                        <span>{{ item.text }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!--Timestamp-->
+            <div v-if="props.type === 'outbound' && content.user" class="mt-2 mb--2">
+                <span  class="text-gray-500 text-xs text-right leading-none">Sent By: <u>{{ content.user?.first_name + ' ' + content.user?.last_name }}</u></span>
+            </div>
+            <div class="flex items-center justify-between space-x-4" :class="props.type === 'outbound' && content.user ? '' : 'mt-2'">
+                <p class="text-gray-500 text-xs text-right leading-none">{{ content.created_at }}</p>
+                <span class="relative group cursor-pointer" :class="chatStatus(content.logs) === 'read' ? 'text-blue-500' : 'text-gray-500'">
+                    <!-- Tooltip text -->
+                    <div class="absolute capitalize hidden group-hover:block bg-white text-gray-600 text-xs rounded-sm py-1 px-2 bottom-full mb-1 whitespace-no-wrap">
+                        {{ chatStatus(content.logs) }}
+                    </div>
+                    <svg v-if="chatStatus(content.logs) === 'sent'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.75 8.75l3.5 3.5l7-7.5"/></svg>
+                    <svg v-if="chatStatus(content.logs) === 'delivered' || chatStatus(content.logs) === 'read'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m1.75 9.75l2.5 2.5m3.5-4l2.5-2.5m-4.5 4l2.5 2.5l6-6.5"/></svg>
+                    <svg @click="isModalOpen = true;" v-if="chatStatus(content.logs) === 'failed'" class="text-red-600" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><g fill="currentColor"><path d="M2 2a2 2 0 0 0-2 2v8.01A2 2 0 0 0 2 14h5.5a.5.5 0 0 0 0-1H2a1 1 0 0 1-.966-.741l5.64-3.471L8 9.583l7-4.2V8.5a.5.5 0 0 0 1 0V4a2 2 0 0 0-2-2zm3.708 6.208L1 11.105V5.383zM1 4.217V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v.217l-7 4.2z"/><path d="M12.5 16a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7m.5-5v1.5a.5.5 0 0 1-1 0V11a.5.5 0 0 1 1 0m0 3a.5.5 0 1 1-1 0a.5.5 0 0 1 1 0"/></g></svg>
+                </span>
+            </div>
+
+            <div v-if="JSON.parse(content.metadata).type === 'contacts'" class="cursor-pointer text-center border-t mt-2 pt-2">
+                {{ $t('View') }}
+            </div>
+        </div>
+    </div>
+
+    <Modal :label="$t('Message status: ') + chatStatus(content.logs)" :isOpen=isModalOpen :closeBtn="true" @close="isModalOpen = false">
+        <div>
+            <div v-if="errors.length" class="bg-red-100 rounded-md p-3 text-sm mt-4">
+                <div v-for="(error, index) in errors" :key="index">
+                    <div class="flex">
+                        <p class="truncate">Chat ID: {{ JSON.parse(content.logs[0].metadata).id }}</p>
+                        <button @click="copyItem(JSON.parse(content.logs[0].metadata).id)" class="text-gray-600 hover:text-black transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 11c0-2.828 0-4.243.879-5.121C7.757 5 9.172 5 12 5h3c2.828 0 4.243 0 5.121.879C21 6.757 21 8.172 21 11v5c0 2.828 0 4.243-.879 5.121C19.243 22 17.828 22 15 22h-3c-2.828 0-4.243 0-5.121-.879C6 20.243 6 18.828 6 16z"/><path d="M6 19a3 3 0 0 1-3-3v-6c0-3.771 0-5.657 1.172-6.828C5.343 2 7.229 2 11 2h4a3 3 0 0 1 3 3"/></g></svg>
+                        </button>
+                    </div>
+                    <p>Error Code: {{ error.code }}</p>
+                    <p>Title: {{ error.title }}</p>
+                    <p>Message: {{ error.message }}</p>
+                    <p>Error Details: {{ error.error_data.details }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex w-full">
+                <button type="button" @click.self="isModalOpen = false;" class="w-full justify-center rounded-md border border-transparent bg-slate-50 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">{{ $t('Cancel') }}</button>
+            </div>
+        </div>
+    </Modal>
+</template>
+
+ChatForm Ui Code :
+
+<script setup>
+    import axios from 'axios';
+    import { ref, watchEffect, computed, onMounted, onBeforeUnmount } from 'vue';
+    import EmojiPicker from 'vue3-emoji-picker';
+    import 'vue3-emoji-picker/css';
+    import MicRecorder from 'mic-recorder-to-mp3-fixed';
+    
+    const recorder = ref(null);
+    const props = defineProps(['contact', 'chatLimitReached', 'simpleForm']);
+    const processingForm = ref(null);
+    const processingAISuggestions = ref(false);
+    const formTextInput = ref(null);
+    const isRecording = ref(false);
+    const audioChunks = ref([]);
+    const recordingTime = ref(0);
+    const timerInterval = ref(null);
+    const playbackTime = ref(0);
+    const playbackInterval = ref(null);
+    const audioDuration = ref(0);
+    const audioPreviewUrl = ref(null);
+    const isPlaying = ref(false);
+    const audioPlayer = ref(null);
+    const isAudioRecording = ref(false);
+    const form = ref({
+        'uuid' : props.contact.uuid,
+        'message' : null,
+        'type' : null,
+        'file' : null
+    })
+    const form2 = ref({
+        'uuid' : props.contact.uuid,
+        'message' : null,
+        'type' : null,
+        'file' : null
+    })
+    const emojiPicker = ref(false);
+    const emojiPickerRef = ref(null);
+
+    watchEffect(() => {
+        form.value.uuid = props.contact.uuid;
+    });
+
+    const emit = defineEmits(['response', 'viewTemplate']);
+
+    const viewTemplate = () => {
+        emit('viewTemplate', true);
+    }
+
+    const sendMessage = async() => {
+        form.value.message = formTextInput.value;
+        processingForm.value = true;
+
+        if(form.value.message != null || form.value.file != null){
+            const formData = new FormData();
+
+            formData.append('message', form.value.message);
+            formData.append('type', form.value.type);
+            formData.append('uuid', form.value.uuid);
+
+            if (form.value.file) {
+                formData.append('file', form.value.file);
+            }
+
+            try {
+                const response = await axios.post('/chats', formData);
+
+                if(isAudioRecording.value == true){
+                    await sendAudioMessage();
+                }
+
+                form.value.message = null;
+                formTextInput.value = null;
+                form.value.file = null;
+
+                processingForm.value = false;
+            } catch (error) {
+                // Handle the error
+                // console.error('Error:', error);
+            }
+        } else {
+            if(isAudioRecording.value == true){
+                await sendAudioMessage();
+            }
+
+            processingForm.value = false;
+        }
+    }
+
+    const sendAudioMessage = async() => {
+        const formData = new FormData();
+        formData.append('type', form2.value.type);
+        formData.append('uuid', form2.value.uuid);
+
+        if (form2.value.file) {
+            formData.append('file', form2.value.file);
+        }
+
+        try {
+            const response = await axios.post('/chats', formData);
+
+            if(isAudioRecording.value == true){
+                deleteRecording();
+            }
+        } catch (error) {
+            // Handle the error
+            // console.error('Error:', error);
+        }
+    }
+
+    const textInputRef = ref(null);
+    const adjustTextareaHeight = () => {
+        const textInput = textInputRef.value;
+        textInput.style.height = 'auto';
+        textInput.style.height = textInput.scrollHeight + 'px';
+    };
+
+    const handleEnterKey = (event) => {
+        if (formTextInput.value != null && formTextInput.value.trim() != '') {
+            sendMessage();
+        }
+    };
+
+    const isInboundChatWithin24Hours = computed(() => {
+        if (props.contact.last_inbound_chat) {
+            const lastInboundChatTime = new Date(props.contact.last_inbound_chat.created_at);
+            const currentTime = new Date();
+            const timeDifference = currentTime - lastInboundChatTime;
+
+            return timeDifference < 24 * 60 * 60 * 1000;
+        }
+
+        return false;
+    });
+
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            form.value.file = file;
+            sendMessage();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    const getAcceptedFileTypes = () => {
+        switch (form.value.type) {
+            case 'image':
+                return '.jpg, .png';
+            case 'document':
+                return '.txt, .pdf, .ppt, .doc, .xls, .docx, .pptx, .xlsx';
+            case 'audio':
+                return '.mp3, .ogg';
+            case 'video':
+                return '.mp4';
+            default:
+                return ''; // Empty string allows all file types
+        }
+    }
+
+    const toggleEmojiPicker = (e) => {
+        e.stopPropagation();
+        emojiPicker.value = !emojiPicker.value;
+    };
+
+    const closeEmojiPicker = () => {
+        emojiPicker.value = false;
+    };
+
+    const addEmoji = (emoji) => {
+        const textarea = textInputRef.value;
+        const currentValue = formTextInput.value || '';
+        const start = textarea.selectionStart || 0;
+        const end = textarea.selectionEnd || 0;
+
+        const newText =
+            currentValue.substring(0, start) +
+            emoji.i +
+            currentValue.substring(end);
+
+        formTextInput.value = newText;
+
+        // Focus the textarea and place the cursor at the correct position
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + emoji.i.length, start + emoji.i.length);
+        }, 0);
+    };
+
+    const handleClickOutside = (event) => {
+        if (
+            emojiPickerRef.value &&
+            !emojiPickerRef.value.contains(event.target) &&
+            !textInputRef.value.contains(event.target)
+        ) {
+            closeEmojiPicker();
+        }
+    };
+
+    const startRecording = async () => {
+        try {
+            isAudioRecording.value = true;
+            await recorder.value.start();
+            isRecording.value = true;
+            startTimer();
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+        }
+    };
+
+    const stopRecording = async () => {
+        if (isRecording.value) {
+            try {
+                const [buffer, blob] = await recorder.value.stop().getMp3();
+                const audioFile = new File(buffer, 'audio-message.mp3', {
+                    type: blob.type,
+                    lastModified: Date.now()
+                });
+                
+                audioPreviewUrl.value = URL.createObjectURL(blob);
+                form2.value.type = 'audio';
+                form2.value.file = audioFile;
+                
+                isRecording.value = false;
+                stopTimer();
+            } catch (error) {
+                console.error('Error stopping recording:', error);
+            }
+        }
+    };
+
+    const deleteRecording = () => {
+        if (audioPreviewUrl.value) {
+            URL.revokeObjectURL(audioPreviewUrl.value);
+        }
+        audioPreviewUrl.value = null;
+        recordingTime.value = 0;
+        playbackTime.value = 0;
+        audioDuration.value = 0;
+        audioChunks.value = [];
+        form2.value.type = null;
+        form2.value.file = null;
+        stopPlaybackTimer();
+    };
+
+    const togglePlayback = () => {
+        if (!audioPlayer.value) return;
+        
+        if (isPlaying.value) {
+            audioPlayer.value.pause();
+            stopPlaybackTimer();
+        } else {
+            audioPlayer.value.play();
+            startPlaybackTimer();
+        }
+        isPlaying.value = !isPlaying.value;
+    };
+
+    const startTimer = () => {
+        recordingTime.value = 0;
+        timerInterval.value = setInterval(() => {
+            recordingTime.value++;
+        }, 1000);
+    };
+
+    const startPlaybackTimer = () => {
+        playbackTime.value = 0;
+        playbackInterval.value = setInterval(() => {
+            if (audioPlayer.value) {
+                playbackTime.value = Math.floor(audioPlayer.value.currentTime);
+            }
+        }, 100);
+    };
+
+    const stopTimer = () => {
+        if (timerInterval.value) {
+            clearInterval(timerInterval.value);
+            timerInterval.value = null;
+        }
+    };
+
+    const stopPlaybackTimer = () => {
+        if (playbackInterval.value) {
+            clearInterval(playbackInterval.value);
+            playbackInterval.value = null;
+        }
+    };
+
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
+    const getSuggestion = async() => {
+        processingAISuggestions.value = true;
+        try {
+            const response = await axios.get('/automation/chat/suggestion', {
+                params: {
+                    contact: props.contact.uuid
+                }
+            });
+
+            if (response.data.success) {
+                form.value.type = 'text';
+                formTextInput.value = response.data.data.text;
+            } else {
+                console.error('Failed to get suggestion:', response.data.message);
+            }
+        } catch (error) {
+            console.error('Error getting suggestion:', error.response?.data?.message || error.message);
+        } finally {
+            processingAISuggestions.value = false;
+        }
+    }
+
+    onMounted(() => {
+        document.addEventListener('click', handleClickOutside);
+        recorder.value = new MicRecorder({
+            bitRate: 128
+        });
+    });
+
+    onBeforeUnmount(() => {
+        document.removeEventListener('click', handleClickOutside);
+        stopTimer();
+        stopPlaybackTimer();
+        if (audioPreviewUrl.value) {
+            URL.revokeObjectURL(audioPreviewUrl.value);
+        }
+    });
+</script>
+<template>
+    <div v-if="props.chatLimitReached" class="flex justify-center items-center w-full px-6 md:px-4">
+        <div class="flex items-start space-x-4 bg-orange-100 rounded-lg p-2 mb-2 px-4">
+            <span class="text-red-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 36 36"><path fill="currentColor" d="M18 21.32a1.3 1.3 0 0 0 1.3-1.3V14a1.3 1.3 0 1 0-2.6 0v6a1.3 1.3 0 0 0 1.3 1.32Z" class="clr-i-outline clr-i-outline-path-1"/><circle cx="17.95" cy="24.27" r="1.5" fill="currentColor" class="clr-i-outline clr-i-outline-path-2"/><path fill="currentColor" d="M30.33 25.54L20.59 7.6a3 3 0 0 0-5.27 0L5.57 25.54A3 3 0 0 0 8.21 30h19.48a3 3 0 0 0 2.64-4.43Zm-1.78 1.94a1 1 0 0 1-.86.49H8.21a1 1 0 0 1-.88-1.48l9.74-17.94a1 1 0 0 1 1.76 0l9.74 17.94a1 1 0 0 1-.02.99Z" class="clr-i-outline clr-i-outline-path-3"/><path fill="none" d="M0 0h36v36H0z"/></svg>
+            </span>
+            <div>
+                <div class="text-sm">{{ $t('Maximum chat limit reached') }}</div>
+                <div class="text-sm">{{ $t('You have reached the maximum chat limit for your subscription! Please upgrade to send/receive more messages') }}</div>
+            </div>
+        </div>
+    </div>
+    <div v-if="!isInboundChatWithin24Hours && !props.chatLimitReached" class="flex justify-center items-center w-full px-6 md:px-4">
+        <div class="flex items-center justify-between space-x-4 bg-orange-100 rounded-lg p-2 mb-2 px-4">
+            <div class="flex items-start justify-between space-x-4">
+                <span class="text-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 36 36"><path fill="currentColor" d="M18 21.32a1.3 1.3 0 0 0 1.3-1.3V14a1.3 1.3 0 1 0-2.6 0v6a1.3 1.3 0 0 0 1.3 1.32Z" class="clr-i-outline clr-i-outline-path-1"/><circle cx="17.95" cy="24.27" r="1.5" fill="currentColor" class="clr-i-outline clr-i-outline-path-2"/><path fill="currentColor" d="M30.33 25.54L20.59 7.6a3 3 0 0 0-5.27 0L5.57 25.54A3 3 0 0 0 8.21 30h19.48a3 3 0 0 0 2.64-4.43Zm-1.78 1.94a1 1 0 0 1-.86.49H8.21a1 1 0 0 1-.88-1.48l9.74-17.94a1 1 0 0 1 1.76 0l9.74 17.94a1 1 0 0 1-.02.99Z" class="clr-i-outline clr-i-outline-path-3"/><path fill="none" d="M0 0h36v36H0z"/></svg>
+                </span>
+                <div>
+                    <div class="text-sm">{{ $t('24 hour limit') }}</div>
+                    <div class="text-sm">{{ $t('Whatsapp does not allow sending messages 24 hours after they last messaged you. However, you can send them a template message') }}</div>
+                </div>
+            </div>
+            <button @click="viewTemplate()" class="rounded-md bg-primary px-3 py-1 text-sm text-white shadow-sm w-[25%]">Send Template</button>
+        </div>
+    </div>
+    <form v-if="simpleForm && isInboundChatWithin24Hours && !props.chatLimitReached" @submit.prevent="sendMessage()" class="flex items-center px-2 md:px-10 space-x-2">
+        <div class="flex items-center w-full rounded-lg py-4 md:py-2 pl-2 pr-2" :class="processingForm ? 'bg-gray-200' : 'bg-white'">
+            <div class="absolute">
+                <button type="button" @click="toggleEmojiPicker">😀</button>
+                <div v-if="emojiPicker" class="absolute left-0 bottom-full" ref="emojiPickerRef">
+                    <EmojiPicker :native="true" @select="addEmoji" />
+                </div>
+            </div>
+            <textarea 
+                ref="textInputRef" 
+                @focus="form.type = 'text'"
+                @keydown.enter.exact.prevent="handleEnterKey" 
+                class="w-full ml-3 outline-none resize-none text-sm md:text-base pl-6" 
+                :class="processingForm ? 'bg-gray-200' : 'bg-white'"
+                v-model="formTextInput" 
+                @input="adjustTextareaHeight" 
+                type="text" 
+                rows="1" 
+                :placeholder="$t('Type your message...')" 
+                :disabled="processingForm">
+            </textarea>
+            <input
+                type="file"
+                class="sr-only"
+                :accept="getAcceptedFileTypes()"
+                id="file-upload"
+                @change="handleFileUpload($event)"
+            />
+            <label @click="form.type = 'image'" for="file-upload" class="text-slate-500 mr-2 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M6.5 8a2 2 0 1 0 4 0a2 2 0 0 0-4 0Zm14.427 1.99c-6.61-.908-12.31 4-11.927 10.51"/><path d="M3 13.066c2.78-.385 5.275.958 6.624 3.1"/><path d="M3 12c0-4.243 0-6.364 1.318-7.682C5.636 3 7.758 3 12 3c4.243 0 6.364 0 7.682 1.318C21 5.636 21 7.758 21 12c0 4.243 0 6.364-1.318 7.682C18.364 21 16.242 21 12 21c-4.243 0-6.364 0-7.682-1.318C3 18.364 3 16.242 3 12Z"/></g></svg>
+            </label>
+            <label @click="form.type = 'document'" for="file-upload" class="text-slate-500 mr-1 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10c0-3.771 0-5.657 1.172-6.828C5.343 2 7.229 2 11 2h2c3.771 0 5.657 0 6.828 1.172C21 4.343 21 6.229 21 10v4c0 3.771 0 5.657-1.172 6.828C18.657 22 16.771 22 13 22h-2c-3.771 0-5.657 0-6.828-1.172C3 19.657 3 17.771 3 14v-4Z"/><path stroke-linecap="round" d="M8 10h8m-8 4h5"/></g></svg>
+            </label>
+            <label @click="form.type = 'audio'" for="file-upload" class="text-slate-500 mr-1 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 1024 1024"><path fill="currentColor" d="M842 454c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8c0 140.3-113.7 254-254 254S258 594.3 258 454c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8c0 168.7 126.6 307.9 290 327.6V884H326.7c-13.7 0-24.7 14.3-24.7 32v36c0 4.4 2.8 8 6.2 8h407.6c3.4 0 6.2-3.6 6.2-8v-36c0-17.7-11-32-24.7-32H548V782.1c165.3-18 294-158 294-328.1M512 624c93.9 0 170-75.2 170-168V232c0-92.8-76.1-168-170-168s-170 75.2-170 168v224c0 92.8 76.1 168 170 168m-94-392c0-50.6 41.9-92 94-92s94 41.4 94 92v224c0 50.6-41.9 92-94 92s-94-41.4-94-92z"/></svg>
+            </label>
+            <label @click="form.type = 'video'" for="file-upload" class="text-slate-500 mr-2 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32"><path fill="currentColor" d="M6.5 5.5A4.5 4.5 0 0 0 2 10v12a4.5 4.5 0 0 0 4.5 4.5h12A4.5 4.5 0 0 0 23 22v-1.5l4.2 3.15c1.153.865 2.8.042 2.8-1.4V9.75c0-1.442-1.647-2.265-2.8-1.4L23 11.5V10a4.5 4.5 0 0 0-4.5-4.5zM23 14l5-3.75v11.5L23 18zm-2-4v12a2.5 2.5 0 0 1-2.5 2.5h-12A2.5 2.5 0 0 1 4 22V10a2.5 2.5 0 0 1 2.5-2.5h12A2.5 2.5 0 0 1 21 10"/></svg>
+            </label>
+            <label @click="viewTemplate()" class="text-slate-500 mr-4 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="currentColor" d="M216 80h-32V48a16 16 0 0 0-16-16H40a16 16 0 0 0-16 16v128a8 8 0 0 0 13 6.22L72 154v30a16 16 0 0 0 16 16h93.59L219 230.22a8 8 0 0 0 5 1.78a8 8 0 0 0 8-8V96a16 16 0 0 0-16-16M66.55 137.78L40 159.25V48h128v88H71.58a8 8 0 0 0-5.03 1.78M216 207.25l-26.55-21.47a8 8 0 0 0-5-1.78H88v-32h80a16 16 0 0 0 16-16V96h32Z"></path></svg>
+            </label>
+            <button class="flex items-center" type="submit" :disabled="formTextInput === null || formTextInput.trim() === '' || processingForm">
+                <svg v-if="!processingForm" :class="formTextInput === null || formTextInput.trim() === '' ? 'text-slate-300' : 'text-black'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 16 16"><path fill="currentColor" d="M1.724 1.053a.5.5 0 0 0-.714.545l1.403 4.85a.5.5 0 0 0 .397.354l5.69.953c.268.053.268.437 0 .49l-5.69.953a.5.5 0 0 0-.397.354l-1.403 4.85a.5.5 0 0 0 .714.545l13-6.5a.5.5 0 0 0 0-.894l-13-6.5Z"/></svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="2" r="0" fill="currentColor"><animate attributeName="r" begin="0" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(45 12 12)"><animate attributeName="r" begin="0.125s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(90 12 12)"><animate attributeName="r" begin="0.25s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(135 12 12)"><animate attributeName="r" begin="0.375s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(180 12 12)"><animate attributeName="r" begin="0.5s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(225 12 12)"><animate attributeName="r" begin="0.625s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(270 12 12)"><animate attributeName="r" begin="0.75s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(315 12 12)"><animate attributeName="r" begin="0.875s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle></svg>
+            </button>
+        </div>
+    </form>
+    <form v-if="!simpleForm && isInboundChatWithin24Hours && !props.chatLimitReached" @submit.prevent="sendMessage()" class="flex items-center px-2 md:px-10 space-x-2">
+        <div class="bg-white rounded-md w-full p-4">
+            <div>
+                <textarea 
+                    ref="textInputRef" 
+                    @focus="form.type = 'text'"
+                    @keydown.enter.exact.prevent="handleEnterKey" 
+                    class="w-full outline-none resize-none text-sm rounded-md p-2" 
+                    :class="processingForm ? 'bg-gray-100' : 'bg-white'"
+                    v-model="formTextInput" 
+                    @input="adjustTextareaHeight" 
+                    type="text" 
+                    rows="3" 
+                    :placeholder="$t('Type your message...')" 
+                    :disabled="processingForm">
+                </textarea>
+                <input
+                    type="file"
+                    class="sr-only"
+                    :accept="getAcceptedFileTypes()"
+                    id="file-upload"
+                    @change="handleFileUpload($event)"
+                />
+            </div>
+            <!-- Recording Interface -->
+            <div v-if="isRecording || audioPreviewUrl" class="bg-slate-50 rounded-lg border px-2 mb-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="text-red-500 mr-2">
+                            <span v-if="isRecording" class="animate-pulse">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="red" opacity="0.5"/><path fill="#fee2e2" fill-rule="evenodd" d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10m0-3a7 7 0 1 0 0-14a7 7 0 0 0 0 14" clip-rule="evenodd"/></svg>
+                            </span>
+                            <span v-if="audioPreviewUrl" @click="togglePlayback">
+                                <svg v-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#22c55e" stroke="#22c55e" stroke-linecap="round" stroke-width="1.5" d="M3 12v6.967c0 2.31 2.534 3.769 4.597 2.648l3.203-1.742M3 8V5.033c0-2.31 2.534-3.769 4.597-2.648l12.812 6.968a2.998 2.998 0 0 1 0 5.294l-6.406 3.484"/></svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="red" stroke-linecap="round" stroke-width="1.5" d="M2 18c0 1.886 0 2.828.586 3.414S4.114 22 6 22s2.828 0 3.414-.586S10 19.886 10 18V6c0-1.886 0-2.828-.586-3.414S7.886 2 6 2s-2.828 0-3.414.586S2 4.114 2 6v8m20-8c0-1.886 0-2.828-.586-3.414S19.886 2 18 2s-2.828 0-3.414.586S14 4.114 14 6v12c0 1.886 0 2.828.586 3.414S16.114 22 18 22s2.828 0 3.414-.586S22 19.886 22 18v-8"/></svg>
+                            </span>
+                        </span>
+                        <span class="text-sm" v-if="isRecording">{{ formatTime(recordingTime) }}</span>
+                        <span class="text-sm" v-else>{{ formatTime(playbackTime) }} / {{ formatTime(recordingTime) }}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <!-- Stop Recording Button -->
+                        <button 
+                            v-if="isRecording"
+                            @click="stopRecording"
+                            class="p-2 rounded-full hover:bg-red-100"
+                            title="Stop Recording">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="red" stroke="red" stroke-width="1.5" d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"/></svg>
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button 
+                            v-if="audioPreviewUrl"
+                            @click="deleteRecording"
+                            class="p-2 rounded-full hover:bg-red-100 text-red-500"
+                            title="Delete Recording">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="red" stroke-linecap="round" stroke-width="1.5" d="M9.17 4a3.001 3.001 0 0 1 5.66 0m5.67 2h-17m14.874 9.4c-.177 2.654-.266 3.981-1.131 4.79s-2.195.81-4.856.81h-.774c-2.66 0-3.99 0-4.856-.81c-.865-.809-.953-2.136-1.13-4.79l-.46-6.9m13.666 0l-.2 3M9.5 11l.5 5m4.5-5l-.5 5"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <audio ref="audioPlayer" :src="audioPreviewUrl" @ended="isPlaying = false" class="hidden" />
+            </div>
+            <div class="flex gap-x-4 items-center text-gray-600">
+                <div @click="viewTemplate()" class="flex gap-x-1 text-sm items-center">
+                    <span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="currentColor" d="M216 80h-32V48a16 16 0 0 0-16-16H40a16 16 0 0 0-16 16v128a8 8 0 0 0 13 6.22L72 154v30a16 16 0 0 0 16 16h93.59L219 230.22a8 8 0 0 0 5 1.78a8 8 0 0 0 8-8V96a16 16 0 0 0-16-16M66.55 137.78L40 159.25V48h128v88H71.58a8 8 0 0 0-5.03 1.78M216 207.25l-26.55-21.47a8 8 0 0 0-5-1.78H88v-32h80a16 16 0 0 0 16-16V96h32Z"></path></svg>
+                    </span>
+                    <button>{{ $t('Templates') }}</button>
+                </div>
+                <div>|</div>
+                <div class="flex gap-x-4 text-sm items-center">
+                    <div>
+                        <button type="button" class="py-1" @click="toggleEmojiPicker">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M4.111 2.18a7 7 0 1 1 7.778 11.64A7 7 0 0 1 4.11 2.18zm.556 10.809a6 6 0 1 0 6.666-9.978a6 6 0 0 0-6.666 9.978M6.5 7a1 1 0 1 1-2 0a1 1 0 0 1 2 0m5 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0M8 11a3 3 0 0 1-2.65-1.58l-.87.48a4 4 0 0 0 7.12-.16l-.9-.43A3 3 0 0 1 8 11" clip-rule="evenodd"/></svg>
+                            </span>
+                        </button>
+                        <div class="absolute">
+                            
+                            <div v-if="emojiPicker" class="absolute left-0 bottom-full" ref="emojiPickerRef">
+                                <EmojiPicker :native="true" @select="addEmoji" />
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="py-1 cursor-pointer" @click="form.type = 'document'" for="file-upload">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 56 56"><path fill="currentColor" d="M44.09 28.867L26.863 46.094c-4.476 4.5-10.5 4.054-14.343.164c-3.867-3.844-4.313-9.82.187-14.32L36.191 8.453c2.696-2.695 6.657-3.07 9.235-.515c2.555 2.601 2.18 6.539-.492 9.234L21.988 40.14c-1.171 1.195-2.554.843-3.375.047c-.796-.82-1.125-2.18.047-3.376l16.031-16.007c.704-.727.75-1.758.07-2.438c-.679-.656-1.71-.61-2.413.094L16.246 34.563c-2.39 2.39-2.297 6.046-.187 8.156c2.297 2.297 5.789 2.25 8.18-.164l23.085-23.063c4.383-4.383 4.172-10.148.375-13.969c-3.75-3.726-9.586-4.007-13.992.375L10.082 29.547c-5.789 5.789-5.344 14.062-.117 19.289c5.227 5.203 13.5 5.648 19.289-.117l17.344-17.344c.703-.68.68-1.922-.024-2.555c-.68-.726-1.78-.633-2.484.047"/></svg>
+                        </label>
+                    </div>
+                    <div>
+                        <label @click="form.type = 'audio'" class="py-1 cursor-pointer" for="file-upload">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19a3 3 0 1 1-6 0a3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0a3 3 0 0 1 6 0ZM9 19V8m12 9V6"/><path stroke-linecap="round" d="m15.735 3.755l-4 1.333c-1.32.44-1.98.66-2.357 1.184S9 7.492 9 8.882V12l12-4v-.45c0-2.533 0-3.8-.83-4.398c-.831-.599-2.032-.198-4.435.603Z"/></g></svg>
+                        </label>
+                    </div>
+                    <div>
+                        <label @click="form.type = 'video'" class="py-1 cursor-pointer" for="file-upload">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32"><path fill="currentColor" d="M6.5 5.5A4.5 4.5 0 0 0 2 10v12a4.5 4.5 0 0 0 4.5 4.5h12A4.5 4.5 0 0 0 23 22v-1.5l4.2 3.15c1.153.865 2.8.042 2.8-1.4V9.75c0-1.442-1.647-2.265-2.8-1.4L23 11.5V10a4.5 4.5 0 0 0-4.5-4.5zM23 14l5-3.75v11.5L23 18zm-2-4v12a2.5 2.5 0 0 1-2.5 2.5h-12A2.5 2.5 0 0 1 4 22V10a2.5 2.5 0 0 1 2.5-2.5h12A2.5 2.5 0 0 1 21 10"/></svg>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="py-1 cursor-pointer" @click="form.type = 'image'" for="file-upload">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M6.5 8a2 2 0 1 0 4 0a2 2 0 0 0-4 0Zm14.427 1.99c-6.61-.908-12.31 4-11.927 10.51"/><path d="M3 13.066c2.78-.385 5.275.958 6.624 3.1"/><path d="M3 12c0-4.243 0-6.364 1.318-7.682C5.636 3 7.758 3 12 3c4.243 0 6.364 0 7.682 1.318C21 5.636 21 7.758 21 12c0 4.243 0 6.364-1.318 7.682C18.364 21 16.242 21 12 21c-4.243 0-6.364 0-7.682-1.318C3 18.364 3 16.242 3 12Z"/></g></svg>
+                        </label>
+                    </div>
+                </div>
+                <div>|</div>
+                <button 
+                    type="button"
+                    class="py-1 cursor-pointer relative" 
+                    @click="startRecording"
+                    v-if="!isRecording && !audioPreviewUrl">
+                    <span class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 1024 1024">
+                            <path fill="currentColor" d="M842 454c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8c0 140.3-113.7 254-254 254S258 594.3 258 454c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8c0 168.7 126.6 307.9 290 327.6V884H326.7c-13.7 0-24.7 14.3-24.7 32v36c0 4.4 2.8 8 6.2 8h407.6c3.4 0 6.2-3.6 6.2-8v-36c0-17.7-11-32-24.7-32H548V782.1c165.3-18 294-158 294-328.1M512 624c93.9 0 170-75.2 170-168V232c0-92.8-76.1-168-170-168s-170 75.2-170 168v224c0 92.8 76.1 168 170 168m-94-392c0-50.6 41.9-92 94-92s94 41.4 94 92v224c0 50.6-41.9 92-94 92s-94-41.4-94-92z"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="ms-[-5px]">
+                    <button v-if="!processingAISuggestions" class="text-[14px] flex items-center gap-2 hover:bg-gray-100 p-1 rounded-md" type="button" @click="getSuggestion()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" color="#000"><path d="m7 8l2.942 1.74c1.715 1.014 2.4 1.014 4.116 0L17 8"/><path d="M21.984 12.976c.021-.986.021-1.966 0-2.952c-.065-3.065-.098-4.598-1.229-5.733c-1.131-1.136-2.705-1.175-5.854-1.254a115 115 0 0 0-5.802 0c-3.149.079-4.723.118-5.854 1.254c-1.131 1.135-1.164 2.668-1.23 5.733a69 69 0 0 0 0 2.952c.066 3.065.099 4.598 1.23 5.733c1.131 1.136 2.705 1.175 5.854 1.254c1.305.033 2.601.044 3.901.033"/><path d="m18.5 14l.258.697c.338.914.507 1.371.84 1.704c.334.334.791.503 1.705.841L22 17.5l-.697.258c-.914.338-1.371.507-1.704.84c-.334.334-.503.791-.841 1.705L18.5 21l-.258-.697c-.338-.914-.507-1.371-.84-1.704c-.334-.334-.791-.503-1.705-.841L15 17.5l.697-.258c.914-.338 1.371-.507 1.704-.84c.334-.334.503-.791.841-1.705z"/></g></svg>
+                        <span>{{ $t('AI Assist') }}</span>
+                    </button>
+                    <div v-else class="text-[14px] flex items-center gap-2 bg-gray-100 p-1 px-2 rounded-md">
+                        <span>{{ $t('Searching for suggestions') }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="18" cy="12" r="0" fill="currentColor"><animate attributeName="r" begin=".67" calcMode="spline" dur="1.5s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="12" r="0" fill="currentColor"><animate attributeName="r" begin=".33" calcMode="spline" dur="1.5s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="6" cy="12" r="0" fill="currentColor"><animate attributeName="r" begin="0" calcMode="spline" dur="1.5s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle></svg>
+                    </div>
+                </div>
+                <div class="ml-auto">
+                    <button class="flex items-center gap-x-2 p-1 px-2 rounded-md border border-gray-400 text-sm" :disabled="(formTextInput === null || formTextInput.trim() === '') && !form2.file">
+                        <span :class="(formTextInput === null || formTextInput.trim() === '') && !form2.file ? 'text-slate-300' : 'text-black'">Send</span>
+                        <div>
+                            <svg v-if="!processingForm" :class="(formTextInput === null || formTextInput.trim() === '') && !form2.file ? 'text-slate-300' : 'text-black'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="currentColor" d="M1.724 1.053a.5.5 0 0 0-.714.545l1.403 4.85a.5.5 0 0 0 .397.354l5.69.953c.268.053.268.437 0 .49l-5.69.953a.5.5 0 0 0-.397.354l-1.403 4.85a.5.5 0 0 0 .714.545l13-6.5a.5.5 0 0 0 0-.894l-13-6.5Z"/></svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="2" r="0" fill="currentColor"><animate attributeName="r" begin="0" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(45 12 12)"><animate attributeName="r" begin="0.125s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(90 12 12)"><animate attributeName="r" begin="0.25s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(135 12 12)"><animate attributeName="r" begin="0.375s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(180 12 12)"><animate attributeName="r" begin="0.5s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(225 12 12)"><animate attributeName="r" begin="0.625s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(270 12 12)"><animate attributeName="r" begin="0.75s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle><circle cx="12" cy="2" r="0" fill="currentColor" transform="rotate(315 12 12)"><animate attributeName="r" begin="0.875s" calcMode="spline" dur="1s" keySplines="0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8" repeatCount="indefinite" values="0;2;0;0"/></circle></svg>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
 </template>

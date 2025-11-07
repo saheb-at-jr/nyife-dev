@@ -1045,7 +1045,7 @@ onMounted(() => {
                                                     }}
                                                 </span>
                                                 <span v-else class="text-sm text-slate-400">{{ $t('No file chosen')
-                                                }}</span>
+                                                    }}</span>
                                             </div>
                                             <p class="text-xs text-slate-500 flex items-start space-x-2">
                                                 <span class="text-[#ff5100]">ℹ</span>

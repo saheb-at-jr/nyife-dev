@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
     import axios from 'axios';
     import { ref, watchEffect, computed, onMounted, onBeforeUnmount } from 'vue';
     import EmojiPicker from 'vue3-emoji-picker';
@@ -428,7 +428,6 @@
                     @change="handleFileUpload($event)"
                 />
             </div>
-            <!-- Recording Interface -->
             <div v-if="isRecording || audioPreviewUrl" class="bg-slate-50 rounded-lg border px-2 mb-2">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
@@ -445,7 +444,6 @@
                         <span class="text-sm" v-else>{{ formatTime(playbackTime) }} / {{ formatTime(recordingTime) }}</span>
                     </div>
                     <div class="flex gap-2">
-                        <!-- Stop Recording Button -->
                         <button 
                             v-if="isRecording"
                             @click="stopRecording"
@@ -454,7 +452,6 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="red" stroke="red" stroke-width="1.5" d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"/></svg>
                         </button>
 
-                        <!-- Delete Button -->
                         <button 
                             v-if="audioPreviewUrl"
                             @click="deleteRecording"
@@ -540,6 +537,637 @@
                         </div>
                     </button>
                 </div>
+            </div>
+        </div>
+    </form>
+</template> -->
+
+<!-- ========================================== NEW UI CODE ==================================== -->
+
+
+<script setup>
+import axios from 'axios';
+import { ref, watchEffect, onMounted, onBeforeUnmount, computed } from 'vue';
+import EmojiPicker from 'vue3-emoji-picker';
+import 'vue3-emoji-picker/css';
+import MicRecorder from 'mic-recorder-to-mp3-fixed';
+
+const recorder = ref(null);
+const props = defineProps(['contact', 'chatLimitReached', 'simpleForm']);
+const processingForm = ref(null);
+const processingAISuggestions = ref(false);
+const formTextInput = ref(null);
+const isRecording = ref(false);
+const audioChunks = ref([]);
+const recordingTime = ref(0);
+const timerInterval = ref(null);
+const playbackTime = ref(0);
+const playbackInterval = ref(null);
+const audioDuration = ref(0);
+const audioPreviewUrl = ref(null);
+const isPlaying = ref(false);
+const audioPlayer = ref(null);
+const isAudioRecording = ref(false);
+
+const form = ref({
+    'uuid': props.contact.uuid,
+    'message': null,
+    'type': null,
+    'file': null
+})
+
+const form2 = ref({
+    'uuid': props.contact.uuid,
+    'message': null,
+    'type': null,
+    'file': null
+})
+
+const emojiPicker = ref(false);
+const emojiPickerRef = ref(null);
+
+watchEffect(() => {
+    form.value.uuid = props.contact.uuid;
+});
+
+const emit = defineEmits(['response', 'viewTemplate']);
+
+const viewTemplate = () => {
+    emit('viewTemplate', true);
+}
+
+const sendMessage = async () => {
+    form.value.message = formTextInput.value;
+    processingForm.value = true;
+
+    if (form.value.message != null || form.value.file != null) {
+        const formData = new FormData();
+        formData.append('message', form.value.message);
+        formData.append('type', form.value.type);
+        formData.append('uuid', form.value.uuid);
+
+        if (form.value.file) {
+            formData.append('file', form.value.file);
+        }
+
+        try {
+            const response = await axios.post('/chats', formData);
+
+            if (isAudioRecording.value == true) {
+                await sendAudioMessage();
+            }
+
+            form.value.message = null;
+            formTextInput.value = null;
+            form.value.file = null;
+            processingForm.value = false;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    } else {
+        if (isAudioRecording.value == true) {
+            await sendAudioMessage();
+        }
+        processingForm.value = false;
+    }
+}
+
+const sendAudioMessage = async () => {
+    const formData = new FormData();
+    formData.append('type', form2.value.type);
+    formData.append('uuid', form2.value.uuid);
+
+    if (form2.value.file) {
+        formData.append('file', form2.value.file);
+    }
+
+    try {
+        const response = await axios.post('/chats', formData);
+        if (isAudioRecording.value == true) {
+            deleteRecording();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+const textInputRef = ref(null);
+
+const adjustTextareaHeight = () => {
+    const textInput = textInputRef.value;
+    textInput.style.height = 'auto';
+    textInput.style.height = textInput.scrollHeight + 'px';
+};
+
+const handleEnterKey = (event) => {
+    if (formTextInput.value != null && formTextInput.value.trim() != '') {
+        sendMessage();
+    }
+};
+
+const isInboundChatWithin24Hours = computed(() => {
+    if (props.contact.last_inbound_chat) {
+        const lastInboundChatTime = new Date(props.contact.last_inbound_chat.created_at);
+        const currentTime = new Date();
+        const timeDifference = currentTime - lastInboundChatTime;
+        return timeDifference < 24 * 60 * 60 * 1000;
+    }
+    return false;
+});
+
+const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        form.value.file = file;
+        sendMessage();
+    };
+    reader.readAsDataURL(file);
+}
+
+const getAcceptedFileTypes = () => {
+    switch (form.value.type) {
+        case 'image': return '.jpg, .png';
+        case 'document': return '.txt, .pdf, .ppt, .doc, .xls, .docx, .pptx, .xlsx';
+        case 'audio': return '.mp3, .ogg';
+        case 'video': return '.mp4';
+        default: return '';
+    }
+}
+
+const toggleEmojiPicker = (e) => {
+    e.stopPropagation();
+    emojiPicker.value = !emojiPicker.value;
+};
+
+const closeEmojiPicker = () => {
+    emojiPicker.value = false;
+};
+
+const addEmoji = (emoji) => {
+    const textarea = textInputRef.value;
+    const currentValue = formTextInput.value || '';
+    const start = textarea.selectionStart || 0;
+    const end = textarea.selectionEnd || 0;
+
+    const newText = currentValue.substring(0, start) + emoji.i + currentValue.substring(end);
+    formTextInput.value = newText;
+
+    setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + emoji.i.length, start + emoji.i.length);
+    }, 0);
+};
+
+const handleClickOutside = (event) => {
+    if (emojiPickerRef.value && !emojiPickerRef.value.contains(event.target) && !textInputRef.value.contains(event.target)) {
+        closeEmojiPicker();
+    }
+};
+
+const startRecording = async () => {
+    try {
+        isAudioRecording.value = true;
+        await recorder.value.start();
+        isRecording.value = true;
+        startTimer();
+    } catch (error) {
+        console.error('Error accessing microphone:', error);
+    }
+};
+
+const stopRecording = async () => {
+    if (isRecording.value) {
+        try {
+            const [buffer, blob] = await recorder.value.stop().getMp3();
+            const audioFile = new File(buffer, 'audio-message.mp3', {
+                type: blob.type,
+                lastModified: Date.now()
+            });
+
+            audioPreviewUrl.value = URL.createObjectURL(blob);
+            form2.value.type = 'audio';
+            form2.value.file = audioFile;
+
+            isRecording.value = false;
+            stopTimer();
+        } catch (error) {
+            console.error('Error stopping recording:', error);
+        }
+    }
+};
+
+const deleteRecording = () => {
+    if (audioPreviewUrl.value) {
+        URL.revokeObjectURL(audioPreviewUrl.value);
+    }
+    audioPreviewUrl.value = null;
+    recordingTime.value = 0;
+    playbackTime.value = 0;
+    audioDuration.value = 0;
+    audioChunks.value = [];
+    form2.value.type = null;
+    form2.value.file = null;
+    stopPlaybackTimer();
+};
+
+const togglePlayback = () => {
+    if (!audioPlayer.value) return;
+
+    if (isPlaying.value) {
+        audioPlayer.value.pause();
+        stopPlaybackTimer();
+    } else {
+        audioPlayer.value.play();
+        startPlaybackTimer();
+    }
+    isPlaying.value = !isPlaying.value;
+};
+
+const startTimer = () => {
+    recordingTime.value = 0;
+    timerInterval.value = setInterval(() => {
+        recordingTime.value++;
+    }, 1000);
+};
+
+const startPlaybackTimer = () => {
+    playbackTime.value = 0;
+    playbackInterval.value = setInterval(() => {
+        if (audioPlayer.value) {
+            playbackTime.value = Math.floor(audioPlayer.value.currentTime);
+        }
+    }, 100);
+};
+
+const stopTimer = () => {
+    if (timerInterval.value) {
+        clearInterval(timerInterval.value);
+        timerInterval.value = null;
+    }
+};
+
+const stopPlaybackTimer = () => {
+    if (playbackInterval.value) {
+        clearInterval(playbackInterval.value);
+        playbackInterval.value = null;
+    }
+};
+
+const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+const getSuggestion = async () => {
+    processingAISuggestions.value = true;
+    try {
+        const response = await axios.get('/automation/chat/suggestion', {
+            params: { contact: props.contact.uuid }
+        });
+
+        if (response.data.success) {
+            form.value.type = 'text';
+            formTextInput.value = response.data.data.text;
+        } else {
+            console.error('Failed to get suggestion:', response.data.message);
+        }
+    } catch (error) {
+        console.error('Error getting suggestion:', error.response?.data?.message || error.message);
+    } finally {
+        processingAISuggestions.value = false;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+    recorder.value = new MicRecorder({ bitRate: 128 });
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('click', handleClickOutside);
+    stopTimer();
+    stopPlaybackTimer();
+    if (audioPreviewUrl.value) {
+        URL.revokeObjectURL(audioPreviewUrl.value);
+    }
+});
+</script>
+
+<template>
+    <!-- Chat Limit Reached Warning -->
+    <div v-if="props.chatLimitReached" class="px-6 py-4">
+        <div class="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-xl p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 36 36"
+                        class="text-red-600">
+                        <path fill="currentColor"
+                            d="M18 21.32a1.3 1.3 0 0 0 1.3-1.3V14a1.3 1.3 0 1 0-2.6 0v6a1.3 1.3 0 0 0 1.3 1.32Z" />
+                        <circle cx="17.95" cy="24.27" r="1.5" fill="currentColor" />
+                        <path fill="currentColor"
+                            d="M30.33 25.54L20.59 7.6a3 3 0 0 0-5.27 0L5.57 25.54A3 3 0 0 0 8.21 30h19.48a3 3 0 0 0 2.64-4.43Z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-red-900 mb-1">{{ $t('Maximum chat limit reached') }}</h3>
+                    <p class="text-sm text-red-800">{{ $t(`You have reached the maximum chat limit for your
+                        subscription! Please upgrade to send /receive more messages`) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 24 Hour Limit Warning -->
+    <div v-if="!isInboundChatWithin24Hours && !props.chatLimitReached" class="px-6 py-4">
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-[#ff5100] rounded-xl p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 36 36"
+                        class="text-[#ff5100]">
+                        <path fill="currentColor"
+                            d="M18 21.32a1.3 1.3 0 0 0 1.3-1.3V14a1.3 1.3 0 1 0-2.6 0v6a1.3 1.3 0 0 0 1.3 1.32Z" />
+                        <circle cx="17.95" cy="24.27" r="1.5" fill="currentColor" />
+                        <path fill="currentColor"
+                            d="M30.33 25.54L20.59 7.6a3 3 0 0 0-5.27 0L5.57 25.54A3 3 0 0 0 8.21 30h19.48a3 3 0 0 0 2.64-4.43Z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-[#ff5100] mb-1">{{ $t('24 hour limit') }}</h3>
+                    <p class="text-sm text-gray-700 mb-3">{{ $t(`Whatsapp does not allow sending messages 24 hours after
+                        they last messaged you.However, you can send them a template message`) }}</p>
+                    <button @click="viewTemplate()"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-[#ff5100] hover:bg-[#e64900] text-white rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                        </svg>
+                        {{ $t('Send Template') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Form -->
+    <form v-if="simpleForm && isInboundChatWithin24Hours && !props.chatLimitReached" @submit.prevent="sendMessage()"
+        class="px-4 md:px-6 py-4">
+        <div class="flex items-end gap-3">
+            <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 focus-within:border-[#ff5100] focus-within:ring-2 focus-within:ring-[#ff5100]/20 transition-all"
+                :class="processingForm ? 'opacity-50' : ''">
+                <div class="flex items-center px-4 py-2">
+                    <!-- Emoji Picker -->
+                    <div class="relative">
+                        <button type="button" @click="toggleEmojiPicker"
+                            class="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                            <span class="text-xl">😀</span>
+                        </button>
+                        <div v-if="emojiPicker" class="absolute left-0 bottom-full mb-2 z-50" ref="emojiPickerRef">
+                            <EmojiPicker :native="true" @select="addEmoji" />
+                        </div>
+                    </div>
+
+                    <!-- Text Input -->
+                    <textarea ref="textInputRef" @focus="form.type = 'text'"
+                        @keydown.enter.exact.prevent="handleEnterKey"
+                        class="flex-1 outline-none resize-none text-sm mx-3 max-h-32" v-model="formTextInput"
+                        @input="adjustTextareaHeight" rows="1" :placeholder="$t('Type your message...')"
+                        :disabled="processingForm">
+                    </textarea>
+
+                    <!-- File Upload -->
+                    <input type="file" class="sr-only" :accept="getAcceptedFileTypes()" id="file-upload"
+                        @change="handleFileUpload($event)" />
+
+                    <!-- Attachment Buttons -->
+                    <div class="flex items-center gap-1">
+                        <label @click="form.type = 'image'" for="file-upload"
+                            class="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                class="text-gray-600">
+                                <path fill="currentColor"
+                                    d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                            </svg>
+                        </label>
+
+                        <label @click="form.type = 'document'" for="file-upload"
+                            class="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                class="text-gray-600">
+                                <path fill="currentColor"
+                                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                            </svg>
+                        </label>
+
+                        <label @click="viewTemplate()"
+                            class="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                class="text-gray-600">
+                                <path fill="currentColor"
+                                    d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                            </svg>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Send Button -->
+            <button type="submit" :disabled="formTextInput === null || formTextInput.trim() === '' || processingForm"
+                class="flex-shrink-0 p-4 bg-[#ff5100] hover:bg-[#e64900] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-2xl transition-all shadow-md hover:shadow-lg">
+                <svg v-if="!processingForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                    viewBox="0 0 16 16" class="text-white">
+                    <path fill="currentColor"
+                        d="M1.724 1.053a.5.5 0 0 0-.714.545l1.403 4.85a.5.5 0 0 0 .397.354l5.69.953c.268.053.268.437 0 .49l-5.69.953a.5.5 0 0 0-.397.354l-1.403 4.85a.5.5 0 0 0 .714.545l13-6.5a.5.5 0 0 0 0-.894l-13-6.5Z" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                    class="text-white animate-spin">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25" />
+                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+            </button>
+        </div>
+    </form>
+
+    <!-- Advanced Form -->
+    <form v-if="!simpleForm && isInboundChatWithin24Hours && !props.chatLimitReached" @submit.prevent="sendMessage()"
+        class="px-4 md:px-6 py-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+            <!-- Text Input -->
+            <textarea ref="textInputRef" @focus="form.type = 'text'" @keydown.enter.exact.prevent="handleEnterKey"
+                class="w-full outline-none resize-none text-sm rounded-xl p-3 bg-gray-50 focus:bg-white border-0 focus:ring-2 focus:ring-[#ff5100]/20 transition-all"
+                v-model="formTextInput" @input="adjustTextareaHeight" rows="3" :placeholder="$t('Type your message...')"
+                :disabled="processingForm">
+            </textarea>
+
+            <input type="file" class="sr-only" :accept="getAcceptedFileTypes()" id="file-upload"
+                @change="handleFileUpload($event)" />
+
+            <!-- Recording Interface -->
+            <div v-if="isRecording || audioPreviewUrl" class="mt-3 bg-gray-50 rounded-xl border border-gray-200 p-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <!-- Recording/Play Button -->
+                        <button type="button" @click="isRecording ? stopRecording() : togglePlayback()"
+                            class="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                            :class="isRecording ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-[#ff5100] hover:bg-[#e64900]'">
+                            <svg v-if="isRecording" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" class="text-white">
+                                <path fill="currentColor" d="M6 6h12v12H6z" />
+                            </svg>
+                            <svg v-else-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" class="text-white">
+                                <path fill="currentColor" d="M8 5v14l11-7z" />
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                class="text-white">
+                                <path fill="currentColor" d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                            </svg>
+                        </button>
+
+                        <!-- Time Display -->
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium text-gray-900">
+                                {{ isRecording ? formatTime(recordingTime) : formatTime(playbackTime) }}
+                            </span>
+                            <span v-if="!isRecording" class="text-xs text-gray-500">
+                                / {{ formatTime(recordingTime) }}
+                            </span>
+                        </div>
+
+                        <!-- Waveform Animation (for recording) -->
+                        <div v-if="isRecording" class="flex items-center gap-1">
+                            <div class="w-1 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                            <div class="w-1 h-5 bg-red-500 rounded-full animate-pulse" style="animation-delay: 0.1s">
+                            </div>
+                            <div class="w-1 h-4 bg-red-500 rounded-full animate-pulse" style="animation-delay: 0.2s">
+                            </div>
+                            <div class="w-1 h-6 bg-red-500 rounded-full animate-pulse" style="animation-delay: 0.3s">
+                            </div>
+                            <div class="w-1 h-3 bg-red-500 rounded-full animate-pulse" style="animation-delay: 0.4s">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Button -->
+                    <button v-if="audioPreviewUrl" type="button" @click="deleteRecording"
+                        class="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="text-red-600">
+                            <path fill="currentColor"
+                                d="M7 21q-.825 0-1.413-.588T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.588 1.413T17 21H7Z" />
+                        </svg>
+                    </button>
+                </div>
+                <audio ref="audioPlayer" :src="audioPreviewUrl" @ended="isPlaying = false" class="hidden" />
+            </div>
+
+            <!-- Action Bar -->
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                <!-- Left Actions -->
+                <div class="flex items-center gap-2">
+                    <!-- Emoji -->
+                    <div class="relative">
+                        <button type="button" @click="toggleEmojiPicker"
+                            class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16"
+                                class="text-gray-600">
+                                <path fill="currentColor"
+                                    d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1ZM6.5 7a1 1 0 1 1-2 0a1 1 0 0 1 2 0Zm5 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0ZM8 11a3 3 0 0 1-2.65-1.58l-.87.48a4 4 0 0 0 7.12-.16l-.9-.43A3 3 0 0 1 8 11Z" />
+                            </svg>
+                        </button>
+                        <div v-if="emojiPicker" class="absolute left-0 bottom-full mb-2 z-50" ref="emojiPickerRef">
+                            <EmojiPicker :native="true" @select="addEmoji" />
+                        </div>
+                    </div>
+
+                    <!-- Attachments -->
+                    <label @click="form.type = 'document'" for="file-upload"
+                        class="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="text-gray-600">
+                            <path fill="currentColor"
+                                d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
+                        </svg>
+                    </label>
+
+                    <label @click="form.type = 'image'" for="file-upload"
+                        class="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="text-gray-600">
+                            <path fill="currentColor"
+                                d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                        </svg>
+                    </label>
+
+                    <label @click="form.type = 'video'" for="file-upload"
+                        class="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="text-gray-600">
+                            <path fill="currentColor"
+                                d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                        </svg>
+                    </label>
+
+                    <!-- Microphone -->
+                    <button v-if="!isRecording && !audioPreviewUrl" type="button" @click="startRecording"
+                        class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="text-gray-600">
+                            <path fill="currentColor"
+                                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                            <path fill="currentColor"
+                                d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg>
+                    </button>
+
+                    <!-- Templates -->
+                    <button type="button" @click="viewTemplate()"
+                        class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="text-gray-600">
+                            <path fill="currentColor"
+                                d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                        </svg>
+                    </button>
+
+                    <!-- AI Assist -->
+                    <button v-if="!processingAISuggestions" type="button" @click="getSuggestion()"
+                        class="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            class="text-[#ff5100]">
+                            <path fill="currentColor"
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22c.03-1.99 4-3.08 6-3.08c1.99 0 5.97 1.09 6 3.08c-1.29 1.94-3.5 3.22-6 3.22z" />
+                        </svg>
+                        <span>{{ $t('AI Assist') }}</span>
+                    </button>
+                    <div v-else class="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            class="text-[#ff5100] animate-spin">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"
+                                opacity="0.25" />
+                            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <span class="text-gray-600">{{ $t('Searching...') }}</span>
+                    </div>
+                </div>
+
+                <!-- Send Button -->
+                <button type="submit" :disabled="(formTextInput === null || formTextInput.trim() === '') && !form2.file"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff5100] hover:bg-[#e64900] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg">
+                    <span>{{ $t('Send') }}</span>
+                    <svg v-if="!processingForm" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                        viewBox="0 0 16 16">
+                        <path fill="currentColor"
+                            d="M1.724 1.053a.5.5 0 0 0-.714.545l1.403 4.85a.5.5 0 0 0 .397.354l5.69.953c.268.053.268.437 0 .49l-5.69.953a.5.5 0 0 0-.397.354l-1.403 4.85a.5.5 0 0 0 .714.545l13-6.5a.5.5 0 0 0 0-.894l-13-6.5Z" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        class="animate-spin">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"
+                            opacity="0.25" />
+                        <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                </button>
             </div>
         </div>
     </form>

@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
     import { ref, watchEffect, computed } from 'vue';
     import { router, useForm, Link, usePage } from '@inertiajs/vue3'
     import AlertModal from '@/Components/AlertModal.vue';
@@ -185,5 +185,247 @@
         v-model="showAlert" 
         :label="$t('Clear chat')" 
         :description="$t('Are you sure you want to delete this thread? You can\'t undo this action')" 
+        @confirm="deleteThread" />
+</template> -->
+
+<!-- ========================================== NEW UI CODE ==================================== -->
+
+<script setup>
+import { ref, watchEffect, computed } from 'vue';
+import { router, useForm, Link, usePage } from '@inertiajs/vue3'
+import AlertModal from '@/Components/AlertModal.vue';
+import Dropdown from '@/Components/Dropdown.vue';
+import DropdownItemGroup from '@/Components/DropdownItemGroup.vue';
+import DropdownItem from '@/Components/DropdownItem.vue';
+import FormSelectCombo from '@/Components/FormSelectCombo.vue';
+import FormTextArea from '@/Components/FormTextArea.vue';
+import Modal from '@/Components/Modal.vue';
+import { trans } from 'laravel-vue-i18n';
+
+const props = defineProps(['contact', 'displayContactInfo', 'ticketingIsEnabled', 'ticket', 'addon']);
+
+const accountUser = computed(() => usePage().props.auth.user);
+const showAlert = ref(false);
+const displayContact = ref(props.displayContactInfo);
+const ticketState = ref(null);
+const isOpenModal = ref(false);
+const user = ref({
+    'label': props.ticket?.user ? props.ticket?.user?.full_name : trans('Unassigned'),
+    'value': props.ticket?.user ? props.ticket?.user?.id : 0,
+});
+
+watchEffect(() => {
+    displayContact.value = props.displayContactInfo;
+    ticketState.value = props.ticket?.status;
+});
+
+const emit = defineEmits(['toggleView', 'deleteThread', 'closeThread']);
+
+const toggleView = () => {
+    displayContact.value = !displayContact.value;
+    emit('toggleView', displayContact.value);
+}
+
+const deleteThread = () => {
+    router.visit('/chats/' + props.contact.uuid, {
+        method: 'delete',
+        onFinish: () => {
+            showAlert.value = false
+        }
+    });
+}
+
+const form2 = useForm({
+    'notes': null,
+    'contact': null
+});
+
+const form3 = useForm({
+    'ai_assistant': props.contact?.ai_assistance_enabled,
+});
+
+const changeTicketStatus = (value) => {
+    router.put('/tickets/' + props.contact.uuid + '/update', {
+        'status': value
+    }, {})
+}
+
+const changeTicketAgent = () => {
+    router.put('/tickets/' + props.contact.uuid + '/assign', {
+        'id': user.value.value
+    }, {})
+}
+
+function loadUsers(query, setOptions) {
+    fetch("/team?search=" + query, {
+        headers: { 'Accept': 'application/json' }
+    })
+        .then(response => response.json())
+        .then(result => {
+            setOptions(result.rows);
+        })
+        .catch(error => {
+            console.error("Error fetching agents:", error);
+        });
+}
+
+const submitForm = () => {
+    form2.contact = props.contact.uuid;
+    form2.post('/notes', {
+        preserveState: false,
+        onSuccess: () => {
+            form2.reset();
+            isOpenModal.value = false;
+        }
+    });
+}
+
+const submitForm3 = () => {
+    form3.ai_assistant = !form3.ai_assistant;
+    form3.post('/automation/contact/' + props.contact.uuid, {
+        preserveState: true,
+    });
+}
+</script>
+
+<template>
+    <!-- Main Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <!-- Contact Info -->
+            <div class="flex items-center gap-4 flex-1">
+                <Link href="/chats" class="sm:block md:hidden text-gray-600 hover:text-gray-900">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor"
+                        d="M19 11H7.14l3.63-4.36a1 1 0 1 0-1.54-1.28l-5 6a1.19 1.19 0 0 0-.09.15c0 .05 0 .08-.07.13A1 1 0 0 0 4 12a1 1 0 0 0 .07.36c0 .05 0 .08.07.13a1.19 1.19 0 0 0 .09.15l5 6A1 1 0 0 0 10 19a1 1 0 0 0 .64-.23a1 1 0 0 0 .13-1.41L7.14 13H19a1 1 0 0 0 0-2" />
+                </svg>
+                </Link>
+
+                <div @click="toggleView" class="cursor-pointer">
+                    <img v-if="contact.avatar" class="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100"
+                        :src="contact.avatar">
+                    <div v-else
+                        class="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff5100] to-orange-400 flex items-center justify-center text-white font-semibold text-lg">
+                        {{ contact.full_name.substring(0, 1) }}
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3">
+                        <h2 @click="toggleView"
+                            class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-[#ff5100] transition-colors">
+                            {{ contact.full_name }}
+                        </h2>
+                        <FormSelectCombo v-if="ticketingIsEnabled && accountUser.teams[0]['role'] != 'agent'"
+                            v-model="user" :name="''" :loadOptions="loadUsers" :class="'col-span-1 md:block hidden'"
+                            :placeholder="'Select Agent'" @update:modelValue="changeTicketAgent()" />
+                    </div>
+                    <p @click="toggleView" class="text-sm text-gray-500 cursor-pointer">{{
+                        contact.formatted_phone_number }}</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <button v-if="ticketState === 'open' && ticketingIsEnabled" @click="changeTicketStatus('closed')"
+                    class="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="currentColor"
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                    </svg>
+                    {{ $t('Mark as closed') }}
+                </button>
+
+                <button v-if="ticketState === 'closed' && ticketingIsEnabled" @click="changeTicketStatus('open')"
+                    class="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-[#ff5100] hover:bg-[#e64900] text-white rounded-xl text-sm font-medium transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="currentColor"
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                    {{ $t('Mark as open') }}
+                </button>
+
+                <Dropdown v-if="!displayContact">
+                    <button type="button" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M12 6.75a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5Z" />
+                        </svg>
+                    </button>
+                    <template #items>
+                        <DropdownItemGroup>
+                            <DropdownItem @click="isOpenModal = true;" as="button">{{ $t('Add notes') }}</DropdownItem>
+                            <DropdownItem v-if="ticketState === 'open' && ticketingIsEnabled"
+                                @click="changeTicketStatus('closed')" as="button">{{ $t('Mark as closed') }}
+                            </DropdownItem>
+                            <DropdownItem v-if="ticketState === 'closed' && ticketingIsEnabled"
+                                @click="changeTicketStatus('open')" as="button">{{ $t('Mark as open') }}</DropdownItem>
+                            <DropdownItem @click="showAlert = true" as="button">{{ $t('Clear chat') }}</DropdownItem>
+                        </DropdownItemGroup>
+                    </template>
+                </Dropdown>
+
+                <button v-else @click="toggleView"
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium transition-colors">
+                    {{ $t('Back') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Toggle -->
+    <div v-if="addon == 1" class="bg-white border-b border-gray-200 px-6 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full" :class="form3.ai_assistant ? 'bg-green-500' : 'bg-red-500'"></div>
+                <span class="text-sm font-medium text-gray-700">{{ $t('AI Assistant') }}</span>
+                <span class="text-xs px-2 py-1 rounded-full"
+                    :class="form3.ai_assistant ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                    {{ form3.ai_assistant ? $t('Active') : $t('Inactive') }}
+                </span>
+            </div>
+
+            <button @click="submitForm3()"
+                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                :class="form3.ai_assistant ? 'bg-[#ff5100]' : 'bg-gray-300'">
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                    :class="form3.ai_assistant ? 'translate-x-6' : 'translate-x-1'">
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <Modal :label="$t('Add Note')" :isOpen="isOpenModal">
+        <div class="mt-5">
+            <form @submit.prevent="submitForm()">
+                <FormTextArea v-model="form2.notes" :error="form2.errors.note" :name="''" :class="'col-span-2'" />
+                <div class="mt-6 flex gap-3">
+                    <button type="button" @click.self="isOpenModal = false"
+                        class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">
+                        {{ $t('Cancel') }}
+                    </button>
+                    <button type="submit" :disabled="form2.processing"
+                        :class="['flex-1 px-4 py-3 rounded-xl text-sm font-medium text-white transition-all flex items-center justify-center gap-2',
+                            form2.processing ? 'bg-[#ff5100]/70 cursor-not-allowed' : 'bg-[#ff5100] hover:bg-[#e64900]']">
+                        <svg v-if="form2.processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                            viewBox="0 0 24 24" class="animate-spin">
+                            <path fill="currentColor"
+                                d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z"
+                                opacity=".5" />
+                            <path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z">
+                                <animateTransform attributeName="transform" dur="1s" from="0 12 12"
+                                    repeatCount="indefinite" to="360 12 12" type="rotate" />
+                            </path>
+                        </svg>
+                        <span>{{ $t('Save') }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </Modal>
+
+    <AlertModal v-model="showAlert" :label="$t('Clear chat')"
+        :description="$t('Are you sure you want to delete this thread? You can\'t undo this action')"
         @confirm="deleteThread" />
 </template>
