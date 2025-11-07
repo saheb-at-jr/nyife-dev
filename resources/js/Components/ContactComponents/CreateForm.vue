@@ -399,7 +399,8 @@ const transformOptions = (optionsString) => {
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex gap-4 sticky bottom-0 bg-gradient-to-br from-gray-50 to-orange-50/30 py-6 -mx-8 px-8">
+                <div
+                    class="flex pb-16 gap-4 sticky bottom-4 bg-gradient-to-br from-gray-50 to-orange-50/30 py-6 -mx-8 px-8">
                     <Link href="/contacts"
                         class="flex-1 sm:flex-none px-8 py-3.5 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-white transition-all text-center">
                     {{ $t('Cancel') }}

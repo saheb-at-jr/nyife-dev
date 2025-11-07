@@ -92,7 +92,7 @@ const handleContact = (value) => {
 
 <template>
     <AppLayout>
-        <div class="h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-orange-50/30">
+        <div class="h-[calc(100vh-65px)] bg-gradient-to-br from-gray-50 to-orange-50/30">
             <div class="md:flex md:h-full">
                 <!-- Sidebar -->
                 <div class="md:w-[380px] bg-white shadow-xl md:flex flex-col"
@@ -152,6 +152,7 @@ const handleContact = (value) => {
                             </div>
 
                             <h2 class="text-3xl font-bold text-gray-900 mb-3">{{ $t('Select contact') }}</h2>
+
                             <p class="text-gray-500 mb-8">{{ $t('Choose a contact from the list or create a new one') }}
                             </p>
 
@@ -179,6 +180,7 @@ const handleContact = (value) => {
                                     </span>
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </div>

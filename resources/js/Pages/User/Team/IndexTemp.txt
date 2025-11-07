@@ -1,0 +1,464 @@
+<template>
+    <AppLayout>
+        <div class="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50 p-4 md:p-8">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="p-2 bg-gradient-to-br from-[#ff5100] to-[#ff7100] rounded-xl shadow-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-white">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                    </svg>
+                                </div>
+                                <h1
+                                    class="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                                    {{ $t('Team Management') }}
+                                </h1>
+                            </div>
+                            <p class="text-slate-600 flex items-center gap-2 ml-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="text-[#ff5100]">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="16" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                {{ $t('Add, edit and manage your team members') }}
+                            </p>
+                        </div>
+                        <button @click="openModal()"
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff5100] to-[#ff6a00] text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transform hover:-translate-y-0.5 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="8.5" cy="7" r="4" />
+                                <line x1="20" y1="8" x2="20" y2="14" />
+                                <line x1="23" y1="11" x2="17" y2="11" />
+                            </svg>
+                            {{ $t('Invite User') }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="mb-6">
+                    <div class="relative max-w-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
+                        </svg>
+                        <input type="text" :placeholder="$t('Search team members...')" v-model="params.search"
+                            @input="search"
+                            class="w-full pl-12 pr-12 py-3.5 bg-white border-2 border-slate-200 rounded-xl focus:border-[#ff5100] focus:ring-4 focus:ring-orange-100 outline-none transition-all duration-200 text-slate-700 placeholder-slate-400">
+                        <button v-if="isSearching === false && params.search" @click="clearSearch" type="button"
+                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                        <span v-if="isSearching" class="absolute right-4 top-1/2 transform -translate-y-1/2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                class="animate-spin text-[#ff5100]">
+                                <path fill="currentColor"
+                                    d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z"
+                                    opacity=".5" />
+                                <path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z">
+                                    <animateTransform attributeName="transform" dur="1s" from="0 12 12"
+                                        repeatCount="indefinite" to="360 12 12" type="rotate" />
+                                </path>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Team Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="(member, index) in rows.data" :key="index"
+                        class="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl border-2 border-slate-100 hover:border-[#ff5100]/20 transition-all duration-300 transform hover:-translate-y-1">
+                        <!-- Card Header -->
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff5100] to-[#ff7100] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    {{ member.user.first_name[0] }}{{ member.user.last_name[0] }}
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-slate-800 text-lg">
+                                        {{ member.user.first_name }} {{ member.user.last_name }}
+                                    </h3>
+                                    <span
+                                        :class="['inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium text-white', getRoleBadgeColor(member.role)]">
+                                        {{ $t(member.role) }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="relative" v-if="user.teams[0].role === 'owner' && member.role !== 'owner'">
+                                <button @click="toggleDropdown(member.uuid)"
+                                    class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-slate-400">
+                                        <circle cx="12" cy="12" r="1" />
+                                        <circle cx="12" cy="5" r="1" />
+                                        <circle cx="12" cy="19" r="1" />
+                                    </svg>
+                                </button>
+                                <div v-if="activeDropdown === member.uuid"
+                                    class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-10">
+                                    <button @click="edit(member.uuid, member.role, member.user.email)"
+                                        class="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-blue-500">
+                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                                        </svg>
+                                        {{ $t('Edit') }}
+                                    </button>
+                                    <button @click="openStatusModal(member.uuid)"
+                                        class="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-amber-500">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="8" x2="12" y2="12" />
+                                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                                        </svg>
+                                        {{ $t('Change Status') }}
+                                    </button>
+                                    <button @click="openAlert(member.uuid)"
+                                        class="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center gap-3 text-red-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path
+                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                        {{ $t('Remove User') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2 text-slate-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="text-[#ff5100] flex-shrink-0">
+                                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                </svg>
+                                <span class="text-sm truncate">{{ member.user.email }}</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="text-[#ff5100] flex-shrink-0">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                <span class="text-sm">{{ $t('Updated') }} {{ member.updated_at }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <span v-if="member.status === 'active'"
+                                class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                                {{ $t('Active') }}
+                            </span>
+                            <span v-else
+                                class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                {{ $t('Inactive') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-if="rows.data.length === 0" class="text-center py-16">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-slate-400">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-slate-700 mb-2">{{ $t('No team members found') }}</h3>
+                    <p class="text-slate-500">{{ $t('Try adjusting your search query') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invite/Edit Modal -->
+        <Modal :label="label" :isOpen="isOpenFormModal">
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        {{ $t('Email Address') }}
+                    </label>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                        <input type="email" v-model="form.email" :disabled="formMethod === 'put'"
+                            class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#ff5100] focus:ring-4 focus:ring-orange-100 outline-none transition-all duration-200 disabled:bg-slate-50 disabled:text-slate-500"
+                            :placeholder="$t('user@example.com')">
+                    </div>
+                    <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        {{ $t('Role') }}
+                    </label>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        <select v-model="form.role"
+                            class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#ff5100] focus:ring-4 focus:ring-orange-100 outline-none transition-all duration-200 appearance-none bg-white">
+                            <option value="">{{ $t('Select Role') }}</option>
+                            <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{
+                                option.label }}</option>
+                        </select>
+                    </div>
+                    <p v-if="form.errors.role" class="mt-1 text-sm text-red-600">{{ form.errors.role }}</p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" @click="isOpenFormModal = false"
+                        class="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors">
+                        {{ $t('Cancel') }}
+                    </button>
+                    <button @click="submitForm"
+                        :class="['flex-1 px-4 py-3 bg-gradient-to-r from-[#ff5100] to-[#ff6a00] text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all duration-200 flex items-center justify-center gap-2', { 'opacity-50': form.processing }]"
+                        :disabled="form.processing">
+                        <svg v-if="form.processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                            viewBox="0 0 24 24" class="animate-spin">
+                            <path fill="currentColor"
+                                d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z"
+                                opacity=".5" />
+                            <path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z">
+                                <animateTransform attributeName="transform" dur="1s" from="0 12 12"
+                                    repeatCount="indefinite" to="360 12 12" type="rotate" />
+                            </path>
+                        </svg>
+                        <span v-else>{{ formMethod === 'post' ? $t('Send Invite') : $t('Update') }}</span>
+                    </button>
+                </div>
+            </div>
+        </Modal>
+
+        <!-- Alert Modal Component-->
+        <AlertModal v-model="isOpenAlert" @confirm="() => confirmAlert(deleteAction)" :label="$t('Remove User')"
+            :description="$t('Are you sure you want to remove this team member? All their access will be revoked immediately.')" />
+
+        <!-- Status Change Modal -->
+        <div v-if="isOpenStatusModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            @click.self="isOpenStatusModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all duration-200">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="p-3 bg-amber-100 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-amber-600">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">{{ $t('Change Status') }}</h3>
+                        <p class="text-slate-600 text-sm mt-1">{{ $t('Update user account status') }}</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 mb-6">
+                    {{ $t('Are you sure you want to change the status of this team member?') }}
+                </p>
+                <div class="flex gap-3">
+                    <button @click="isOpenStatusModal = false"
+                        class="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors">
+                        {{ $t('Cancel') }}
+                    </button>
+                    <button @click="confirmStatusChange"
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[#ff5100] to-[#ff6a00] text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all duration-200">
+                        {{ $t('Confirm') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>
+
+<script setup>
+import AppLayout from "./../Layout/App.vue";
+import { ref, computed } from 'vue';
+import { useForm, router, usePage } from "@inertiajs/vue3";
+import Modal from '@/Components/Modal.vue';
+import AlertModal from '@/Components/AlertModal.vue';
+import { useAlertModal } from '@/Composables/useAlertModal';
+import { trans } from 'laravel-vue-i18n';
+import debounce from 'lodash/debounce';
+
+const props = defineProps({ rows: Object, filters: Object });
+const user = computed(() => usePage().props.auth.user);
+const isOpenFormModal = ref(false);
+const isOpenStatusModal = ref(false);
+const formUrl = ref('/team/invite');
+const formMethod = ref('post');
+const label = ref('Invite user');
+const activeDropdown = ref(null);
+const selectedStatusId = ref(null);
+const isSearching = ref(false);
+
+const { isOpenAlert, openAlert, confirmAlert } = useAlertModal();
+
+const form = useForm({
+    email: null,
+    role: null,
+});
+
+const roleOptions = [
+    { value: 'manager', label: trans('Manager') },
+    { value: 'agent', label: trans('Agent') },
+];
+
+const params = ref({
+    search: props.filters?.search,
+});
+
+const openModal = (key, formData = {}) => {
+    label.value = trans('Invite user');
+    formUrl.value = '/team/invite';
+    formMethod.value = 'post';
+    activeDropdown.value = null;
+
+    if (key) {
+        label.value = trans('Update user');
+        formUrl.value = '/team/' + key.id;
+        formMethod.value = 'put';
+        form.email = key.email;
+        form.role = key.role;
+        isOpenFormModal.value = true;
+    } else {
+        form.email = null;
+        form.role = null;
+        isOpenFormModal.value = true;
+    }
+};
+
+const submitForm = () => {
+    if (formMethod.value === 'post') {
+        form.post(formUrl.value, {
+            onFinish: () => {
+                isOpenFormModal.value = false;
+            }
+        });
+    } else {
+        form.put(formUrl.value, {
+            onFinish: () => {
+                isOpenFormModal.value = false;
+            }
+        });
+    }
+};
+
+const deleteAction = (key) => {
+    form.delete('/team/' + key);
+};
+
+const toggleDropdown = (id) => {
+    activeDropdown.value = activeDropdown.value === id ? null : id;
+};
+
+const edit = (id, role, email) => {
+    openModal({ id: id, role: role, email: email });
+};
+
+const getRoleBadgeColor = (role) => {
+    return role === 'manager'
+        ? 'bg-gradient-to-r from-purple-500 to-purple-600'
+        : 'bg-gradient-to-r from-blue-500 to-blue-600';
+};
+
+const clearSearch = () => {
+    params.value.search = null;
+    runSearch();
+};
+
+const search = debounce(() => {
+    isSearching.value = true;
+    runSearch();
+}, 1000);
+
+const runSearch = () => {
+    router.visit('/team', {
+        method: 'get',
+        data: params.value,
+        onFinish: () => {
+            isSearching.value = false;
+        }
+    });
+};
+
+const openStatusModal = (id) => {
+    selectedStatusId.value = id;
+    isOpenStatusModal.value = true;
+    activeDropdown.value = null;
+};
+
+const confirmStatusChange = () => {
+    if (selectedStatusId.value) {
+        form.put('/team/' + selectedStatusId.value + '/status');
+    }
+    isOpenStatusModal.value = false;
+};
+</script>
+
+<style scoped>
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+</style>

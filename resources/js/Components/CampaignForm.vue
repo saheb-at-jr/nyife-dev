@@ -562,7 +562,7 @@ import FormInput from '@/Components/FormInput.vue';
 import FormSelect from '@/Components/FormSelect.vue';
 import WhatsappTemplate from '@/Components/WhatsappTemplate.vue';
 import { ref, computed, onMounted } from 'vue';
-import { Link, useForm } from "@inertiajs/vue3";
+import { Link, router, useForm } from "@inertiajs/vue3";
 import 'vue3-toastify/dist/index.css';
 import { trans } from 'laravel-vue-i18n';
 import Backup from './CrouselSend.vue';
@@ -828,6 +828,14 @@ onMounted(() => {
     ];
 });
 
+const closeModal = () => {
+    showModal.value = false;
+    emit('viewTemplate', false);
+    if (props.isCampaignFlow) {
+        router.visit('/campaigns');
+    }
+}
+
 </script>
 
 <template>
@@ -840,6 +848,13 @@ onMounted(() => {
             <div class="bg-gradient-to-br from-[#ff5100] to-[#ff7433] p-8 text-white relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
                 <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+                <div class="absolute top-8 right-8 z-[9999] ">
+                    <button @click="closeModal"
+                        class="p-1 bg-black/20 hover:bg-black/10 backdrop-blur-sm text-white rounded-lg transition-colors cursor-pointer">
+                        <X class="w-6 h-6 cursor-pointer" />
+                    </button>
+                </div>
+
                 <div class="relative z-10">
                     <div class="flex items-center justify-center mb-3">
                         <Sparkles class="w-8 h-8 animate-pulse" />
@@ -1045,7 +1060,7 @@ onMounted(() => {
                                                     }}
                                                 </span>
                                                 <span v-else class="text-sm text-slate-400">{{ $t('No file chosen')
-                                                    }}</span>
+                                                }}</span>
                                             </div>
                                             <p class="text-xs text-slate-500 flex items-start space-x-2">
                                                 <span class="text-[#ff5100]">ℹ</span>

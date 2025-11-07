@@ -873,7 +873,7 @@ onBeforeUnmount(() => {
                 <div class="flex-1">
                     <h3 class="font-semibold text-red-900 mb-1">{{ $t('Maximum chat limit reached') }}</h3>
                     <p class="text-sm text-red-800">{{ $t(`You have reached the maximum chat limit for your
-                        subscription! Please upgrade to send /receive more messages`) }}</p>
+                        subscription! Please upgrade to send/receive more messages`) }}</p>
                 </div>
             </div>
         </div>
@@ -974,7 +974,7 @@ onBeforeUnmount(() => {
 
             <!-- Send Button -->
             <button type="submit" :disabled="formTextInput === null || formTextInput.trim() === '' || processingForm"
-                class="flex-shrink-0 p-4 bg-[#ff5100] hover:bg-[#e64900] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-2xl transition-all shadow-md hover:shadow-lg">
+                class="flex-shrink-0 p-4 bg-[#ff5100] hover:bg-[#e64900] disabled:bg-primary/50 disabled:cursor-not-allowed rounded-2xl transition-all shadow-md hover:shadow-lg">
                 <svg v-if="!processingForm" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                     viewBox="0 0 16 16" class="text-white">
                     <path fill="currentColor"
@@ -1154,7 +1154,7 @@ onBeforeUnmount(() => {
 
                 <!-- Send Button -->
                 <button type="submit" :disabled="(formTextInput === null || formTextInput.trim() === '') && !form2.file"
-                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff5100] hover:bg-[#e64900] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg">
+                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff5100] hover:bg-[#e64900] disabled:bg-primary/50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg">
                     <span>{{ $t('Send') }}</span>
                     <svg v-if="!processingForm" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                         viewBox="0 0 16 16">

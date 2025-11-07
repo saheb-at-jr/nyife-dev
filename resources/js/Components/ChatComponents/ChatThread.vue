@@ -96,7 +96,7 @@ const loadMoreMessages = async () => {
 import { ref } from 'vue';
 import { default as axios } from 'axios';
 import ChatBubble from '@/Components/ChatComponents/ChatBubble.vue';
-import { ArrowUpToLine } from 'lucide-vue-next';
+import { ArrowUpDown } from 'lucide-vue-next';
 
 const props = defineProps({
     contactId: {
@@ -157,7 +157,7 @@ const loadMoreMessages = async () => {
 
             <button v-else @click="loadMoreMessages"
                 class="inline-flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 hover:border-[#ff5100] rounded-xl text-sm font-medium text-gray-700 hover:text-[#ff5100] shadow-sm hover:shadow-md transition-all">
-                <ArrowUpToLine class="w-4 h-4" />
+                <ArrowUpDown class="w-4 h-4" />
                 <span>{{ $t('Load More Messages') }}</span>
             </button>
         </div>

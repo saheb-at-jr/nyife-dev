@@ -605,7 +605,7 @@ export default {
                 <div class="flex items-center justify-between mb-1">
                     <h3 class="font-semibold text-gray-900 truncate">{{ contact.full_name }}</h3>
                     <span class="text-xs text-gray-500 ml-2 flex-shrink-0">{{ formatTime(contact?.last_chat?.created_at)
-                    }}</span>
+                        }}</span>
                 </div>
 
                 <div v-if="contact?.last_chat?.deleted_at === null" class="flex items-center justify-between">

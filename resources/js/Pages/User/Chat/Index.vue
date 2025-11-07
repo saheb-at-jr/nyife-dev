@@ -158,8 +158,7 @@ onMounted(() => {
 
 <template>
     <AppLayout v-slot:default="slotProps">
-        <div
-            class="max-w-[calc(100vw-265px)] md:h-[calc(100vh-65px)] md:flex md:flex-grow bg-gradient-to-br from-gray-50 to-orange-50/20">
+        <div class="md:h-[calc(100vh-65px)] md:flex md:flex-grow bg-gradient-to-br from-gray-50 to-orange-50/20">
             <!-- Chat List Sidebar -->
             <div class="md:w-[380px] md:flex flex-col bg-white shadow-xl border-r" :class="contact ? 'hidden' : ''">
                 <ChatTable :rows="rows" :filters="props.filters" :rowCount="props.rowCount"
