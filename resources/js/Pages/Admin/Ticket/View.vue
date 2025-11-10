@@ -83,7 +83,7 @@
                             <span>{{ formatDateTime(props.ticket.created_at) }}</span>
                         </div>
                         <div v-if="props.ticket.status === 'open' || props.ticket.status === 'pending'"
-                            class="flex grid grid-cols-2 space-x-2 mt-4">
+                            class="grid grid-cols-2 space-x-2 mt-4">
                             <button @click="changeTicketStatus('closed')"
                                 class="mb-2 rounded-md bg-black px-3 py-2 text-sm text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{{
                                     $t('Close ticket') }}</button>
