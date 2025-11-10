@@ -65,7 +65,7 @@ const submitForm = async () => {
                 {{ props.activeTeam.name }}
               </span>
               <span class="truncate text-xs">{{ props.activeTeam?.role ?? 'Current'
-              }}</span>
+                }}</span>
             </div>
             <ChevronsUpDown class="ml-auto" />
           </SidebarMenuButton>
@@ -76,7 +76,8 @@ const submitForm = async () => {
             {{ $t('Organizations') }}
           </DropdownMenuLabel>
           <DropdownMenuItem v-for="(team, index) in props.teams" :key="team.name"
-            @click.stop="selectOrganization(team.uuid)" class="gap-2 p-2 cursor-pointer">
+            @click.stop="selectOrganization(team.uuid)" class="gap-2 p-2 cursor-pointer"
+            :class="props.activeTeam.id === team.uuid ? `bg-black/5` : ``">
             <div class="flex size-6 items-center justify-center rounded-sm border">
               <component :is="team.logo" class="size-4 shrink-0" />
             </div>

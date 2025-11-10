@@ -2,7 +2,7 @@
     <AppLayout>
         <div
             class="bg-white md:bg-inherit pt-0 px-4 md:pt-8 md:p-8 rounded-[5px] text-[#000] overflow-y-scroll capitalize">
-            <div class="md:flex justify-between mt-8 md:mt-0 hidden">
+            <div class="flex justify-between mt-8 md:mt-0 flex-wrap gap-4">
                 <!-- <div>
                     <h2 class="text-xl mb-1">{{ $t('Campaigns') }}</h2>
                     <p class="mb-6 md:flex items-center text-sm leading-6 text-gray-600 hidden">
@@ -16,7 +16,7 @@
 
                 <div class="mb-3 w-full">
 
-                    <div class="w-full flex items-center justify-between">
+                    <div class="w-full flex items-center justify-between flex-wrap gap-4">
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
                                 <div
@@ -27,7 +27,7 @@
                             </h1>
                             <p class="text-gray-600">{{ $t('Manage your campaigns') }}</p>
                         </div>
-                        <div class="w-full flex justify-end mb-6">
+                        <div class="flex justify-end mb-6">
                             <div
                                 class="inline-flex bg-white border border-gray-200 rounded-2xl shadow-md overflow-hidden">
                                 <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
@@ -41,9 +41,7 @@
                                 </button>
                             </div>
                         </div>
-
                     </div>
-
                 </div>
             </div>
 

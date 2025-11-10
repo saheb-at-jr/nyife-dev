@@ -135,6 +135,13 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                     </div>
 
                     <div class="flex flex-wrap gap-2">
+                        <Link href="/campaigns"
+                            class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center space-x-2">
+                        <ArrowLeft class="w-4 h-4" />
+                        <span>{{ $t('Back') }}</span>
+
+                        </Link>
+
                         <a :href="'/campaigns/export/' + props.campaign.uuid"
                             class="group inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-md border-2 border-gray-200 transition-all duration-300 hover:shadow-lg hover:border-gray-300 hover:scale-105 active:scale-95">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
@@ -147,16 +154,6 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             {{ $t('Export as CSV') }}
                         </a>
 
-                        <Link href="/campaigns"
-                            class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5100] to-[#ff7433] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-all duration-300 hover:shadow-xl hover:shadow-orange-300 hover:scale-105 active:scale-95">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="transition-transform group-hover:-translate-x-1">
-                            <line x1="19" y1="12" x2="5" y2="12" />
-                            <polyline points="12 19 5 12 12 5" />
-                        </svg>
-                        {{ $t('Back') }}
-                        </Link>
                     </div>
                 </div>
             </div>
@@ -184,7 +181,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_message_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{
                                         $t('Messages') }}
                                     </h4>
                                 </div>
@@ -209,13 +206,13 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_sent_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{ $t('Sent') }}
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t('Sent') }}
                                     </h4>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="group relative col-span-2 lg:col-span-1">
+                        <div class="group relative">
                             <div
                                 class="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-green-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
                             </div>
@@ -232,14 +229,13 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_delivered_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{
                                         $t('Delivered')
                                         }}</h4>
                                 </div>
                             </div>
 
                         </div>
-
 
                         <div class="group relative">
                             <div
@@ -258,7 +254,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_read_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{ $t('Read') }}
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t('Read') }}
                                     </h4>
                                 </div>
                             </div>
@@ -284,9 +280,8 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_failed_count }}</h2>
-                                    <h4 class="text-xs text-gray-600 font-medium capitalize md:text-sm">{{ $t(`Rejected
-                                        by
-                                        meta`) }}</h4>
+                                    <h4 class="text-xs text-gray-600 font-medium capitalize">{{ $t(`Rejected
+                                        by meta`) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -439,6 +434,7 @@ import AppLayout from "./../Layout/App.vue";
 import CampaignLogTable from '@/Components/Tables/CampaignLogTable.vue';
 import WhatsappTemplate from '@/Components/WhatsappTemplate.vue';
 import { Link } from "@inertiajs/vue3";
+import { ArrowLeft } from "lucide-vue-next";
 
 const props = defineProps(['campaign', 'rows', 'filters']);
 </script>

@@ -201,6 +201,7 @@ import FormSelectCombo from '@/Components/FormSelectCombo.vue';
 import FormTextArea from '@/Components/FormTextArea.vue';
 import Modal from '@/Components/Modal.vue';
 import { trans } from 'laravel-vue-i18n';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps(['contact', 'displayContactInfo', 'ticketingIsEnabled', 'ticket', 'addon']);
 
@@ -366,8 +367,9 @@ const submitForm3 = () => {
                 </Dropdown>
 
                 <button v-else @click="toggleView"
-                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium transition-colors">
-                    {{ $t('Back') }}
+                    class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center space-x-2">
+                    <ArrowLeft class="w-4 h-4" />
+                    <span>{{ $t('Back') }}</span>
                 </button>
             </div>
         </div>

@@ -24,8 +24,9 @@
                 </div>
                 <div class="space-x-2 flex items-center">
                     <Link href="/campaigns"
-                        class="bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:block hidden">
-                    {{ $t('Back') }}</Link>
+                        class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center space-x-2">
+                    <ArrowLeft class="w-4 h-4" />
+                    <span>{{ $t('Back') }}</span></Link>
                 </div>
             </div>
             <CampaignForm :templates="templates" :contactGroups="contactGroups" :settings="settings" />
@@ -36,7 +37,7 @@
 import AppLayout from "./../Layout/App.vue";
 import CampaignForm from '@/Components/CampaignForm.vue';
 import { Link } from "@inertiajs/vue3";
-import { Megaphone } from "lucide-vue-next";
+import { ArrowLeft, Megaphone } from "lucide-vue-next";
 import 'vue3-toastify/dist/index.css';
 const props = defineProps(['templates', 'contactGroups', 'settings']);
 </script>

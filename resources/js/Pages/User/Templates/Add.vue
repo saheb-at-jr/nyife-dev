@@ -1,4 +1,5 @@
-<template>
+<!-- UI Template -->
+<!-- <template>
   <AppLayout>
     <div class="px-4 md:px-0 flex flex-col bg-white border-l py-4 text-[#000] md:overflow-y-hidden">
       <div class="flex justify-between md:px-8 border-b pb-4">
@@ -11,7 +12,7 @@
             </svg>
             <span class="ml-1 mt-1">{{
               $t("Create template for review")
-              }}</span>
+            }}</span>
           </p>
         </div>
         <div class="space-x-2 flex items-center">
@@ -69,7 +70,7 @@
                   :disabled="isLoading">
                 <span v-if="!isLoading">{{
                   $t("Connect Whatsapp account")
-                }}</span>
+                  }}</span>
                 </Link>
               </div>
             </div>
@@ -78,7 +79,7 @@
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700">{{
                 $t("Select Template Type")
-                }}</label>
+              }}</label>
               <select v-model="selectedType"
                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                 <option value="template">Template</option>
@@ -115,7 +116,6 @@
                   </div>
                 </div>
 
-                <!-- Header  -->
                 <h2 class="text-slate-600">
                   {{ $t("Header") }}
                   <span class="text-xs">({{ $t("Optional") }})</span>
@@ -181,7 +181,7 @@
                               <div class="flex items-center space-x-2">
                                 <span class="text-sm">{{
                                   form.header.example.name
-                                  }}</span>
+                                }}</span>
                                 <button @click="removeFile()">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                                     <path fill="currentColor" fill-rule="evenodd"
@@ -240,7 +240,7 @@
                               <div class="flex items-center space-x-2">
                                 <span class="text-sm">{{
                                   form.header.example.name
-                                  }}</span>
+                                }}</span>
                                 <button @click="removeFile()">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                                     <path fill="currentColor" fill-rule="evenodd"
@@ -299,7 +299,7 @@
                               <div class="flex items-center space-x-2">
                                 <span class="text-sm">{{
                                   form.header.example.name
-                                  }}</span>
+                                }}</span>
                                 <button @click="removeFile()">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                                     <path fill="currentColor" fill-rule="evenodd"
@@ -338,7 +338,6 @@
                   </div>
                 </div>
 
-                <!-- footer  -->
                 <h2 class="text-slate-600">
                   {{ $t("Footer description") }}
                   <span class="text-xs">({{ $t("Optional") }})</span>
@@ -354,7 +353,7 @@
                       :showLabel="false" :type="'text'" :textAreaRows="2" :class="'sm:col-span-6'" />
                     <span class="text-xs">{{ $t("Characters") }}: {{ footerCharacterCount }}/{{
                       footerCharacterLimit
-                    }}</span>
+                      }}</span>
                   </div>
                 </div>
 
@@ -392,7 +391,7 @@
                     <div class="flex items-center justify-between pb-1">
                       <span class="text-sm">{{
                         $t(formatText(button.type))
-                        }}</span>
+                      }}</span>
                       <button @click="removeButton(index)" class="bg-slate-200 hover:shadow rounded-full p-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
                           <path fill="currentColor" fill-rule="evenodd"
@@ -438,10 +437,8 @@
                             " @change="
                               form.authentication_button.otp_type = option.value
                               " />
-                          <!-- Outer Circle -->
                           <div
                             class="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center transition">
-                            <!-- Inner Dot -->
                             <div class="w-2.5 h-2.5 rounded-full bg-primary transition" v-if="
                               form.authentication_button.otp_type ===
                               option.value
@@ -454,7 +451,7 @@
                         ">
                         <label class="text-gray-900 cursor-pointer">{{
                           $t(option.label)
-                          }}</label>
+                        }}</label>
                         <div class="text-[11px] leading-tight text-gray-500">
                           {{ $t(option.description) }}
                         </div>
@@ -524,7 +521,7 @@
                         !form.body.add_security_recommendation
                         ">
                         <label :for="name" class="text-gray-900 cursor-pointer">{{ $t("Add security recommendation")
-                          }}</label>
+                        }}</label>
                       </div>
                     </div>
                     <div class="relative flex mb-2">
@@ -535,7 +532,7 @@
                       <div class="text-sm leading-tight cursor-pointer"
                         @click="form.code_expiration = !form.code_expiration">
                         <label :for="name" class="text-gray-900 cursor-pointer">{{ $t("Add expiry time for the code")
-                          }}</label>
+                        }}</label>
                         <div class="text-[11px] text-slate-600">
                           {{
                             $t(
@@ -607,10 +604,8 @@
                   <div class="flex w-full mb-4">
                     <p class="w-3/4 text-slate-600 text-[11px]">
                       {{
-                        $t(
-                          `If you don't set a custom validity period, the standard 10 minutes WhatsApp message validity
-                      period will be applied.`
-                        )
+                        $t(`If you don't set a custom validity period, the standard 10 minutes WhatsApp message validity
+                      period will be applied.`)
                       }}
                     </p>
                     <div class="w-1/4">
@@ -642,9 +637,7 @@
                 </h2>
                 <span class="text-slate-600 text-xs">
                   {{
-                    $t(
-                      "Enter the text for your message in the language that you've selected"
-                    )
+                    $t("Enter the text for your message in the language that you've selected")
                   }}
                 </span>
 
@@ -654,7 +647,6 @@
 
                 <div>
                   <div v-for="(card, cardIndex) in cards" :key="cardIndex" class="p-4 border rounded-lg mb-6 shadow-sm">
-                    <!-- Card Header -->
                     <div class="flex justify-between items-center mb-2">
                       <h3 class="text-lg font-semibold">
                         Card {{ cardIndex + 1 }}
@@ -664,14 +656,6 @@
                       </button>
                     </div>
 
-                    <!-- <label class="text-slate-600">Header Image Handle</label>
-  <input
-    v-model="card.components[0].example.header_handle[0]"
-    type="text"
-    class="w-full border rounded p-2 mb-4"
-    placeholder="Enter header_handle string"
-  /> -->
-
                     <div class="container mb-4">
                       <input type="file" accept="image/*" @change="(e) => onFileChange(e, cardIndex)" />
                       <p v-if="uploadingIndex === cardIndex" class="text-sm text-blue-600 mt-1">
@@ -679,12 +663,10 @@
                       </p>
                     </div>
 
-                    <!-- Body Text -->
                     <label class="text-slate-600">Body Text</label>
                     <textarea v-model="card.components[1].text" class="w-full border rounded p-2 mb-4"
                       placeholder="Enter body text"></textarea>
 
-                    <!-- Buttons... (unchanged) -->
                     <div>
                       <h4 class="text-slate-600">Buttons</h4>
                       <div v-for="(btn, btnIndex) in card.components[2].buttons" :key="btnIndex"
@@ -715,13 +697,6 @@
                     class="bg-green-500 text-white px-4 py-2 rounded mr-4">
                     + Add Card
                   </button>
-
-                  <!-- <button
-                    @click="CardsubmitForm"
-                    class="bg-blue-500 text-white px-4 py-2 rounded"
-                  >
-                    {{ $t("Submit Template") }}
-                  </button> -->
                 </div>
               </div>
             </div>
@@ -749,23 +724,19 @@
                 <BodyTextArea v-model="flowform.body.text" @updateExamples="updateBodyExamples" />
               </div>
 
-              <!-- Button Text Field -->
               <FormInput v-model="flowform.buttonText" :name="$t('Button Text')" type="text" class="mb-4" />
 
-              <!-- JSON Input Field -->
               <label class="block text-sm font-medium text-gray-700 mb-1">{{
                 $t("Flow JSON")
-                }}</label>
+              }}</label>
               <textarea v-model="flowform.flowJson" rows="6" class="w-full p-3 border rounded mb-4"
                 placeholder="Paste the JSON here"></textarea>
 
-              <!-- Create Form Button -->
               <button @click="showFlowBuilder = true"
                 class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                 {{ $t("Create Form") }}
               </button>
 
-              <!-- Note -->
               <p class="text-sm text-gray-500 mt-2">
                 {{
                   $t(
@@ -774,13 +745,10 @@
                 }}
               </p>
 
-              <!-- Submit Button -->
               <button @click="FlowSubmitForm" class="bg-green-600 text-white px-4 py-2 rounded mt-4 hover:bg-green-700">
                 {{ $t("Submit Flow Template") }}
               </button>
 
-              <!-- Modal for Flow Playground -->
-              <!-- Modal opens inside app -->
               <div v-if="showFlowBuilder"
                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div class="bg-white max-w-lg w-full p-6 rounded-lg relative">
@@ -881,26 +849,25 @@
               </span>
               <span v-if="form.authentication_button.otp_type == 'one_tap'">{{
                 form.authentication_button.autofill_text
-                }}</span>
+              }}</span>
             </div>
           </div>
         </div>
 
         <div v-if="selectedType === 'carousel'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20 overflow-y-auto">
-          <!-- Message Preview -->
-          <div class="w-full max-w-sm mx-auto p-4 bg-[#ece5dd] rounded shadow-md">
-            <!-- Message Bubble -->
+          <div
+            class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left w-[25em]">
             <div class="bg-white rounded-lg rounded-tl-none p-4 mb-4">
               <p class="text-sm text-gray-800 whitespace-pre-wrap">
                 {{ cardform.body.text || 'Your message preview will appear here...' }}
               </p>
             </div>
 
-            <!-- Carousel Cards Preview -->
+            {{ console.log("cards : ", JSON.stringify(cards, null, 2)) }}
+
             <div class="overflow-x-auto flex space-x-4">
-              <div v-for="(card, index) in cleanedCards" :key="index"
+              <div v-for="(card, index) in cards" :key="index"
                 class="min-w-[250px] bg-white rounded-lg shadow-md p-4 flex-shrink-0">
-                <!-- Assume card.components[0] is body text -->
                 <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
                   <p class="text-sm text-gray-700">
                     {{
@@ -909,7 +876,6 @@
                   </p>
                 </div>
 
-                <!-- Buttons -->
                 <div v-if="card.components.find(c => c.type === 'buttons')" class="flex flex-col space-y-2 mt-2">
                   <button v-for="(btn, btnIndex) in card.components.find(c => c.type === 'buttons')?.buttons"
                     :key="btnIndex"
@@ -972,8 +938,684 @@
       </div>
     </Modal>
   </AppLayout>
+</template> -->
+
+<template>
+  <AppLayout>
+    <div class="h-[calc(100vh-65px)] bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50 overflow-hidden">
+      <!-- Header -->
+      <div class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+          <div class="flex items-center justify-between">
+            <!-- Left: Title and Info -->
+            <div class="flex items-center space-x-4">
+              <div
+                class="w-12 h-12 bg-gradient-to-br from-[#ff5100] to-[#ff6422] rounded-xl flex items-center justify-center shadow-lg">
+                <FileText class="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-slate-800">{{ $t("New Template") }}</h2>
+                <p class="flex items-center text-sm text-slate-600 mt-1">
+                  <span>{{ $t("Create template for review") }}</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="flex items-center space-x-3">
+              <Link href="/templates"
+                class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center space-x-2">
+              <ArrowLeft class="w-4 h-4" />
+              <span>{{ $t("Back") }}</span>
+              </Link>
+
+              <button v-if="selectedType === 'template'" @click="submitForm()" type="button"
+                class="px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                :class="isFormValid ? 'bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white' : 'bg-slate-200 text-slate-400'"
+                :disabled="!isFormValid || isLoading">
+                <template v-if="!isLoading">
+                  <Send class="w-4 h-4" />
+                  <span>{{ $t("Submit Template") }}</span>
+                </template>
+                <template v-else>
+                  <Loader2 class="w-5 h-5 animate-spin" />
+                  <span>{{ $t("Creating...") }}</span>
+                </template>
+              </button>
+
+              <button v-if="selectedType === 'carousel'" @click="CardsubmitForm"
+                class="px-6 py-2.5 bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center space-x-2">
+                <Send class="w-4 h-4" />
+                <span>{{ $t("Submit Template") }}</span>
+              </button>
+
+              <button v-if="selectedType === 'flow'" @click="FlowSubmitForm"
+                class="px-6 py-2.5 bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center space-x-2">
+                <Send class="w-4 h-4" />
+                <span>{{ $t("Submit Template") }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex h-[calc(100vh-152px)]">
+        <!-- Left Panel - Form -->
+        <div class="w-full lg:w-1/2 overflow-y-auto">
+          <!-- Not Connected State -->
+          <div v-if="!settings?.whatsapp" class="p-8 flex items-center justify-center min-h-full">
+            <div class="max-w-md w-full">
+              <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-200 relative overflow-hidden">
+                <div
+                  class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ff5100]/10 to-transparent rounded-full -mr-16 -mt-16">
+                </div>
+
+                <div class="relative z-10">
+                  <div
+                    class="w-20 h-20 bg-gradient-to-br from-[#ff5100] to-[#ff6422] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <MessageSquare class="w-10 h-10 text-white" />
+                  </div>
+
+                  <h3 class="text-2xl font-bold text-center mb-3 text-slate-800">
+                    {{ $t('Connect WhatsApp') }}
+                  </h3>
+                  <p class="text-center text-slate-600 mb-6 leading-relaxed">
+                    {{ $t('You need to connect your WhatsApp account first before you can create a template.') }}
+                  </p>
+
+                  <Link href="/settings/whatsapp"
+                    class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02]">
+                  <Zap class="w-5 h-5" />
+                  <span>{{ $t('Connect Whatsapp account') }}</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Content -->
+          <div v-else class="p-6 lg:p-8 space-y-6">
+            <!-- Template Type Selector -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
+              <div class="flex items-center space-x-2 mb-4">
+                <Layers class="w-5 h-5 text-[#ff5100]" />
+                <h4 class="font-semibold text-slate-800">{{ $t("Template Type") }}</h4>
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <button @click="selectedType = 'template'"
+                  class="p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2"
+                  :class="selectedType === 'template' ? 'border-[#ff5100] bg-[#ff5100]/5' : 'border-slate-200 hover:border-slate-300'">
+                  <FileText :class="selectedType === 'template' ? 'text-[#ff5100]' : 'text-slate-400'"
+                    class="w-6 h-6" />
+                  <span class="text-sm font-medium"
+                    :class="selectedType === 'template' ? 'text-[#ff5100]' : 'text-slate-600'">Template</span>
+                </button>
+
+                <button @click="selectedType = 'carousel'"
+                  class="p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2"
+                  :class="selectedType === 'carousel' ? 'border-[#ff5100] bg-[#ff5100]/5' : 'border-slate-200 hover:border-slate-300'">
+                  <Layers :class="selectedType === 'carousel' ? 'text-[#ff5100]' : 'text-slate-400'" class="w-6 h-6" />
+                  <span class="text-sm font-medium"
+                    :class="selectedType === 'carousel' ? 'text-[#ff5100]' : 'text-slate-600'">Carousel</span>
+                </button>
+
+                <button @click="selectedType = 'flow'"
+                  class="p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2"
+                  :class="selectedType === 'flow' ? 'border-[#ff5100] bg-[#ff5100]/5' : 'border-slate-200 hover:border-slate-300'">
+                  <Workflow :class="selectedType === 'flow' ? 'text-[#ff5100]' : 'text-slate-400'" class="w-6 h-6" />
+                  <span class="text-sm font-medium"
+                    :class="selectedType === 'flow' ? 'text-[#ff5100]' : 'text-slate-600'">Flow</span>
+                </button>
+              </div>
+            </div>
+            <!-- Template Form -->
+            <div v-if="selectedType === 'template'" class="space-y-4">
+              <!-- Basic Details Card -->
+              <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-5">
+                <div class="flex items-center space-x-2 mb-4">
+                  <Settings class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">Basic Details</h4>
+                </div>
+
+                <FormInput v-model="form.name" :name="$t('Name')" :type="'text'" @input="handleNameInput"
+                  @keydown.space.prevent="addUnderscore" :class="'w-full'" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormSelect v-model="form.category" :options="categoryOptions" :name="$t('Category')"
+                    :placeholder="$t('Select category')" />
+                  <FormSelect v-model="form.language" :options="langOptions" :name="$t('Language')"
+                    :placeholder="$t('Select language')" />
+                </div>
+              </div>
+
+              <!-- Body Section (for UTILITY and MARKETING) -->
+              <div v-if="form.category === 'UTILITY' || form.category === 'MARKETING'"
+                class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <FileText class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Body") }}</h4>
+                    <span
+                      class="px-2 py-1 bg-[#ff5100]/10 text-[#ff5100] text-xs font-medium rounded-full">Required</span>
+                  </div>
+                </div>
+                <p class="text-sm text-slate-600">
+                  {{ $t("Enter the text for your message in the language that you've selected") }}
+                </p>
+                <BodyTextArea v-model="form.body.text" @updateExamples="updateBodyExamples" />
+              </div>
+
+              <!-- Header Section -->
+              <div v-if="form.category === 'UTILITY' || form.category === 'MARKETING'"
+                class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <ImageIcon class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Header") }}</h4>
+                    <span class="px-2 py-1 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">Optional</span>
+                  </div>
+                </div>
+                <p class="text-sm text-slate-600">
+                  {{ $t("Add a title or choose which type of media you'll use for this header") }}
+                </p>
+
+                <!-- Header Type Selector -->
+                <div class="grid grid-cols-4 gap-2 p-2 bg-slate-50 rounded-xl">
+                  <button @click="changeHeaderType('TEXT')"
+                    class="py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+                    :class="form.header.format === 'TEXT' ? 'bg-white shadow-md text-[#ff5100]' : 'text-slate-600 hover:bg-white/50'">
+                    {{ $t("Text") }}
+                  </button>
+                  <button @click="changeHeaderType('IMAGE')"
+                    class="py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+                    :class="form.header.format === 'IMAGE' ? 'bg-white shadow-md text-[#ff5100]' : 'text-slate-600 hover:bg-white/50'">
+                    {{ $t("Image") }}
+                  </button>
+                  <button @click="changeHeaderType('VIDEO')"
+                    class="py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+                    :class="form.header.format === 'VIDEO' ? 'bg-white shadow-md text-[#ff5100]' : 'text-slate-600 hover:bg-white/50'">
+                    {{ $t("Video") }}
+                  </button>
+                  <button @click="changeHeaderType('DOCUMENT')"
+                    class="py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+                    :class="form.header.format === 'DOCUMENT' ? 'bg-white shadow-md text-[#ff5100]' : 'text-slate-600 hover:bg-white/50'">
+                    {{ $t("Document") }}
+                  </button>
+                </div>
+
+                <!-- Header Content -->
+                <div v-if="form.header.format === 'TEXT'">
+                  <HeaderTextArea v-model="form.header.text" :customValues="form.header.example"
+                    @updateExamples="updateHeaderExamples" />
+                </div>
+
+                <!-- File Upload for IMAGE/VIDEO/DOCUMENT -->
+                <div v-else
+                  class="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-[#ff5100] transition-colors">
+                  <input type="file" class="sr-only"
+                    :accept="form.header.format === 'IMAGE' ? '.jpg, .png' : form.header.format === 'VIDEO' ? '.mp4' : '.pdf'"
+                    :id="`file-upload-${form.header.format}`" @change="handleFileUpload($event)" />
+
+                  <div v-if="form.header.example"
+                    class="flex items-center justify-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                    <component
+                      :is="form.header.format === 'IMAGE' ? ImageIcon : form.header.format === 'VIDEO' ? Video : FileIcon"
+                      class="w-6 h-6 text-[#ff5100]" />
+                    <span class="text-sm font-medium text-slate-700">{{ form.header.example.name }}</span>
+                    <button @click="removeFile()" class="p-1 hover:bg-slate-200 rounded-full transition-colors">
+                      <X class="w-4 h-4 text-slate-600" />
+                    </button>
+                  </div>
+
+                  <label v-else :for="`file-upload-${form.header.format}`"
+                    class="cursor-pointer flex flex-col items-center space-y-3">
+                    <component
+                      :is="form.header.format === 'IMAGE' ? ImageIcon : form.header.format === 'VIDEO' ? Video : FileIcon"
+                      class="w-12 h-12 text-slate-400" />
+                    <span class="text-sm font-medium text-slate-600">
+                      {{ $t("Provide examples of the variables or media in the header") }}
+                    </span>
+                    <span class="text-xs text-slate-500">
+                      {{ form.header.format === 'IMAGE' ? 'PNG or JPG files only' :
+                        form.header.format === 'VIDEO' ? 'MP4 files only' : 'PDF files only' }}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Footer Section -->
+              <div v-if="form.category === 'UTILITY' || form.category === 'MARKETING'"
+                class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <AlignLeft class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Footer") }}</h4>
+                    <span class="px-2 py-1 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">Optional</span>
+                  </div>
+                </div>
+                <p class="text-sm text-slate-600">
+                  {{ $t("Add a short line of text to the bottom of your message template") }}
+                </p>
+                <FormTextArea v-model="form.footer.text" @input="characterCount('footer')" :name="$t('Footer text')"
+                  :showLabel="false" :textAreaRows="2" />
+                <span class="text-xs text-slate-500">{{ $t("Characters") }}: {{ footerCharacterCount }}/{{
+                  footerCharacterLimit }}</span>
+              </div>
+
+              <!-- Buttons Section -->
+              <div v-if="form.category === 'UTILITY' || form.category === 'MARKETING'"
+                class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <Zap class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Buttons") }}</h4>
+                    <span class="px-2 py-1 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">Optional</span>
+                  </div>
+                </div>
+                <p class="text-sm text-slate-600">
+                  {{ $t("Create buttons that let customers respond to your message or take action") }}
+                </p>
+
+                <!-- Button Add Options -->
+                <div class="grid grid-cols-2 gap-3">
+                  <button @click="addButton('call')"
+                    class="flex items-center justify-center space-x-2 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-200 text-sm font-medium text-slate-700">
+                    <Phone class="w-4 h-4" />
+                    <span>{{ $t("Call phone number (1)") }}</span>
+                  </button>
+                  <button @click="addButton('website')"
+                    class="flex items-center justify-center space-x-2 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-200 text-sm font-medium text-slate-700">
+                    <Link2 class="w-4 h-4" />
+                    <span>{{ $t("Visit website (2)") }}</span>
+                  </button>
+                  <button @click="addButton('offer')"
+                    class="flex items-center justify-center space-x-2 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-200 text-sm font-medium text-slate-700">
+                    <Copy class="w-4 h-4" />
+                    <span>{{ $t("Copy offer code (1)") }}</span>
+                  </button>
+                  <button @click="addButton('custom')"
+                    class="flex items-center justify-center space-x-2 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-200 text-sm font-medium text-slate-700">
+                    <MousePointerClick class="w-4 h-4" />
+                    <span>{{ $t("Custom button (6)") }}</span>
+                  </button>
+                </div>
+
+                <!-- Added Buttons List -->
+                <div v-if="form.buttons.length > 0" class="space-y-3">
+                  <div v-for="(button, index) in form.buttons" :key="index"
+                    class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                      <span class="text-sm font-medium text-slate-700">{{ $t(formatText(button.type)) }}</span>
+                      <button @click="removeButton(index)"
+                        class="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors">
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <FormInput v-model="button.text" :name="$t('Button text')" :type="'text'" :labelClass="'mb-0'" />
+                      <FormInput v-if="button.type === 'URL'" v-model="button.url" :name="$t('Website url')"
+                        :type="'url'" :labelClass="'mb-0'" />
+                      <FormInput v-if="button.type === 'PHONE_NUMBER'" v-model="button.country" :name="$t('Country')"
+                        :type="'text'" :labelClass="'mb-0'" />
+                      <FormInput v-if="button.type === 'PHONE_NUMBER'" v-model="button.phone_number"
+                        :name="$t('Phone number')" :type="'text'" :labelClass="'mb-0'" />
+                      <FormInput v-if="button.type === 'copy_code'" v-model="button.example" :name="$t('Sample code')"
+                        :type="'text'" :labelClass="'mb-0'" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Authentication Category Sections -->
+              <div v-if="form.category === 'AUTHENTICATION'" class="space-y-6">
+                <!-- Code Delivery Setup -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <Shield class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Code delivery setup") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">
+                    {{ $t("Choose how customers send the code from WhatsApp to your app.") }}
+                  </p>
+
+                  <div class="space-y-3">
+                    <div v-for="option in codeDeliveryOptions" :key="option.value"
+                      class="p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer"
+                      :class="form.authentication_button.otp_type === option.value ? 'border-[#ff5100] bg-[#ff5100]/5' : 'border-slate-200 hover:border-slate-300'"
+                      @click="form.authentication_button.otp_type = option.value">
+                      <div class="flex items-start space-x-3">
+                        <div class="mt-0.5">
+                          <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                            :class="form.authentication_button.otp_type === option.value ? 'border-[#ff5100]' : 'border-slate-400'">
+                            <div v-if="form.authentication_button.otp_type === option.value"
+                              class="w-2.5 h-2.5 rounded-full bg-[#ff5100]"></div>
+                          </div>
+                        </div>
+                        <div class="flex-1">
+                          <label class="font-medium text-slate-800 cursor-pointer">{{ $t(option.label) }}</label>
+                          <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ $t(option.description) }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- App Setup (for one_tap and zero_tap) -->
+                <div v-if="form.authentication_button.otp_type !== 'copy_code'"
+                  class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <Smartphone class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("App setup") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">{{ $t("You can add up to 5 apps.") }}</p>
+
+                  <div v-for="(item, index) in form.authentication_button.supported_apps" :key="index"
+                    class="flex gap-3 p-4 bg-slate-50 rounded-xl">
+                    <FormInput v-model="form.authentication_button.supported_apps[index].package_name"
+                      :name="$t('Package name')" :type="'text'" :class="'flex-1'" :labelClass="'mb-0'" />
+                    <FormInput v-model="form.authentication_button.supported_apps[index].signature_hash"
+                      :name="$t('App signature hash')" :type="'text'" :class="'flex-1'" :labelClass="'mb-0'" />
+                    <button v-if="form.authentication_button.supported_apps.length > 1"
+                      @click="removeSupportedApp(index)"
+                      class="mt-7 p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors">
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <button v-if="form.authentication_button.supported_apps.length < 5" @click="addSupportedApp()"
+                    class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center justify-center space-x-2">
+                    <Plus class="w-4 h-4" />
+                    <span>{{ $t("Add another app") }}</span>
+                  </button>
+                </div>
+
+                <!-- Content Options -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <FileText class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Content") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">
+                    {{ $t(`Content for authentication message templates can't be edited. You can add additional content
+                    from
+                    the options below.`) }}
+                  </p>
+
+                  <div class="space-y-3">
+                    <label
+                      class="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                      <input v-model="form.body.add_security_recommendation" type="checkbox"
+                        class="w-5 h-5 rounded border-slate-300 text-[#ff5100] focus:ring-[#ff5100] cursor-pointer" />
+                      <span class="text-sm font-medium text-slate-700">{{ $t("Add security recommendation") }}</span>
+                    </label>
+
+                    <label
+                      class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                      <input v-model="form.code_expiration" type="checkbox"
+                        class="w-5 h-5 rounded border-slate-300 text-[#ff5100] focus:ring-[#ff5100] cursor-pointer mt-0.5" />
+                      <div>
+                        <div class="text-sm font-medium text-slate-700">{{ $t("Add expiry time for the code") }}</div>
+                        <p class="text-xs text-slate-600 mt-1">
+                          {{ $t("After the code has expired, the auto-fill button will be disabled.") }}
+                        </p>
+                      </div>
+                    </label>
+
+                    <div v-if="form.code_expiration" class="p-4 bg-white border border-slate-200 rounded-xl">
+                      <label class="block text-sm font-medium text-slate-700 mb-2">{{ $t("Expires In") }}</label>
+                      <div class="flex items-center space-x-2">
+                        <input type="number" v-model="form.footer.code_expiration_minutes" step="any"
+                          class="w-32 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100] focus:border-transparent" />
+                        <span class="text-sm text-slate-600">{{ $t("Minutes") }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Authentication Buttons -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <MousePointerClick class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Buttons") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">
+                    {{ $t("You can customise the button text for both auto-fill and copy code.") }}
+                  </p>
+
+                  <div v-if="form.authentication_button.otp_type === 'copy_code'">
+                    <FormInput v-model="form.authentication_button.text" :name="$t('Copy code')" :type="'text'" />
+                  </div>
+                  <div v-else class="grid grid-cols-2 gap-4">
+                    <FormInput v-model="form.authentication_button.autofill_text" :name="$t('Auto-fill')"
+                      :type="'text'" />
+                    <FormInput v-model="form.authentication_button.text" :name="$t('Copy code')" :type="'text'" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message Validity Period -->
+              <div v-if="form.category === 'UTILITY' || form.category === 'AUTHENTICATION'"
+                class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center space-x-2">
+                  <Clock class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">{{ $t("Message validity period") }}</h4>
+                </div>
+                <p class="text-sm text-slate-600">
+                  {{ $t("Set a custom validity period for your message delivery.") }}
+                </p>
+
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                  <div class="flex-1">
+                    <label class="text-sm font-medium text-slate-700">
+                      {{ $t("Set custom validity period") }}
+                    </label>
+                    <p class="text-xs text-slate-600 mt-1">
+                      {{ $t("Default is 10 minutes if not set") }}
+                    </p>
+                  </div>
+                  <FormToggleSwitch v-model="form.customize_ttl" />
+                </div>
+
+                <FormSelect v-if="form.customize_ttl" v-model="form.message_send_ttl_seconds"
+                  :options="form.category === 'UTILITY' ? utilityTTLOptions : authTTLOptions"
+                  :name="$t('Validity period')" :placeholder="$t('Select validity period')" />
+              </div>
+            </div>
+            <!-- Carousel Form -->
+            <div v-if="selectedType === 'carousel'" class="space-y-6">
+              <!-- Basic Details -->
+              <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-5">
+                <div class="flex items-center space-x-2 mb-4">
+                  <Settings class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">Basic Details</h4>
+                </div>
+
+                <FormInput v-model="cardform.name" :name="$t('Name')" type="text" @input="handleNameInput"
+                  @keydown.space.prevent="addUnderscore" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormSelect v-model="cardform.category" :options="categoryCrouselOptions" :name="$t('Category')"
+                    :placeholder="$t('Select category')" />
+                  <FormSelect v-model="cardform.language" :options="langOptions" :name="$t('Language')"
+                    :placeholder="$t('Select language')" />
+                </div>
+              </div>
+
+              <!-- Body Text -->
+              <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center space-x-2">
+                  <FileText class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">{{ $t("Body") }}</h4>
+                  <span
+                    class="px-2 py-1 bg-[#ff5100]/10 text-[#ff5100] text-xs font-medium rounded-full">Required</span>
+                </div>
+                <BodyTextArea v-model="cardform.body.text" @updateExamples="updateBodyExamples" />
+              </div>
+
+              <!-- Carousel Cards -->
+              <div class="space-y-4">
+                <div v-for="(card, cardIndex) in cards" :key="cardIndex"
+                  class="bg-white rounded-2xl shadow-sm p-6 border-2 border-slate-200">
+                  <!-- Card Header -->
+                  <div class="flex items-center justify-between mb-4 pb-4 border-b border-slate-200">
+                    <div class="flex items-center space-x-3">
+                      <div
+                        class="w-10 h-10 bg-gradient-to-br from-[#ff5100] to-[#ff6422] rounded-xl flex items-center justify-center text-white font-bold">
+                        {{ cardIndex + 1 }}
+                      </div>
+                      <h3 class="text-lg font-semibold text-slate-800">Card {{ cardIndex + 1 }}</h3>
+                    </div>
+                    <button @click="removeCard(cardIndex)"
+                      class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors flex items-center space-x-2">
+                      <Trash2 class="w-4 h-4" />
+                      <span class="text-sm font-medium">Remove</span>
+                    </button>
+                  </div>
+
+                  <!-- Image Upload -->
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Header Image</label>
+                    <div class="flex items-center space-x-3">
+                      <label
+                        class="cursor-pointer flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#ff5100] to-[#ff6422] text-white rounded-lg hover:shadow-lg transition-all">
+                        <Upload class="w-4 h-4" />
+                        <span>Upload Image</span>
+                        <input type="file" accept="image/*" @change="(e) => onFileChange(e, cardIndex)"
+                          class="sr-only" />
+                      </label>
+                      <span v-if="uploadingIndex === cardIndex"
+                        class="text-sm text-[#ff5100] flex items-center space-x-2">
+                        <Loader2 class="w-4 h-4 animate-spin" />
+                        <span>Uploading...</span>
+                      </span>
+                      <span v-else-if="cards[cardIndex].components[0].example.header_handle[0]"
+                        class="text-sm text-green-600 flex items-center space-x-2">
+                        <CheckCircle class="w-4 h-4" />
+                        <span>Uploaded</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Body Text -->
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Body Text</label>
+                    <textarea v-model="card.components[1].text"
+                      class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100] focus:border-transparent"
+                      rows="3" placeholder="Enter body text"></textarea>
+                  </div>
+
+                  <!-- Buttons -->
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Buttons</label>
+                    <div class="space-y-2">
+                      <div v-for="(btn, btnIndex) in card.components[2].buttons" :key="btnIndex"
+                        class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+                        <select v-model="btn.type"
+                          class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100]">
+                          <option value="quick_reply">Quick Reply</option>
+                          <option value="url">URL</option>
+                        </select>
+                        <input v-model="btn.text" placeholder="Button Text"
+                          class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100]" />
+                        <input v-if="btn.type === 'url'" v-model="btn.url" placeholder="URL"
+                          class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100]" />
+                        <input v-if="btn.type === 'url'" v-model="btn.example[0]" placeholder="Example"
+                          class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100]" />
+                        <button @click="removeCardButton(cardIndex, btnIndex)"
+                          class="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors">
+                          <Trash2 class="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <button v-if="card.components[2].buttons.length < 3" @click="addCardButton(cardIndex)"
+                      class="mt-3 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
+                      <Plus class="w-4 h-4" />
+                      <span>Add Button</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Add Card Button -->
+                <button v-if="cards.length < 10" @click="addCard"
+                  class="w-full py-3 bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+                  <Plus class="w-5 h-5" />
+                  <span>Add Card</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Flow Form -->
+            <div v-if="selectedType === 'flow'" class="space-y-6">
+              <!-- Basic Details -->
+              <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-5">
+                <div class="flex items-center space-x-2 mb-4">
+                  <Settings class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">Basic Details</h4>
+                </div>
+
+                <FormInput v-model="flowform.name" :name="$t('Name')" type="text" @input="handleNameInput"
+                  @keydown.space.prevent="addUnderscore" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormSelect v-model="flowform.category" :options="categoryCrouselOptions" :name="$t('Category')"
+                    :placeholder="$t('Select category')" />
+                  <FormSelect v-model="flowform.language" :options="langOptions" :name="$t('Language')"
+                    :placeholder="$t('Select language')" />
+                </div>
+              </div>
+
+              <!-- Body Text -->
+              <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center space-x-2">
+                  <FileText class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">{{ $t("Body") }}</h4>
+                  <span
+                    class="px-2 py-1 bg-[#ff5100]/10 text-[#ff5100] text-xs font-medium rounded-full">Required</span>
+                </div>
+                <BodyTextArea v-model="flowform.body.text" @updateExamples="updateBodyExamples" />
+              </div>
+
+              <!-- Flow Configuration -->
+              <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center space-x-2">
+                  <Workflow class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">Flow Configuration</h4>
+                </div>
+
+                <FormInput v-model="flowform.buttonText" :name="$t('Button Text')" type="text" />
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">{{ $t("Flow JSON") }}</label>
+                  <textarea v-model="flowform.flowJson" rows="6"
+                    class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100] focus:border-transparent font-mono text-sm"
+                    placeholder="Paste the JSON here"></textarea>
+                </div>
+
+                <button @click="showFlowBuilder = true"
+                  class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+                  <ExternalLink class="w-5 h-5" />
+                  <span>{{ $t("Create Form") }}</span>
+                </button>
+
+                <p class="text-sm text-slate-600 flex items-start space-x-2">
+                  <Info class="w-4 h-4 mt-0.5 flex-shrink-0 text-[#ff5100]" />
+                  <span>{{ $t("Note: Use the popup to create your flow. Copy the JSON from there and paste it above.")
+                  }}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- =========================== OLD UI CODE ============================== -->
+      </div>
+    </div>
+  </AppLayout>
 </template>
 
+
+<!-- First Script -->
 <script>
 export default {
   data() {
@@ -1006,13 +1648,10 @@ export default {
 };
 </script>
 
+<!-- Second Script -->
 <script setup>
 import axios from "axios";
 import AppLayout from "./../Layout/App.vue";
-import Dropdown from "@/Components/Dropdown.vue";
-import DropdownItemGroup from "@/Components/DropdownItemGroup.vue";
-import DropdownItem from "@/Components/DropdownItem.vue";
-import FormCheckbox from "@/Components/FormCheckbox.vue";
 import FormInput from "@/Components/FormInput.vue";
 import FormSelect from "@/Components/FormSelect.vue";
 import FormTextArea from "@/Components/FormTextArea.vue";
@@ -1022,10 +1661,9 @@ import HeaderTextArea from "@/Components/Template/HeaderTextArea.vue";
 import { ref, computed, watch } from "vue";
 import { Link } from "@inertiajs/vue3";
 import Modal from "@/Components/Modal.vue";
-import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 import { router } from "@inertiajs/vue3";
-import { text } from "body-parser";
+import { AlignLeft, ArrowLeft, Clock, Copy, FileText, ImageIcon, Layers, Link2, Loader, Loader2, MessageSquare, MousePointerClick, Phone, Plus, Send, Settings, Shield, Smartphone, Trash2, Workflow, Zap } from "lucide-vue-next";
 
 const props = defineProps(["languages", "settings"]);
 const headerCharacterLimit = ref("60");
@@ -1038,7 +1676,6 @@ const isLoading = ref(false);
 const imageUrl = ref(null);
 const isModalOpen = ref(false);
 const error = ref(null);
-const bodyExamples = ref([]);
 const form = ref({
   name: null,
   category: "UTILITY",
@@ -1102,7 +1739,6 @@ watch(
   }
 );
 
-const headerType = ref("text");
 const langOptions = ref(props.languages);
 const categoryOptions = ref([
   { value: "UTILITY", label: "Utility" },
@@ -1113,7 +1749,6 @@ const categoryOptions = ref([
 const categoryCrouselOptions = ref([
   { value: "MARKETING", label: "Marketing" },
 ]);
-const categoryFlowOptions = ref([{ value: "UTILITY", label: "Utility" }]);
 const previousExamples = ref({});
 
 const changeHeaderType = (value) => {
@@ -1558,12 +2193,6 @@ function removeCardButton(cardIndex, buttonIndex) {
   cards.value[cardIndex].components[2].buttons.splice(buttonIndex, 1);
 }
 
-function extractVariables(text) {
-  const matches = [...text.matchAll(/{{\d+}}/g)];
-  const uniqueVars = [...new Set(matches.map((m) => m[0]))];
-  return [uniqueVars.length ? uniqueVars : ["{{1}}"]];
-}
-
 
 function FlowSubmitForm() {
   if (!flowform.value.body.text.trim()) {
@@ -1613,7 +2242,6 @@ function FlowSubmitForm() {
       },
     ],
   };
-  console.log("Final Flow JSON:", finalFlowJson);
   isLoading.value = true;
   isModalOpen.value = true;
   axios
@@ -1770,30 +2398,6 @@ function CardsubmitForm() {
     });
 }
 
-const file = ref(null);
-const fileHandle = ref("");
-
-// function onFileChange(e) {
-//   file.value = e.target.files[0];
-// }
-
-async function uploadToMeta() {
-  const formData = new FormData();
-  formData.append("image", file.value);
-
-  try {
-    const res = await axios.post("/meta-upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    fileHandle.value = res.data.file_handle;
-  } catch (err) {
-    console.error("❌ Upload failed:", err.response?.data || err.message);
-    alert("Upload failed. Check console for error.");
-  }
-}
-
 const uploadingIndex = ref(null); // track which card is uploading
 
 async function onFileChange(e, cardIndex) {
@@ -1822,6 +2426,7 @@ async function onFileChange(e, cardIndex) {
 }
 </script>
 
+<!-- Third Script for styling -->
 <style scoped>
 .button {
   display: inline-block;

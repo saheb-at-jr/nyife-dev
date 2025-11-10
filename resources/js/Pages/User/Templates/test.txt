@@ -1,0 +1,118 @@
+When i am creating whatsapp carousel template, i can only see the body but i want to see the carousel as well. with every content like we see in real whatsapp so please make carousel template viewer ui like whatsapp carousel template viewer ui
+  
+  Carousel template creater form  : <div v-if="selectedType === 'carousel'">
+              <div>
+                <div class="grid gap-x-6 gap-y-4 sm:grid-cols-6 mb-8 capitalize">
+                  <FormInput v-model="cardform.name" :name="$t('Name')" type="text" @input="handleNameInput"
+                    @keydown.space.prevent="addUnderscore" class="sm:col-span-6" />
+                  <FormSelect v-model="cardform.category" :options="categoryCrouselOptions" :name="$t('Category')"
+                    class="sm:col-span-3" :placeholder="$t('Select category')" />
+                  <FormSelect v-model="cardform.language" :options="langOptions" :name="$t('Language')"
+                    class="sm:col-span-3" :placeholder="$t('Select language')" />
+                </div>
+
+                <h2 class="text-slate-600">
+                  {{ $t("Body") }}
+                  <span class="text-xs">({{ $t("Required") }})</span>
+                </h2>
+                <span class="text-slate-600 text-xs">
+                  {{
+                    $t(
+                      "Enter the text for your message in the language that you've selected"
+                    )
+                  }}
+                </span>
+
+                <div class="mb-8">
+                  <BodyTextArea v-model="cardform.body.text" @updateExamples="updateBodyExamples" />
+                </div>
+
+                <div>
+                  <div v-for="(card, cardIndex) in cards" :key="cardIndex" class="p-4 border rounded-lg mb-6 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                      <h3 class="text-lg font-semibold">
+                        Card {{ cardIndex + 1 }}
+                      </h3>
+                      <button @click="removeCard(cardIndex)" class="text-red-500 hover:text-red-700 text-sm">
+                        🗑️ Remove Card
+                      </button>
+                    </div>
+
+                    <div class="container mb-4">
+                      <input type="file" accept="image/*" @change="(e) => onFileChange(e, cardIndex)" />
+                      <p v-if="uploadingIndex === cardIndex" class="text-sm text-blue-600 mt-1">
+                        Uploading...
+                      </p>
+                    </div>
+
+                    <label class="text-slate-600">Body Text</label>
+                    <textarea v-model="card.components[1].text" class="w-full border rounded p-2 mb-4"
+                      placeholder="Enter body text"></textarea>
+
+                    <div>
+                      <h4 class="text-slate-600">Buttons</h4>
+                      <div v-for="(btn, btnIndex) in card.components[2].buttons" :key="btnIndex"
+                        class="mb-2 flex items-center gap-2">
+                        <select v-model="btn.type" class="border rounded p-1">
+                          <option value="quick_reply">Quick Reply</option>
+                          <option value="url">URL</option>
+                        </select>
+                        <input v-model="btn.text" placeholder="Button Text" class="border rounded p-1" />
+                        <input v-if="btn.type === 'url'" v-model="btn.url" placeholder="Button URL"
+                          class="border rounded p-1" />
+                        <input v-if="btn.type === 'url'" v-model="btn.example[0]" placeholder="Example"
+                          class="border rounded p-1" />
+                        <button @click="removeCardButton(cardIndex, btnIndex)" class="text-red-500 hover:text-red-700"
+                          title="Remove Button">
+                          🗑️
+                        </button>
+                      </div>
+
+                      <button v-if="card.components[2].buttons.length < 3" @click="addCardButton(cardIndex)"
+                        class="text-blue-600 text-sm mt-2">
+                        + Add Button
+                      </button>
+                    </div>
+                  </div>
+
+                  <button @click="addCard" v-if="cards.length < 10"
+                    class="bg-green-500 text-white px-4 py-2 rounded mr-4">
+                    + Add Card
+                  </button>
+                </div>
+              </div>
+            </div>
+
+        Viewer Ui : 
+  <div v-if="selectedType === 'carousel'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20 overflow-y-auto">
+          <div
+            class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left w-[25em]">
+            <div class="bg-white rounded-lg rounded-tl-none p-4 mb-4">
+              <p class="text-sm text-gray-800 whitespace-pre-wrap">
+                {{ cardform.body.text || 'Your message preview will appear here...' }}
+              </p>
+            </div>
+
+            <div class="overflow-x-auto flex space-x-4">
+              <div v-for="(card, index) in cleanedCards" :key="index"
+                class="min-w-[250px] bg-white rounded-lg shadow-md p-4 flex-shrink-0">
+                <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
+                  <p class="text-sm text-gray-700">
+                    {{
+                      card.components.find(c => c.type === 'body')?.text || 'No text'
+                    }}
+                  </p>
+                </div>
+
+                <div v-if="card.components.find(c => c.type === 'buttons')" class="flex flex-col space-y-2 mt-2">
+                  <button v-for="(btn, btnIndex) in card.components.find(c => c.type === 'buttons')?.buttons"
+                    :key="btnIndex"
+                    class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 py-1 px-3 rounded text-left">
+                    {{ btn.text || 'Button' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>

@@ -346,11 +346,11 @@ const viewMode = ref('list'); // 'grid' or 'list'
                 </div>
             </div>
 
-            <div class="flex justify-center items-center gap-4">
+            <div class="self-end flex justify-center items-center flex-wrap gap-4">
                 <!-- Create Campaign Button -->
                 <div class="">
                     <Link href="/campaigns/create"
-                        class="max-w-min text-nowrap bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:block hidden">
+                        class="max-w-min text-nowrap bg-primary/90 hover:bg-primary rounded-xl px-4 py-3  text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                     {{ $t('Create campaign') }}</Link>
                 </div>
                 <!-- View Toggle -->

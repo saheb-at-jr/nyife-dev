@@ -158,6 +158,7 @@ import FormPhoneInput from '@/Components/FormPhoneInput.vue';
 import FormSelect from '@/Components/FormSelect.vue';
 import FormTextArea from '@/Components/FormTextArea.vue';
 import { trans } from 'laravel-vue-i18n';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps(['contactGroups', 'contact', 'fields', 'locationSettings']);
 const fileUrl = props.contact?.avatar ? ref(props.contact?.avatar) : ref(null);
@@ -240,8 +241,9 @@ const transformOptions = (optionsString) => {
             {{ $t('Cancel') }}
             </Link>
             <Link v-else :href="'/contacts/' + props.contact.uuid"
-                class="px-6 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">
-            {{ $t('Back') }}
+                class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center space-x-2">
+            <ArrowLeft class="w-4 h-4" />
+            <span>{{ $t('Back') }}</span>
             </Link>
         </div>
     </div>
