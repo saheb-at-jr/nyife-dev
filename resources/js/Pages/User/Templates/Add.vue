@@ -1,951 +1,9 @@
-<!-- UI Template -->
-<!-- <template>
-  <AppLayout>
-    <div class="px-4 md:px-0 flex flex-col bg-white border-l py-4 text-[#000] md:overflow-y-hidden">
-      <div class="flex justify-between md:px-8 border-b pb-4">
-        <div>
-          <h2 class="text-xl mb-1">{{ $t("New template") }}</h2>
-          <p class="flex items-center text-sm leading-6 text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
-              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z" />
-            </svg>
-            <span class="ml-1 mt-1">{{
-              $t("Create template for review")
-            }}</span>
-          </p>
-        </div>
-        <div class="space-x-2 flex items-center">
-          <Link href="/templates"
-            class="rounded-md bg-black px-3 py-2 text-sm text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-          {{ $t("Back") }}</Link>
-          <div v-if="selectedType === 'template'">
-            <button @click="submitForm()" type="button"
-              class="capitalize rounded-md px-3 py-2 float-right text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              :class="isFormValid === true
-                ? 'bg-indigo-600 hover:bg-indigo-500 shadow-sm'
-                : 'bg-gray-200'
-                " :disabled="!isFormValid || isLoading">
-              <span v-if="!isLoading">{{ $t("Create template") }}</span>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                <path fill="currentColor"
-                  d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z" opacity=".5" />
-                <path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z">
-                  <animateTransform attributeName="transform" dur="1s" from="0 12 12" repeatCount="indefinite"
-                    to="360 12 12" type="rotate" />
-                </path>
-              </svg>
-            </button>
-          </div>
-          <div v-if="selectedType === 'carousel'">
-            <button @click="CardsubmitForm" class="bg-blue-500 text-white px-4 py-2 rounded">
-              {{ $t("Submit Template") }}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="md:flex md:flex-grow-2 md:h-[88vh] mt-4 md:mt-0">
-        <div class="md:w-[50%] md:p-8 overflow-y-auto">
-          <div v-if="!settings?.whatsapp" class="p-4 md:p-8 overflow-y-auto">
-            <div class="bg-slate-50 border border-primary shadow rounded-md p-4 py-8">
-              <div class="flex justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 48 48">
-                  <path fill="black"
-                    d="M43.634 4.366a1.25 1.25 0 0 1 0 1.768l-4.913 4.913a9.253 9.253 0 0 1-.744 12.244l-3.343 3.343a1.25 1.25 0 0 1-1.768 0l-11.5-11.5a1.25 1.25 0 0 1 0-1.768l3.343-3.343a9.25 9.25 0 0 1 12.244-.743l4.913-4.914a1.25 1.25 0 0 1 1.768 0m-7.611 7.425a6.75 6.75 0 0 0-9.546 0l-2.46 2.459l9.733 9.732l2.46-2.459a6.75 6.75 0 0 0 0-9.546zM9.28 36.953l-4.914 4.913a1.25 1.25 0 0 0 1.768 1.768l4.913-4.913a9.253 9.253 0 0 0 12.244-.744l3.343-3.343a1.25 1.25 0 0 0 0-1.768L25.268 31.5l3.366-3.366a1.25 1.25 0 0 0-1.768-1.768L23.5 29.732L18.268 24.5l3.366-3.366a1.25 1.25 0 0 0-1.768-1.768L16.5 22.732l-1.366-1.366a1.25 1.25 0 0 0-1.768 0l-3.343 3.343a9.25 9.25 0 0 0-.743 12.244m2.51-10.476l2.46-2.46l9.732 9.733l-2.459 2.46a6.75 6.75 0 0 1-9.546 0l-.186-.187a6.75 6.75 0 0 1 0-9.546" />
-                </svg>
-              </div>
-              <h3 class="text-center text-lg font-medium mb-4">
-                {{ $t("Connect your whatsapp account") }}
-              </h3>
-              <h4 class="text-center mb-4">
-                {{
-                  $t(
-                    "You need to connect your WhatsApp account first before you can create a template."
-                  )
-                }}
-              </h4>
-              <div class="flex justify-center">
-                <Link href="/settings/whatsapp"
-                  class="rounded-md px-3 py-2 text-sm hover:shadow-md text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 bg-primary"
-                  :disabled="isLoading">
-                <span v-if="!isLoading">{{
-                  $t("Connect Whatsapp account")
-                  }}</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-          <div v-else>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700">{{
-                $t("Select Template Type")
-              }}</label>
-              <select v-model="selectedType"
-                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                <option value="template">Template</option>
-                <option value="carousel">Carousel</option>
-                <option value="flow">Flow</option>
-              </select>
-            </div>
-            <div v-if="selectedType === 'template'">
-              <div class="grid gap-x-6 gap-y-4 sm:grid-cols-6 mb-8 capitalize">
-                <FormInput v-model="form.name" :name="$t('Name')" :type="'text'" @input="handleNameInput"
-                  @keydown.space.prevent="addUnderscore" :class="'sm:col-span-6'" />
-                <FormSelect v-model="form.category" :options="categoryOptions" :name="$t('Category')"
-                  :class="'sm:col-span-3'" :placeholder="$t('Select category')" />
-                <FormSelect v-model="form.language" :options="langOptions" :name="$t('Language')"
-                  :class="'sm:col-span-3'" :placeholder="$t('Select language')" />
-              </div>
-
-              <div v-if="
-                form.category === 'UTILITY' || form.category === 'MARKETING'
-              ">
-                <h2 class="text-slate-600">
-                  {{ $t("Body") }}
-                  <span class="text-xs">({{ $t("Required") }})</span>
-                </h2>
-                <span class="text-slate-600 text-xs">{{
-                  $t(
-                    "Enter the text for your message in the language that you've selected"
-                  )
-                }}</span>
-
-                <div class="mb-8">
-                  <div>
-                    <BodyTextArea v-model="form.body.text" @updateExamples="updateBodyExamples" />
-                  </div>
-                </div>
-
-                <h2 class="text-slate-600">
-                  {{ $t("Header") }}
-                  <span class="text-xs">({{ $t("Optional") }})</span>
-                </h2>
-                <span class="text-slate-600 text-xs">{{
-                  $t(
-                    "Add a title or choose which type of media you'll use for this header"
-                  )
-                }}</span>
-                <div class="grid grid-cols-4 mt-2 bg-[#f9f9fa] rounded-lg mb-4">
-                  <button @click="changeHeaderType('TEXT')" class="text-center py-2 text-sm text-slate-800 m-1" :class="form.header.format === 'TEXT'
-                    ? 'bg-white shadow rounded-lg'
-                    : ''
-                    ">
-                    {{ $t("Text") }}
-                  </button>
-                  <button @click="changeHeaderType('IMAGE')" class="text-center py-2 text-sm text-slate-800 m-1" :class="form.header.format === 'IMAGE'
-                    ? 'bg-white shadow rounded-lg'
-                    : ''
-                    ">
-                    {{ $t("Image") }}
-                  </button>
-                  <button @click="changeHeaderType('VIDEO')" class="text-center py-2 text-sm text-slate-800 m-1" :class="form.header.format === 'VIDEO'
-                    ? 'bg-white shadow rounded-lg'
-                    : ''
-                    ">
-                    {{ $t("Video") }}
-                  </button>
-                  <button @click="changeHeaderType('DOCUMENT')" class="text-center py-2 text-sm text-slate-800 m-1"
-                    :class="form.header.format === 'DOCUMENT'
-                      ? 'bg-white shadow rounded-lg'
-                      : ''
-                      ">
-                    {{ $t("Document") }}
-                  </button>
-                </div>
-                <div class="mb-8">
-                  <div :class="form.header.format === 'TEXT' ? '' : 'hidden'">
-                    <HeaderTextArea v-model="form.header.text" :customValues="form.header.example"
-                      @updateExamples="updateHeaderExamples" />
-                  </div>
-                  <div v-if="form.header.format === 'IMAGE'">
-                    <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                      <input type="file" class="sr-only" accept=".jpg, .png" ref="fileInput" id="file-upload"
-                        @change="handleFileUpload($event)" />
-                      <div class="text-center">
-                        <div>
-                          <div v-if="
-                            form.header.format === 'IMAGE' &&
-                            form.header.example
-                          " class="flex justify-center items-center">
-                            <div
-                              class="flex justify-center items-center space-x-3 py-1 border bg-slate-100 rounded-lg mb-2 w-fit px-2">
-                              <div>
-                                <svg class="mx-auto h-6 w-6 text-gray-400 cursor-pointer"
-                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                  <path fill="currentColor" d="M14 9a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0Z" />
-                                  <path fill="currentColor" fill-rule="evenodd"
-                                    d="M7.268 4.658a54.647 54.647 0 0 1 9.465 0l1.51.132a3.138 3.138 0 0 1 2.831 2.66a30.604 30.604 0 0 1 0 9.1a3.138 3.138 0 0 1-2.831 2.66l-1.51.131c-3.15.274-6.316.274-9.465 0l-1.51-.131a3.138 3.138 0 0 1-2.832-2.66a30.601 30.601 0 0 1 0-9.1a3.138 3.138 0 0 1 2.831-2.66l1.51-.132Zm9.335 1.495a53.147 53.147 0 0 0-9.206 0l-1.51.131A1.638 1.638 0 0 0 4.41 7.672a29.101 29.101 0 0 0-.311 5.17L7.97 8.97a.75.75 0 0 1 1.09.032l3.672 4.13l2.53-.844a.75.75 0 0 1 .796.21l3.519 3.91a29.101 29.101 0 0 0 .014-8.736a1.638 1.638 0 0 0-1.478-1.388l-1.51-.131Zm2.017 11.435l-3.349-3.721l-2.534.844a.75.75 0 0 1-.798-.213l-3.471-3.905l-4.244 4.243c.049.498.11.996.185 1.491a1.638 1.638 0 0 0 1.478 1.389l1.51.131c3.063.266 6.143.266 9.206 0l1.51-.131c.178-.016.35-.06.507-.128Z"
-                                    clip-rule="evenodd" />
-                                </svg>
-                              </div>
-                              <div class="flex items-center space-x-2">
-                                <span class="text-sm">{{
-                                  form.header.example.name
-                                }}</span>
-                                <button @click="removeFile()">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                    <path fill="currentColor" fill-rule="evenodd"
-                                      d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 10.586L7.707 6.293a1 1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 1 0 1 0 1.414 1.414L12 13.414l4.293 4.293a1 1 0 1 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                                      clip-rule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <label v-else for="file-upload">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                              xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                              <path fill="currentColor" d="M14 9a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0Z" />
-                              <path fill="currentColor" fill-rule="evenodd"
-                                d="M7.268 4.658a54.647 54.647 0 0 1 9.465 0l1.51.132a3.138 3.138 0 0 1 2.831 2.66a30.604 30.604 0 0 1 0 9.1a3.138 3.138 0 0 1-2.831 2.66l-1.51.131c-3.15.274-6.316.274-9.465 0l-1.51-.131a3.138 3.138 0 0 1-2.832-2.66a30.601 30.601 0 0 1 0-9.1a3.138 3.138 0 0 1 2.831-2.66l1.51-.132Zm9.335 1.495a53.147 53.147 0 0 0-9.206 0l-1.51.131A1.638 1.638 0 0 0 4.41 7.672a29.101 29.101 0 0 0-.311 5.17L7.97 8.97a.75.75 0 0 1 1.09.032l3.672 4.13l2.53-.844a.75.75 0 0 1 .796.21l3.519 3.91a29.101 29.101 0 0 0 .014-8.736a1.638 1.638 0 0 0-1.478-1.388l-1.51-.131Zm2.017 11.435l-3.349-3.721l-2.534.844a.75.75 0 0 1-.798-.213l-3.471-3.905l-4.244 4.243c.049.498.11.996.185 1.491a1.638 1.638 0 0 0 1.478 1.389l1.51.131c3.063.266 6.143.266 9.206 0l1.51-.131c.178-.016.35-.06.507-.128Z"
-                                clip-rule="evenodd" />
-                            </svg>
-                          </label>
-                          <div class="flex text-sm text-gray-600">
-                            <label for="file-upload"
-                              class="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                              <span>{{
-                                $t(
-                                  "Provide examples of the variables or media in the header"
-                                )
-                              }}</span>
-                            </label>
-                          </div>
-                          <p class="text-xs text-gray-500">
-                            {{ $t("PNG or JPG files only") }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="form.header.format === 'VIDEO'">
-                    <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                      <input type="file" class="sr-only" accept=".mp4" ref="fileInput" id="file-upload2"
-                        @change="handleFileUpload($event)" />
-                      <div class="text-center">
-                        <div>
-                          <div v-if="
-                            form.header.format === 'VIDEO' &&
-                            form.header.example
-                          " class="flex justify-center items-center">
-                            <div
-                              class="flex justify-center items-center space-x-3 py-1 border bg-slate-100 rounded-lg mb-2 w-fit px-2">
-                              <div>
-                                <svg class="mx-auto h-6 w-6 text-gray-400 cursor-pointer"
-                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                  <path fill="none" stroke="currentColor" stroke-width="1.5"
-                                    d="M2 11.5c0-3.287 0-4.931.908-6.038a4 4 0 0 1 .554-.554C4.57 4 6.212 4 9.5 4c3.287 0 4.931 0 6.038.908a4 4 0 0 1 .554.554C17 6.57 17 8.212 17 11.5v1c0 3.287 0 4.931-.908 6.038a4.001 4.001 0 0 1-.554.554C14.43 20 12.788 20 9.5 20c-3.287 0-4.931 0-6.038-.908a4 4 0 0 1-.554-.554C2 17.43 2 15.788 2 12.5v-1Zm15-2l.658-.329c1.946-.973 2.92-1.46 3.63-1.02c.712.44.712 1.528.712 3.703v.292c0 2.176 0 3.263-.711 3.703c-.712.44-1.685-.047-3.63-1.02L17 14.5v-5Z" />
-                                </svg>
-                              </div>
-                              <div class="flex items-center space-x-2">
-                                <span class="text-sm">{{
-                                  form.header.example.name
-                                }}</span>
-                                <button @click="removeFile()">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                    <path fill="currentColor" fill-rule="evenodd"
-                                      d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 10.586L7.707 6.293a1 1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 1 0 1 0 1.414 1.414L12 13.414l4.293 4.293a1 1 0 1 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                                      clip-rule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <label v-else for="file-upload2">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                              xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                              <path fill="none" stroke="currentColor" stroke-width="1.5"
-                                d="M2 11.5c0-3.287 0-4.931.908-6.038a4 4 0 0 1 .554-.554C4.57 4 6.212 4 9.5 4c3.287 0 4.931 0 6.038.908a4 4 0 0 1 .554.554C17 6.57 17 8.212 17 11.5v1c0 3.287 0 4.931-.908 6.038a4.001 4.001 0 0 1-.554.554C14.43 20 12.788 20 9.5 20c-3.287 0-4.931 0-6.038-.908a4 4 0 0 1-.554-.554C2 17.43 2 15.788 2 12.5v-1Zm15-2l.658-.329c1.946-.973 2.92-1.46 3.63-1.02c.712.44.712 1.528.712 3.703v.292c0 2.176 0 3.263-.711 3.703c-.712.44-1.685-.047-3.63-1.02L17 14.5v-5Z" />
-                            </svg>
-                          </label>
-                          <div class="flex text-sm text-gray-600">
-                            <label for="file-upload2"
-                              class="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                              <span>{{
-                                $t(
-                                  "Provide examples of the variables or media in the header"
-                                )
-                              }}</span>
-                            </label>
-                          </div>
-                          <p class="text-xs text-gray-500">
-                            {{ $t("MP4 files only") }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="form.header.format === 'DOCUMENT'">
-                    <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                      <input type="file" class="sr-only" accept=".pdf" ref="fileInput" id="file-upload3"
-                        @change="handleFileUpload($event)" />
-                      <div class="text-center">
-                        <div>
-                          <div v-if="
-                            form.header.format === 'DOCUMENT' &&
-                            form.header.example
-                          " class="flex justify-center items-center">
-                            <div
-                              class="flex justify-center items-center space-x-3 py-1 border bg-slate-100 rounded-lg mb-2 w-fit px-2">
-                              <div>
-                                <svg class="mx-auto h-6 w-6 text-gray-400 cursor-pointer"
-                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                  <path fill="currentColor"
-                                    d="M18.53 9L13 3.47a.75.75 0 0 0-.53-.22H8A2.75 2.75 0 0 0 5.25 6v12A2.75 2.75 0 0 0 8 20.75h8A2.75 2.75 0 0 0 18.75 18V9.5a.75.75 0 0 0-.22-.5Zm-5.28-3.19l2.94 2.94h-2.94ZM16 19.25H8A1.25 1.25 0 0 1 6.75 18V6A1.25 1.25 0 0 1 8 4.75h3.75V9.5a.76.76 0 0 0 .75.75h4.75V18A1.25 1.25 0 0 1 16 19.25Z" />
-                                  <path fill="currentColor"
-                                    d="M13.49 14.85a3.15 3.15 0 0 1-1.31-1.66a4.44 4.44 0 0 0 .19-2a.8.8 0 0 0-1.52-.19a5 5 0 0 0 .25 2.4A29 29 0 0 1 9.83 16c-.71.4-1.68 1-1.83 1.69c-.12.56.93 2 2.72-1.12a18.58 18.58 0 0 1 2.44-.72a4.72 4.72 0 0 0 2 .61a.82.82 0 0 0 .62-1.38c-.42-.43-1.67-.31-2.29-.23Zm-4.78 3a4.32 4.32 0 0 1 1.09-1.24c-.68 1.08-1.09 1.27-1.09 1.25Zm2.92-6.81c.26 0 .24 1.15.06 1.46a3.07 3.07 0 0 1-.06-1.45Zm-.87 4.88a14.76 14.76 0 0 0 .88-1.92a3.88 3.88 0 0 0 1.08 1.26a12.35 12.35 0 0 0-1.96.67Zm4.7-.18s-.18.22-1.33-.28c1.25-.08 1.46.21 1.33.29Z" />
-                                </svg>
-                              </div>
-                              <div class="flex items-center space-x-2">
-                                <span class="text-sm">{{
-                                  form.header.example.name
-                                }}</span>
-                                <button @click="removeFile()">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                    <path fill="currentColor" fill-rule="evenodd"
-                                      d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 10.586L7.707 6.293a1 1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 1 0 1 0 1.414 1.414L12 13.414l4.293 4.293a1 1 0 1 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                                      clip-rule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <label v-else for="file-upload3">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                              xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                              <path fill="currentColor"
-                                d="M18.53 9L13 3.47a.75.75 0 0 0-.53-.22H8A2.75 2.75 0 0 0 5.25 6v12A2.75 2.75 0 0 0 8 20.75h8A2.75 2.75 0 0 0 18.75 18V9.5a.75.75 0 0 0-.22-.5Zm-5.28-3.19l2.94 2.94h-2.94ZM16 19.25H8A1.25 1.25 0 0 1 6.75 18V6A1.25 1.25 0 0 1 8 4.75h3.75V9.5a.76.76 0 0 0 .75.75h4.75V18A1.25 1.25 0 0 1 16 19.25Z" />
-                              <path fill="currentColor"
-                                d="M13.49 14.85a3.15 3.15 0 0 1-1.31-1.66a4.44 4.44 0 0 0 .19-2a.8.8 0 0 0-1.52-.19a5 5 0 0 0 .25 2.4A29 29 0 0 1 9.83 16c-.71.4-1.68 1-1.83 1.69c-.12.56.93 2 2.72-1.12a18.58 18.58 0 0 1 2.44-.72a4.72 4.72 0 0 0 2 .61a.82.82 0 0 0 .62-1.38c-.42-.43-1.67-.31-2.29-.23Zm-4.78 3a4.32 4.32 0 0 1 1.09-1.24c-.68 1.08-1.09 1.27-1.09 1.25Zm2.92-6.81c.26 0 .24 1.15.06 1.46a3.07 3.07 0 0 1-.06-1.45Zm-.87 4.88a14.76 14.76 0 0 0 .88-1.92a3.88 3.88 0 0 0 1.08 1.26a12.35 12.35 0 0 0-1.96.67Zm4.7-.18s-.18.22-1.33-.28c1.25-.08 1.46.21 1.33.29Z" />
-                            </svg>
-                          </label>
-                          <div class="flex text-sm text-gray-600">
-                            <label for="file-upload3"
-                              class="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                              <span>{{
-                                $t(
-                                  "Provide examples of the variables or media in the header"
-                                )
-                              }}</span>
-                            </label>
-                          </div>
-                          <p class="text-xs text-gray-500">
-                            {{ $t("PDF files only") }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <h2 class="text-slate-600">
-                  {{ $t("Footer description") }}
-                  <span class="text-xs">({{ $t("Optional") }})</span>
-                </h2>
-                <span class="text-slate-600 text-xs">{{
-                  $t(
-                    "Add a short line of text to the bottom of your message template"
-                  )
-                }}</span>
-                <div class="mb-8">
-                  <div>
-                    <FormTextArea v-model="form.footer.text" @input="characterCount('footer')" :name="$t('Footer text')"
-                      :showLabel="false" :type="'text'" :textAreaRows="2" :class="'sm:col-span-6'" />
-                    <span class="text-xs">{{ $t("Characters") }}: {{ footerCharacterCount }}/{{
-                      footerCharacterLimit
-                      }}</span>
-                  </div>
-                </div>
-
-                <h2 class="text-slate-600">
-                  {{ $t("Buttons") }}
-                  <span class="text-xs">({{ $t("Optional") }})</span>
-                </h2>
-                <span class="text-slate-600 text-xs">{{
-                  $t(
-                    "Create buttons that let customers respond to your message or take action"
-                  )
-                }}</span>
-                <div class="grid grid-cols-2 mt-3 mb-2">
-                  <button @click="addButton('call')"
-                    class="flex items-center justify-center text-slate-700 text-sm bg-slate-100 hover:bg-slate-200 hover:shadow-sm rounded-lg p-2 px-4 mr-2">
-                    <span>{{ $t("Call phone number (1)") }}</span>
-                  </button>
-                  <button @click="addButton('website')"
-                    class="flex items-center justify-center text-slate-700 text-sm bg-slate-100 hover:bg-slate-200 hover:shadow-sm rounded-lg p-2 px-4">
-                    <span>{{ $t("Visit website (2)") }}</span>
-                  </button>
-                </div>
-                <div class="grid grid-cols-2 mt-3 mb-2">
-                  <button @click="addButton('offer')"
-                    class="flex items-center justify-center text-slate-700 text-sm bg-slate-100 hover:bg-slate-200 hover:shadow-sm rounded-lg p-2 px-4 mr-2">
-                    <span>{{ $t("Copy offer code (1)") }}</span>
-                  </button>
-                  <button @click="addButton('custom')"
-                    class="flex items-center justify-center text-slate-700 text-sm bg-slate-100 hover:bg-slate-200 hover:shadow-sm rounded-lg p-2 px-4">
-                    <span>{{ $t("Custom button (6)") }}</span>
-                  </button>
-                </div>
-                <div v-if="form.buttons.length > 0" class="mt-3 mb-8">
-                  <div v-for="(button, index) in form.buttons" :key="index" class="bg-[#f9f9fa] p-3 rounded-lg mb-3">
-                    <div class="flex items-center justify-between pb-1">
-                      <span class="text-sm">{{
-                        $t(formatText(button.type))
-                      }}</span>
-                      <button @click="removeButton(index)" class="bg-slate-200 hover:shadow rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
-                          <path fill="currentColor" fill-rule="evenodd"
-                            d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 10.586L7.707 6.293a1 1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 1 0 1 0 1.414 1.414L12 13.414l4.293 4.293a1 1 0 1 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                            clip-rule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div class="flex space-x-1 border-t pt-2">
-                      <FormInput v-model="button.text" :name="$t('Button text')" :type="'text'" :class="button.type === 'QUICK_REPLY'
-                        ? 'w-full'
-                        : 'sm:col-span-2'
-                        " :labelClass="'mb-0'" />
-                      <FormInput v-model="button.url" v-if="button.type === 'URL'" :name="$t('Website url')"
-                        :type="'url'" :class="'w-full'" :labelClass="'mb-0'" />
-                      <FormInput v-model="button.country" v-if="button.type === 'PHONE_NUMBER'" :name="$t('Country')"
-                        :type="'text'" :class="'sm:col-span-2'" :labelClass="'mb-0'" />
-                      <FormInput v-model="button.phone_number" v-if="button.type === 'PHONE_NUMBER'"
-                        :name="$t('Phone number')" :type="'text'" :class="'sm:col-span-2'" :labelClass="'mb-0'" />
-                      <FormInput v-model="button.example" v-if="button.type === 'copy_code'" :name="$t('Sample code')"
-                        :type="'text'" :class="'w-full'" :labelClass="'mb-0'" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-if="form.category === 'AUTHENTICATION'">
-                <div class="mt-4 bg-gray-50 rounded-md p-3">
-                  <h2 class="text-slate-600">
-                    {{ $t("Code delivery setup") }}
-                  </h2>
-                  <span class="text-slate-600 text-xs">{{
-                    $t(
-                      "Choose how customers send the code from WhatsApp to your app."
-                    )
-                  }}</span>
-
-                  <div class="mt-4">
-                    <div v-for="option in codeDeliveryOptions" :key="option.value" class="relative flex mb-2">
-                      <div class="flex h-6 items-center mr-2">
-                        <label class="flex items-center cursor-pointer">
-                          <input type="radio" class="hidden" :checked="form.authentication_button.otp_type ===
-                            option.value
-                            " @change="
-                              form.authentication_button.otp_type = option.value
-                              " />
-                          <div
-                            class="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center transition">
-                            <div class="w-2.5 h-2.5 rounded-full bg-primary transition" v-if="
-                              form.authentication_button.otp_type ===
-                              option.value
-                            "></div>
-                          </div>
-                        </label>
-                      </div>
-                      <div class="text-sm leading-6 cursor-pointer" @click="
-                        form.authentication_button.otp_type = option.value
-                        ">
-                        <label class="text-gray-900 cursor-pointer">{{
-                          $t(option.label)
-                        }}</label>
-                        <div class="text-[11px] leading-tight text-gray-500">
-                          {{ $t(option.description) }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="form.authentication_button.otp_type != 'copy_code'" class="mt-6 bg-gray-50 rounded-md p-3">
-                  <h2 class="text-slate-600">{{ $t("App setup") }}</h2>
-                  <p class="text-slate-600 leading-tight text-xs mb-4">
-                    {{ $t("You can add up to 5 apps.") }}
-                  </p>
-
-                  <div v-for="(item, index) in form.authentication_button
-                    .supported_apps" class="flex gap-x-2 rounded-lg mb-3">
-                    <FormInput v-model="form.authentication_button.supported_apps[index]
-                      .package_name
-                      " :name="$t('Package name')" :type="'text'" :class="'w-3/5'" :labelClass="'mb-0'" />
-                    <FormInput v-model="form.authentication_button.supported_apps[index]
-                      .signature_hash
-                      " :name="$t('App signature hash')" :type="'text'" :class="'w-2/5'" :labelClass="'mb-0'" />
-                    <span v-if="
-                      form.authentication_button.supported_apps.length > 1
-                    " @click="removeSupportedApp(index)"
-                      class="mt-7 cursor-pointer bg-slate-100 rounded-full w-6 h-6 flex items-center hover:shadow-md">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                        <path fill="#000"
-                          d="M7.404 7.404a.5.5 0 0 1 .707 0L12 11.293l3.89-3.89a.5.5 0 1 1 .706.708L12.707 12l3.89 3.89a.5.5 0 1 1-.708.706L12 12.707l-3.89 3.89a.5.5 0 1 1-.706-.708L11.293 12l-3.89-3.89a.5.5 0 0 1 0-.706" />
-                      </svg>
-                    </span>
-                  </div>
-
-                  <div class="bg-slate-200 text-[11px] p-3 rounded-md leading-tight mb-4 text-gray-500">
-                    {{
-                      $t(
-                        `It is recommended to only include different builds of the same app (which would not coexist on a
-                    production user's phone), rather than entirely different apps.`
-                      )
-                    }}
-                  </div>
-
-                  <button v-if="form.authentication_button.supported_apps.length < 5" @click="addSupportedApp()"
-                    type="button" class="bg-white text-sm rounded-md shadow-sm border px-3 py-2">
-                    {{ $t("Add another app") }}
-                  </button>
-                </div>
-                <div class="mt-6 bg-gray-50 rounded-md p-3">
-                  <h2 class="text-slate-600">{{ $t("Content") }}</h2>
-                  <p class="text-slate-600 leading-tight text-xs">
-                    {{
-                      $t(
-                        `Content for authentication message templates can't be edited. You can add additional content from
-                    the options below.`
-                      )
-                    }}
-                  </p>
-
-                  <div class="mt-4">
-                    <div class="relative flex mb-2">
-                      <div class="flex h-6 items-center mr-2">
-                        <input v-model="form.body.add_security_recommendation" type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                      </div>
-                      <div class="text-sm leading-6 cursor-pointer" @click="
-                        form.body.add_security_recommendation =
-                        !form.body.add_security_recommendation
-                        ">
-                        <label :for="name" class="text-gray-900 cursor-pointer">{{ $t("Add security recommendation")
-                        }}</label>
-                      </div>
-                    </div>
-                    <div class="relative flex mb-2">
-                      <div class="flex h-6 items-center mr-2">
-                        <input v-model="form.code_expiration" type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                      </div>
-                      <div class="text-sm leading-tight cursor-pointer"
-                        @click="form.code_expiration = !form.code_expiration">
-                        <label :for="name" class="text-gray-900 cursor-pointer">{{ $t("Add expiry time for the code")
-                        }}</label>
-                        <div class="text-[11px] text-slate-600">
-                          {{
-                            $t(
-                              "After the code has expired, the auto-fill button will be disabled."
-                            )
-                          }}
-                        </div>
-                      </div>
-                    </div>
-                    <div v-if="form.code_expiration" class="relative flex mb-2">
-                      <div class="bg-white border rounded-md w-full p-2">
-                        <h2 class="mb-2">{{ $t("Expires In") }}</h2>
-                        <div class="w-1/3 flex items-center gap-x-2">
-                          <input type="number" v-model="form.footer.code_expiration_minutes" step="any"
-                            class="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6"
-                            :class="error ? 'ring-[#b91c1c]' : 'ring-gray-300'" />
-                          <span class="text-sm">{{ $t("Minutes") }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mt-6 bg-gray-50 rounded-md p-3">
-                  <h2 class="text-slate-600 mb-1">{{ $t("Buttons") }}</h2>
-                  <p class="text-slate-600 leading-tight text-xs mb-4">
-                    {{
-                      $t(
-                        `You can customise the button text for both auto-fill and copy code. Even when zero-tap is turned
-                    on, buttons are still needed for the backup code delivery method.`
-                      )
-                    }}
-                  </p>
-
-                  <div v-if="form.authentication_button.otp_type == 'copy_code'">
-                    <FormInput v-model="form.authentication_button.text" :name="$t('Copy code')" :type="'text'"
-                      :class="''" :labelClass="'mb-0'" />
-                  </div>
-                  <div v-else class="flex gap-x-2">
-                    <FormInput v-model="form.authentication_button.autofill_text" :name="$t('Auto-fill')" :type="'text'"
-                      :class="'w-1/2'" :labelClass="'mb-0'" />
-                    <FormInput v-model="form.authentication_button.text" :name="$t('Copy code')" :type="'text'"
-                      :class="'w-1/2'" :labelClass="'mb-0'" />
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="
-                form.category == 'UTILITY' ||
-                form.category == 'AUTHENTICATION'
-              " class="mt-6 bg-gray-50 rounded-md p-3">
-                <h2 class="text-slate-600 mb-1">
-                  {{ $t("Message validity period") }}
-                </h2>
-                <p class="text-slate-600 leading-tight text-xs">
-                  {{
-                    $t(
-                      `It's recommended to set a custom validity period that your authentication message must be delivered
-                  by before it expires. If a message is not delivered within this time frame, you will not be charged
-                  and your customer will not see the message.`
-                    )
-                  }}
-                </p>
-
-                <div class="mt-4">
-                  <h2 class="text-slate-600 mb-1">
-                    {{ $t("Set custom validity period for your message") }}
-                  </h2>
-                  <div class="flex w-full mb-4">
-                    <p class="w-3/4 text-slate-600 text-[11px]">
-                      {{
-                        $t(`If you don't set a custom validity period, the standard 10 minutes WhatsApp message validity
-                      period will be applied.`)
-                      }}
-                    </p>
-                    <div class="w-1/4">
-                      <FormToggleSwitch v-model="form.customize_ttl" />
-                    </div>
-                  </div>
-                  <FormSelect v-if="form.customize_ttl" v-model="form.message_send_ttl_seconds" :options="form.category == 'UTILITY'
-                    ? utilityTTLOptions
-                    : authTTLOptions
-                    " :name="$t('Validity period')" :class="'sm:col-span-3'"
-                    :placeholder="$t('Select validity period')" />
-                </div>
-              </div>
-            </div>
-            <div v-if="selectedType === 'carousel'">
-              <div>
-                <div class="grid gap-x-6 gap-y-4 sm:grid-cols-6 mb-8 capitalize">
-                  <FormInput v-model="cardform.name" :name="$t('Name')" type="text" @input="handleNameInput"
-                    @keydown.space.prevent="addUnderscore" class="sm:col-span-6" />
-                  <FormSelect v-model="cardform.category" :options="categoryCrouselOptions" :name="$t('Category')"
-                    class="sm:col-span-3" :placeholder="$t('Select category')" />
-                  <FormSelect v-model="cardform.language" :options="langOptions" :name="$t('Language')"
-                    class="sm:col-span-3" :placeholder="$t('Select language')" />
-                </div>
-
-                <h2 class="text-slate-600">
-                  {{ $t("Body") }}
-                  <span class="text-xs">({{ $t("Required") }})</span>
-                </h2>
-                <span class="text-slate-600 text-xs">
-                  {{
-                    $t("Enter the text for your message in the language that you've selected")
-                  }}
-                </span>
-
-                <div class="mb-8">
-                  <BodyTextArea v-model="cardform.body.text" @updateExamples="updateBodyExamples" />
-                </div>
-
-                <div>
-                  <div v-for="(card, cardIndex) in cards" :key="cardIndex" class="p-4 border rounded-lg mb-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-2">
-                      <h3 class="text-lg font-semibold">
-                        Card {{ cardIndex + 1 }}
-                      </h3>
-                      <button @click="removeCard(cardIndex)" class="text-red-500 hover:text-red-700 text-sm">
-                        🗑️ Remove Card
-                      </button>
-                    </div>
-
-                    <div class="container mb-4">
-                      <input type="file" accept="image/*" @change="(e) => onFileChange(e, cardIndex)" />
-                      <p v-if="uploadingIndex === cardIndex" class="text-sm text-blue-600 mt-1">
-                        Uploading...
-                      </p>
-                    </div>
-
-                    <label class="text-slate-600">Body Text</label>
-                    <textarea v-model="card.components[1].text" class="w-full border rounded p-2 mb-4"
-                      placeholder="Enter body text"></textarea>
-
-                    <div>
-                      <h4 class="text-slate-600">Buttons</h4>
-                      <div v-for="(btn, btnIndex) in card.components[2].buttons" :key="btnIndex"
-                        class="mb-2 flex items-center gap-2">
-                        <select v-model="btn.type" class="border rounded p-1">
-                          <option value="quick_reply">Quick Reply</option>
-                          <option value="url">URL</option>
-                        </select>
-                        <input v-model="btn.text" placeholder="Button Text" class="border rounded p-1" />
-                        <input v-if="btn.type === 'url'" v-model="btn.url" placeholder="Button URL"
-                          class="border rounded p-1" />
-                        <input v-if="btn.type === 'url'" v-model="btn.example[0]" placeholder="Example"
-                          class="border rounded p-1" />
-                        <button @click="removeCardButton(cardIndex, btnIndex)" class="text-red-500 hover:text-red-700"
-                          title="Remove Button">
-                          🗑️
-                        </button>
-                      </div>
-
-                      <button v-if="card.components[2].buttons.length < 3" @click="addCardButton(cardIndex)"
-                        class="text-blue-600 text-sm mt-2">
-                        + Add Button
-                      </button>
-                    </div>
-                  </div>
-
-                  <button @click="addCard" v-if="cards.length < 10"
-                    class="bg-green-500 text-white px-4 py-2 rounded mr-4">
-                    + Add Card
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div v-if="selectedType === 'flow'">
-              <div class="grid gap-x-6 gap-y-4 sm:grid-cols-6 mb-8 capitalize">
-                <FormInput v-model="flowform.name" :name="$t('Name')" type="text" @input="handleNameInput"
-                  @keydown.space.prevent="addUnderscore" class="sm:col-span-6" />
-                <FormSelect v-model="flowform.category" :options="categoryCrouselOptions" :name="$t('Category')"
-                  class="sm:col-span-3" :placeholder="$t('Select category')" />
-                <FormSelect v-model="flowform.language" :options="langOptions" :name="$t('Language')"
-                  class="sm:col-span-3" :placeholder="$t('Select language')" />
-              </div>
-              <h2 class="text-slate-600">
-                {{ $t("Body") }}
-                <span class="text-xs">({{ $t("Required") }})</span>
-              </h2>
-              <span class="text-slate-600 text-xs">
-                {{
-                  $t(
-                    "Enter the text for your message in the language that you've selected"
-                  )
-                }}
-              </span>
-              <div class="mb-8">
-                <BodyTextArea v-model="flowform.body.text" @updateExamples="updateBodyExamples" />
-              </div>
-
-              <FormInput v-model="flowform.buttonText" :name="$t('Button Text')" type="text" class="mb-4" />
-
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
-                $t("Flow JSON")
-              }}</label>
-              <textarea v-model="flowform.flowJson" rows="6" class="w-full p-3 border rounded mb-4"
-                placeholder="Paste the JSON here"></textarea>
-
-              <button @click="showFlowBuilder = true"
-                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                {{ $t("Create Form") }}
-              </button>
-
-              <p class="text-sm text-gray-500 mt-2">
-                {{
-                  $t(
-                    "Note: Use the popup to create your flow. Copy the JSON from there and paste it above."
-                  )
-                }}
-              </p>
-
-              <button @click="FlowSubmitForm" class="bg-green-600 text-white px-4 py-2 rounded mt-4 hover:bg-green-700">
-                {{ $t("Submit Flow Template") }}
-              </button>
-
-              <div v-if="showFlowBuilder"
-                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white max-w-lg w-full p-6 rounded-lg relative">
-                  <button @click="showFlowBuilder = false"
-                    class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
-                    ✕
-                  </button>
-                  <h2 class="text-lg font-semibold mb-2">
-                    Build WhatsApp Flow
-                  </h2>
-                  <p class="text-sm text-gray-600 mb-4">
-                    Open the official
-                    <strong>Facebook Flow Playground</strong> in a new tab to
-                    build your form. After you're done, copy the JSON output and
-                    paste it below.
-                  </p>
-                  <a href="https://developers.facebook.com/docs/whatsapp/flows/playground" target="_blank"
-                    rel="noopener" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                    Open Flow Playground
-                  </a>
-                  <p class="text-xs text-gray-400 mt-4">
-                    Note: Facebook prevents their tool from being embedded in
-                    other apps. That’s why it opens in a new tab.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-              <Loading v-if="isLoading" />
-            </div>
-          </div>
-        </div>
-        <div v-if="selectedType === 'template'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20 overflow-y-auto">
-          <div
-            class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left w-[25em]">
-            <div v-if="form.header.format != 'TEXT'" class="mb-4 bg-[#ccd0d5] flex justify-center py-8 rounded">
-              <img v-if="form.header.format === 'IMAGE'" :src="'/images/image-placeholder.png'" />
-              <img v-if="form.header.format === 'VIDEO'" :src="'/images/video-placeholder.png'" />
-              <img v-if="form.header.format === 'DOCUMENT'" :src="'/images/document-placeholder.png'" />
-            </div>
-            <h2 v-else class="text-gray-700 text-sm mb-1 px-2 normal-case whitespace-pre-wrap">
-              {{ form.header.text }}
-            </h2>
-            <p v-if="form.category != 'AUTHENTICATION'" class="px-2 normal-case whitespace-pre-wrap"
-              v-html="formattedMessage"></p>
-            <p v-else class="px-2 normal-case whitespace-pre-wrap" v-html="form.body.add_security_recommendation === true
-              ? '{{1}} is your verification code. For your security, do not share this code.'
-              : '{{1}} is your verification code.'
-              "></p>
-            <div class="text-[#8c8c8c] mt-1 px-2">
-              <span v-if="form.category != 'AUTHENTICATION'" class="text-[13px]">{{ form.footer.text }}</span>
-              <span v-else-if="
-                form.category === 'AUTHENTICATION' &&
-                form.code_expiration == true
-              ">{{ $t("This code expires in") }}
-                {{ form.footer.code_expiration_minutes }} {{ "minutes" }}</span>
-              <span class="text-right text-xs leading-none float-right"
-                :class="form.footer.text ? 'mt-2' : ''">9:15</span>
-            </div>
-          </div>
-          <div v-if="form.buttons.length > 0"
-            class="mr-auto text-sm text-[#00a5f4] flex flex-col relative max-w-[25em]">
-            <div v-for="(item, index) in form.buttons" :key="index"
-              class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 my-[0.1em]">
-              <span>
-                <svg v-if="item.type === 'copy_code'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                  viewBox="0 0 24 24">
-                  <path fill="currentColor"
-                    d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12V1Z" />
-                </svg>
-                <svg v-else-if="item.type === 'PHONE_NUMBER'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                  viewBox="0 0 24 24">
-                  <g fill="none">
-                    <path fill="currentColor"
-                      d="M20 16v4c-2.758 0-5.07-.495-7-1.325c-3.841-1.652-6.176-4.63-7.5-7.675C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3c1.324 3.045 3.659 6.023 7.5 7.675L16 15l4 1z" />
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M13 18.675c1.93.83 4.242 1.325 7 1.325v-4l-4-1l-3 3.675zm0 0C9.159 17.023 6.824 14.045 5.5 11m0 0C4.4 8.472 4 5.898 4 4h4l1 4l-3.5 3z" />
-                  </g>
-                </svg>
-                <img v-else-if="item.type === 'URL'" :src="'/images/icons/link.png'" class="h-4" />
-                <img v-else :src="'/images/icons/reply.png'" class="h-4" />
-              </span>
-              <span>{{ item.text }}</span>
-            </div>
-          </div>
-          <div v-if="
-            form.category == 'AUTHENTICATION' &&
-            form.authentication_button.otp_type != 'zero_tap'
-          " class="mr-auto text-sm text-[#00a5f4] flex flex-col relative max-w-[25em]">
-            <div class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 my-[0.1em]">
-              <span v-if="form.authentication_button.otp_type == 'copy_code'" class="flex gap-x-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="currentColor"
-                    d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12V1Z" />
-                </svg>
-                {{ form.authentication_button.text }}
-              </span>
-              <span v-if="form.authentication_button.otp_type == 'one_tap'">{{
-                form.authentication_button.autofill_text
-              }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="selectedType === 'carousel'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20 overflow-y-auto">
-          <div
-            class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left w-[25em]">
-            <div class="bg-white rounded-lg rounded-tl-none p-4 mb-4">
-              <p class="text-sm text-gray-800 whitespace-pre-wrap">
-                {{ cardform.body.text || 'Your message preview will appear here...' }}
-              </p>
-            </div>
-
-            {{ console.log("cards : ", JSON.stringify(cards, null, 2)) }}
-
-            <div class="overflow-x-auto flex space-x-4">
-              <div v-for="(card, index) in cards" :key="index"
-                class="min-w-[250px] bg-white rounded-lg shadow-md p-4 flex-shrink-0">
-                <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
-                  <p class="text-sm text-gray-700">
-                    {{
-                      card.components.find(c => c.type === 'body')?.text || 'No text'
-                    }}
-                  </p>
-                </div>
-
-                <div v-if="card.components.find(c => c.type === 'buttons')" class="flex flex-col space-y-2 mt-2">
-                  <button v-for="(btn, btnIndex) in card.components.find(c => c.type === 'buttons')?.buttons"
-                    :key="btnIndex"
-                    class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 py-1 px-3 rounded text-left">
-                    {{ btn.text || 'Button' }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <div v-if="selectedType === 'flow'" class="md:w-[50%] chat-bg py-20 px-4 md:px-20">
-          <div style="max-width: 50%;"
-            class="mr-auto rounded-lg rounded-tl-none my-1 p-1 text-sm bg-white flex flex-col relative speech-bubble-left ">
-            <div v-if="form.header.format != 'TEXT'" class="mb-4 bg-[#ccd0d5] flex justify-center py-8 rounded">
-
-            </div>
-            <h2 v-else class="text-gray-700 text-sm mb-1 px-2 normal-case whitespace-pre-wrap">
-              {{ flowform.body.text }}
-            </h2>
-          </div>
-
-          <div data-v-089de5d9=""
-            class="flex justify-center items-center space-x-2 rounded-lg bg-white h-10 md:w-[50%]">
-            <span data-v-089de5d9=""><img data-v-089de5d9="" src="https://img.icons8.com/ios-filled/50/left2.png"
-                class="h-4" /></span><span data-v-089de5d9="">{{ flowform.buttonText }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <Modal :label="''" :isOpen="isModalOpen" :showHeader="false">
-      <div class="mt-5 grid grid-cols-1 gap-x-6 gap-y-4">
-        <div class="text-center">
-          <div v-if="error != null" class="bg-[#fae6e6] text-[darkred] rounded text-sm p-2 mb-4">
-            <div>{{ $t("Error") }}:</div>
-            <div>{{ error }}</div>
-            <button type="button" @click="closeModal"
-              class="mt-4 inline-flex justify-center rounded-md border border-transparent bg-slate-50 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4">
-              Close
-            </button>
-          </div>
-          <div v-else>
-            <h2 class="text-xl capitalize mt-6">
-              {{ $t("Your template is being uploaded!") }}
-            </h2>
-            <div class="flex justify-center mt-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
-                <path fill="none" stroke="currentColor" stroke-dasharray="15" stroke-dashoffset="15"
-                  stroke-linecap="round" stroke-width="2" d="M12 3C16.9706 3 21 7.02944 21 12">
-                  <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="15;0" />
-                  <animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate"
-                    values="0 12 12;360 12 12" />
-                </path>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Modal>
-  </AppLayout>
-</template> -->
-
 <template>
   <AppLayout>
     <div class="h-[calc(100vh-65px)] bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50 overflow-hidden">
       <!-- Header -->
       <div class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-6 py-4">
+        <div class="mx-auto px-6 py-4">
           <div class="flex items-center justify-between">
             <!-- Left: Title and Info -->
             <div class="flex items-center space-x-4">
@@ -1154,7 +212,7 @@
                 <!-- File Upload for IMAGE/VIDEO/DOCUMENT -->
                 <div v-else
                   class="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-[#ff5100] transition-colors">
-                  <input type="file" class="sr-only"
+                  <input type="file" class="hidden"
                     :accept="form.header.format === 'IMAGE' ? '.jpg, .png' : form.header.format === 'VIDEO' ? '.mp4' : '.pdf'"
                     :id="`file-upload-${form.header.format}`" @change="handleFileUpload($event)" />
 
@@ -1423,7 +481,7 @@
               </div>
             </div>
             <!-- Carousel Form -->
-            <div v-if="selectedType === 'carousel'" class="space-y-6">
+            <div v-if="selectedType === 'carousel'" class="space-y-4">
               <!-- Basic Details -->
               <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-5">
                 <div class="flex items-center space-x-2 mb-4">
@@ -1482,7 +540,7 @@
                         <Upload class="w-4 h-4" />
                         <span>Upload Image</span>
                         <input type="file" accept="image/*" @change="(e) => onFileChange(e, cardIndex)"
-                          class="sr-only" />
+                          class="hidden" />
                       </label>
                       <span v-if="uploadingIndex === cardIndex"
                         class="text-sm text-[#ff5100] flex items-center space-x-2">
@@ -1510,7 +568,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-2">Buttons</label>
                     <div class="space-y-2">
                       <div v-for="(btn, btnIndex) in card.components[2].buttons" :key="btnIndex"
-                        class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+                        class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg flex-wrap">
                         <select v-model="btn.type"
                           class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100]">
                           <option value="quick_reply">Quick Reply</option>
@@ -1547,7 +605,7 @@
             </div>
 
             <!-- Flow Form -->
-            <div v-if="selectedType === 'flow'" class="space-y-6">
+            <div v-if="selectedType === 'flow'" class="space-y-4">
               <!-- Basic Details -->
               <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-5">
                 <div class="flex items-center space-x-2 mb-4">
@@ -1594,7 +652,7 @@
                 </div>
 
                 <button @click="showFlowBuilder = true"
-                  class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+                  class="w-full py-3 bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
                   <ExternalLink class="w-5 h-5" />
                   <span>{{ $t("Create Form") }}</span>
                 </button>
@@ -1602,20 +660,258 @@
                 <p class="text-sm text-slate-600 flex items-start space-x-2">
                   <Info class="w-4 h-4 mt-0.5 flex-shrink-0 text-[#ff5100]" />
                   <span>{{ $t("Note: Use the popup to create your flow. Copy the JSON from there and paste it above.")
-                  }}</span>
+                    }}</span>
                 </p>
               </div>
             </div>
           </div>
         </div>
-        <!-- =========================== OLD UI CODE ============================== -->
+        <!-- Right Panel - Preview -->
+        <div
+          class="w-full lg:w-1/2 bg-gradient-to-br from-slate-100 via-orange-50/20 to-slate-100 p-4 flex items-center justify-center relative">
+          <!-- Background Decorations -->
+          <div
+            class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#ff5100]/5 to-transparent rounded-full blur-3xl">
+          </div>
+          <div
+            class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-orange-200/20 to-transparent rounded-full blur-3xl">
+          </div>
+
+          <!-- Preview Container -->
+          <div class="lg:sticky top-0 lg:z-10">
+            <div class="text-center my-6">
+              <div
+                class="inline-flex items-center space-x-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-slate-200 mb-3">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-sm font-medium text-slate-700">Live Preview</span>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800 mb-1">WhatsApp Message Preview</h3>
+              <p class="text-sm text-slate-600">See how your message will appear</p>
+            </div>
+
+            <!-- Phone Frame -->
+            <div class="bg-white rounded-3xl shadow-2xl p-0 border-8 border-slate-800 relative">
+              <!-- Phone Notch -->
+              <div class="absolute z-50 top-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-slate-800 rounded-b-2xl">
+              </div>
+
+              <!-- WhatsApp Preview -->
+              <div class="w-full chat-bg pt-4 rounded-2xl overflow-hidden h-[calc(100vh-380px)] aspect-[12/16]">
+                <div class="overflow-y-auto h-full p-4">
+                  <!-- Template Preview -->
+                  <div v-if="selectedType === 'template'" class="space-y-2">
+                    <div
+                      class="mr-auto rounded-lg rounded-tl-none my-[0.1em] p-2 text-sm bg-white flex flex-col relative speech-bubble-left max-w-[60%]">
+                      <!-- Header -->
+                      <div v-if="form.header.format !== 'TEXT'"
+                        class="mb-3 bg-slate-200 flex justify-center py-8 rounded-lg">
+                        <img v-if="form.header.format === 'IMAGE' && !!form.header.file_url" :src="form.header.file_url"
+                          alt="Image" class="w-full h-full object-cover" />
+
+                        <video v-else-if="form.header.format === 'VIDEO' && !!form.header.file_url"
+                          :src="form.header.file_url" autoplay muted loop playsinline
+                          class="w-full h-full object-cover rounded-xl"></video>
+
+
+                        <component v-else
+                          :is="form.header.format === 'IMAGE' ? ImageIcon : form.header.format === 'VIDEO' ? Video : FileIcon"
+                          class="w-12 h-12 text-slate-400" />
+
+                      </div>
+                      <h2 v-else-if="form.header.text" class="text-slate-700 text-sm mb-2 font-medium">
+                        {{ form.header.text }}
+                      </h2>
+
+                      <!-- Body -->
+                      <p v-if="form.category !== 'AUTHENTICATION'" class="text-sm text-slate-800 whitespace-pre-wrap"
+                        v-html="formattedMessage || 'Your message preview will appear here...'"></p>
+                      <p v-else class="text-sm text-slate-800 whitespace-pre-wrap" v-html="form.body.add_security_recommendation
+                        ? '{{1}} is your verification code. For your security, do not share this code.'
+                        : '{{1}} is your verification code.'"></p>
+
+                      <!-- Footer -->
+                      <div class="text-slate-500 mt-2 text-xs">
+                        <span v-if="form.category !== 'AUTHENTICATION'">{{ form.footer.text }}</span>
+                        <span v-else-if="form.code_expiration">
+                          {{ $t("This code expires in") }} {{ form.footer.code_expiration_minutes }} minutes
+                        </span>
+                        <span class="float-right">9:15</span>
+                      </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div v-if="form.buttons.length > 0" class="space-y-1 max-w-[60%]">
+                      <button v-for="(item, index) in form.buttons" :key="index"
+                        class="w-full flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                        <component
+                          :is="item.type === 'copy_code' ? Copy : item.type === 'PHONE_NUMBER' ? Phone : item.type === 'URL' ? SquareArrowOutUpRight : Reply"
+                          class="w-4 h-4" />
+                        <span>{{ item.text }}</span>
+                      </button>
+                    </div>
+
+                    <!-- Auth Buttons -->
+                    <div v-if="form.category === 'AUTHENTICATION' && form.authentication_button.otp_type !== 'zero_tap'"
+                      class="max-w-[60%]">
+                      <button
+                        class="w-full flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                        <Copy class="w-4 h-4" />
+                        <span v-if="form.authentication_button.otp_type === 'copy_code'">
+                          {{ form.authentication_button.text }}
+                        </span>
+                        <span v-else>{{ form.authentication_button.autofill_text }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Carousel Preview -->
+                  <div v-if="selectedType === 'carousel'" class="space-y-2">
+                    <div
+                      class="mr-auto rounded-lg rounded-tl-none my-[0.1em] p-2 text-sm bg-white flex flex-col relative speech-bubble-left max-w-[60%]">
+                      <p class="text-sm text-slate-800 whitespace-pre-wrap">
+                        {{ cardform.body.text || 'Your message preview will appear here...' }}
+                      </p>
+                    </div>
+
+                    <div class="flex space-x-2 overflow-x-auto pb-2">
+                      <div v-for="(card, index) in cards" :key="index"
+                        class="w-[150px] bg-white rounded-lg shadow-md p-3 flex-shrink-0">
+                        <div class="mb-3 w-[126px] aspect-square bg-slate-200 flex justify-center py-8 rounded-lg">
+                          <img v-if="card.image_url" :src="card.image_url" alt="Image"
+                            class="w-full h-full object-cover" />
+                          <component v-else :is="ImageIcon" class="w-12 h-12 text-slate-400" />
+                        </div>
+                        <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
+                          <p class="text-sm text-slate-700">
+                            {{card.components.find(c => c.type === 'body')?.text || 'No text'}}
+                          </p>
+                        </div>
+                        <div v-if="card.components.find(c => c.type === 'buttons')" class="space-y-1">
+                          <button v-for="(btn, btnIndex) in card.components.find(c => c.type === 'buttons')?.buttons"
+                            :key="btnIndex"
+                            class="w-full flex items-center justify-center space-x-2 text-xs bg-blue-500/5 text-blue-600 py-1.5 rounded text-center">
+                            <Reply v-if="btn.type === 'quick_reply'" class="w-4 h-4" />
+                            <SquareArrowOutUpRight v-else-if="btn.type === 'url'" class="w-4 h-4" />
+                            <span>{{ btn.text || 'Button text' }}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Flow Preview -->
+                  <div v-if="selectedType === 'flow'" class="space-y-2">
+                    <div
+                      class="mr-auto rounded-lg rounded-tl-none my-[0.1em] p-2 text-sm bg-white flex flex-col relative speech-bubble-left max-w-[60%]">
+                      <p class="text-sm text-slate-800 whitespace-pre-wrap">
+                        {{ flowform.body.text || 'Your message preview will appear here...' }}
+                      </p>
+                    </div>
+                    <button
+                      class="w-full max-w-[60%] flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                      <span>{{ flowform.buttonText || 'Button text' }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Preview Info -->
+            <div class="my-4 text-center">
+              <p class="text-xs text-slate-500">
+                Preview may differ slightly from actual WhatsApp appearance
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow Builder Modal -->
+    <div v-if="showFlowBuilder"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in zoom-in duration-300">
+        <button @click="showFlowBuilder = false"
+          class="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <X class="w-5 h-5 text-slate-600" />
+        </button>
+
+        <div class="mb-6">
+          <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-4">
+            <Workflow class="w-6 h-6 text-white" />
+          </div>
+          <h2 class="text-2xl font-bold text-slate-800 mb-2">Build WhatsApp Flow</h2>
+          <p class="text-sm text-slate-600">
+            Open the official <strong>Facebook Flow Playground</strong> to build your form. Copy the JSON output and
+            paste
+            it in the form.
+          </p>
+        </div>
+
+        <!-- open flow playground in new tab -->
+        <!-- <a href="https://developers.facebook.com/docs/whatsapp/flows/playground" target="_blank" rel="noopener"
+          class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+          <ExternalLink class="w-5 h-5" />
+          <span>Open Flow Playground</span>
+        </a> -->
+
+        <!-- open flow playground in same tab -->
+        <a href="#" onclick="window.open(
+              `https://developers.facebook.com/docs/whatsapp/flows/playground`,
+              `FlowPlayground`,
+              `width=1200,height=700,left=150,top=100,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
+            ); return false;"
+          class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-[#ff5100] to-[#ff6422] hover:from-[#ff6422] hover:to-[#ff5100] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7v7m0 0L10 21l-7-7L21 10z" />
+          </svg>
+          <span>Open Flow Playground</span>
+        </a>
+
+        <p class="text-xs text-slate-500 mt-4 flex items-start space-x-2">
+          <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>Note: Facebook prevents their tool from being embedded. It opens in a new tab.</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Success/Error Modal -->
+    <Modal :label="''" :isOpen="isModalOpen" :showHeader="false">
+      <div class="p-6">
+        <div v-if="error" class="text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X class="w-8 h-8 text-red-600" />
+          </div>
+          <h4 class="text-lg text-slate-800 font-semibold mb-2 text-start">{{ error.error.error_user_title
+            }}
+          </h4>
+          <p class="text-sm text-slate-600 mb-6 text-start">{{ error.error.error_user_msg }}</p>
+          <button @click="closeModal"
+            class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">
+            Close
+          </button>
+        </div>
+        <div v-else class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 class="w-8 h-8 text-green-600 animate-spin" />
+          </div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">{{ $t("Uploading Template") }}</h3>
+          <p class="text-sm text-slate-600">{{ $t("Your template is being uploaded!") }}</p>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Loading Overlay -->
+    <div v-if="isLoading && !isModalOpen"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+      <div class="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center space-y-4">
+        <Loader2 class="w-12 h-12 animate-spin text-[#ff5100]" />
+        <p class="text-slate-700 font-medium">Processing...</p>
       </div>
     </div>
   </AppLayout>
 </template>
 
 
-<!-- First Script -->
 <script>
 export default {
   data() {
@@ -1629,17 +925,40 @@ export default {
         buttonText: "",
         flowJson: "",
       },
+      selectedType: "template",
+      uploadingIndex: null,
     };
   },
   methods: {
-    handleNameInput() {
-      // your existing logic
+    handleNameInput(event) {
+      const value = event.target.value.toLowerCase();
+      if (this.selectedType === 'template') {
+        this.form.name = value.replace(/[^a-zA-Z0-9_]/g, "");
+      } else if (this.selectedType === 'carousel') {
+        this.cardform.name = value.replace(/[^a-zA-Z0-9_]/g, "");
+      } else if (this.selectedType === 'flow') {
+        this.flowform.name = value.replace(/[^a-zA-Z0-9_]/g, "");
+      }
     },
-    addUnderscore() {
-      // your existing logic
+    addUnderscore(event) {
+      event.preventDefault();
+      if (this.selectedType === 'template') {
+        this.form.name += "_";
+      } else if (this.selectedType === 'carousel') {
+        this.cardform.name += "_";
+      } else if (this.selectedType === 'flow') {
+        this.flowform.name += "_";
+      }
     },
-    updateBodyExamples() {
-      // your existing logic
+    updateBodyExamples(value) {
+      if (this.selectedType === 'template') {
+        this.form.body.example = value;
+      }
+    },
+    updateHeaderExamples(value) {
+      this.form.header.example = value;
+      this.form.header.file_url = URL.createObjectURL(value);
+
     },
     handleSubmitFlowTemplate() {
       console.log("Submitted Flow JSON:", this.flowform.flowJson);
@@ -1648,7 +967,6 @@ export default {
 };
 </script>
 
-<!-- Second Script -->
 <script setup>
 import axios from "axios";
 import AppLayout from "./../Layout/App.vue";
@@ -1663,7 +981,39 @@ import { Link } from "@inertiajs/vue3";
 import Modal from "@/Components/Modal.vue";
 import "vue3-toastify/dist/index.css";
 import { router } from "@inertiajs/vue3";
-import { AlignLeft, ArrowLeft, Clock, Copy, FileText, ImageIcon, Layers, Link2, Loader, Loader2, MessageSquare, MousePointerClick, Phone, Plus, Send, Settings, Shield, Smartphone, Trash2, Workflow, Zap } from "lucide-vue-next";
+
+// Import Lucide Icons
+import {
+  FileText,
+  Info,
+  ArrowLeft,
+  Send,
+  Loader2,
+  MessageSquare,
+  Zap,
+  Layers,
+  Workflow,
+  Settings,
+  ImageIcon,
+  Video,
+  FileIcon,
+  AlignLeft,
+  Phone,
+  Link2,
+  Copy,
+  Trash2,
+  Plus,
+  Shield,
+  Smartphone,
+  Clock,
+  MousePointerClick,
+  Upload,
+  CheckCircle,
+  ExternalLink,
+  X,
+  Reply,
+  SquareArrowOutUpRight,
+} from "lucide-vue-next";
 
 const props = defineProps(["languages", "settings"]);
 const headerCharacterLimit = ref("60");
@@ -1676,6 +1026,8 @@ const isLoading = ref(false);
 const imageUrl = ref(null);
 const isModalOpen = ref(false);
 const error = ref(null);
+const selectedType = ref("template");
+
 const form = ref({
   name: null,
   category: "UTILITY",
@@ -1714,6 +1066,32 @@ const form = ref({
     ],
   },
 });
+
+const cardform = ref({
+  name: "",
+  language: "",
+  category: "",
+  body: {
+    text: "",
+  },
+});
+
+const flowform = ref({
+  name: "",
+  language: "",
+  category: "",
+  body: {
+    text: "",
+  },
+  buttonText: "",
+  flowJson: "",
+});
+
+const cards = ref([]);
+const bodyExamplesInput = ref("");
+const uploadingIndex = ref(null);
+const showFlowBuilder = ref(false);
+
 const config = ref(props.settings.metadata);
 const settings = ref(config.value ? JSON.parse(config.value) : null);
 
@@ -1749,6 +1127,7 @@ const categoryOptions = ref([
 const categoryCrouselOptions = ref([
   { value: "MARKETING", label: "Marketing" },
 ]);
+
 const previousExamples = ref({});
 
 const changeHeaderType = (value) => {
@@ -1759,24 +1138,19 @@ const changeHeaderType = (value) => {
     JSON.stringify(previousExamples.value[currentType]) !==
     JSON.stringify(form.value.header.example)
   ) {
-    // Store the example if it has changed
     previousExamples.value[currentType] = form.value.header.example;
   }
 
   form.value.header.format = value;
 
   if (previousExamples.value[value] !== undefined) {
-    // Restore the example if switching back
     form.value.header.example = previousExamples.value[value];
-  } else {
-    // Set it to null explicitly to avoid fallback issues
-    form.value.header.example = null;
-  }
-};
+    form.value.header.file_url = URL.createObjectURL(previousExamples.value[value]);
 
-const handleNameInput = (event) => {
-  const value = event.target.value.toLowerCase();
-  form.value.name = value.replace(/[^a-zA-Z0-9_]/g, "");
+  } else {
+    form.value.header.example = null;
+    form.value.header.file_url = null;
+  }
 };
 
 const handleFileUpload = (event) => {
@@ -1785,19 +1159,15 @@ const handleFileUpload = (event) => {
   reader.onload = (e) => {
     imageUrl.value = e.target.result;
     form.value.header.example = file;
-    console.log("File uploaded:", file);
-    console.log("File data URL:", e.target.result);
+    form.value.header.file_url = URL.createObjectURL(file);
   };
   reader.readAsDataURL(file);
 };
 
 const removeFile = () => {
   form.value.header.example = "";
-};
+  form.value.header.file_url = null;
 
-const addUnderscore = (event) => {
-  event.preventDefault();
-  form.value.name += "_";
 };
 
 const characterCount = (type) => {
@@ -1937,7 +1307,6 @@ const isFormValid = computed(() => {
     return false;
   }
 
-  // Exclude body.text validation if category is 'authentication'
   if (form.value.category !== "AUTHENTICATION") {
     if (form.value.body.text === null || form.value.body.text.trim() === "") {
       return false;
@@ -1956,7 +1325,6 @@ const isFormValid = computed(() => {
       }
     }
 
-    // Exclude header validation if category is 'authentication'
     if (
       form.value.header.example.length > 0 &&
       !Object.keys(form.value.header.example).every((key) => {
@@ -1968,16 +1336,13 @@ const isFormValid = computed(() => {
     }
   }
 
-  // Additional validation for authentication category
   if (form.value.category === "AUTHENTICATION") {
     const authButton = form.value.authentication_button;
 
-    // Ensure otp_type has a value
     if (!authButton.otp_type || authButton.otp_type.trim() === "") {
       return false;
     }
 
-    // Ensure text value based on otp_type
     if (
       authButton.otp_type === "copy_code" ||
       authButton.otp_type === "one_tap" ||
@@ -1988,7 +1353,6 @@ const isFormValid = computed(() => {
       }
     }
 
-    // If otp_type is one_tap or zero_tap, autofill_text must also have a value
     if (
       (authButton.otp_type === "one_tap" ||
         authButton.otp_type === "zero_tap") &&
@@ -1997,7 +1361,6 @@ const isFormValid = computed(() => {
       return false;
     }
 
-    // Ensure supported_apps is required **only for one_tap and zero_tap**
     if (["one_tap", "zero_tap"].includes(authButton.otp_type)) {
       if (
         !Array.isArray(authButton.supported_apps) ||
@@ -2006,7 +1369,6 @@ const isFormValid = computed(() => {
         return false;
       }
 
-      // Validate each supported_app entry
       const allAppsValid = authButton.supported_apps.every((app) => {
         return (
           app.package_name &&
@@ -2025,18 +1387,10 @@ const isFormValid = computed(() => {
   return true;
 });
 
-const updateBodyExamples = (value) => {
-  form.value.body.example = value;
-};
-
-const updateHeaderExamples = (value) => {
-  form.value.header.example = value;
-};
-
 const submitForm = () => {
+  console.log("Submitting form");
   isLoading.value = true;
   isModalOpen.value = true;
-  console.log("Submitting form:", form.value);
   axios
     .post("/templates/create", form.value, {
       headers: {
@@ -2046,16 +1400,17 @@ const submitForm = () => {
     .then((response) => {
       if (response.data.success === false) {
         isLoading.value = false;
-        error.value = response.data.message;
+        error.value = response.data.message || "Internal server error";;
       } else {
         router.visit("/templates", {
           method: "get",
         });
       }
     })
-    .catch((error) => {
-      //   Handle any errors that occur during the request
-      console.log("An error occurred:", error);
+    .catch((err) => {
+      error.value = err.response.data.error || "Internal server error";
+      console.error("Submit error:", err);
+      isLoading.value = false;
     });
 };
 
@@ -2064,13 +1419,13 @@ const codeDeliveryOptions = [
     value: "zero_tap",
     label: "Zero-tap auto-fill",
     description:
-      "This is recommended as the easiest option for your customers. Zero-tap will automatically send code without requiring your customer to tap a button. An auto-fill or copy code message will be sent if zero-tap and auto-fill aren’t possible.",
+      "This is recommended as the easiest option for your customers. Zero-tap will automatically send code without requiring your customer to tap a button.",
   },
   {
     value: "one_tap",
     label: "One-tap auto-fill",
     description:
-      "The code sends to your app when customers tap the button. A copy code message will be sent if auto-fill isn’t possible.",
+      "The code sends to your app when customers tap the button. A copy code message will be sent if auto-fill isn't possible.",
   },
   {
     value: "copy_code",
@@ -2113,42 +1468,12 @@ function formatText(text) {
 
 const closeModal = () => {
   isModalOpen.value = false;
-
   setTimeout(() => {
     error.value = null;
   }, 500);
 };
 
-watch(form, () => {
-  isFormValid.value;
-});
-
-const selectedType = ref("template");
-
-const cardform = ref({
-  name: "",
-  language: "",
-  category: "",
-  body: {
-    text: "",
-  },
-});
-
-const flowform = ref({
-  name: "",
-  language: "",
-  category: "",
-  body: {
-    text: "",
-  },
-  buttonText: "",
-  flowJson: "",
-});
-
-const bodyExamplesInput = ref("");
-
-const cards = ref([]);
-
+// Carousel Functions
 function addCard() {
   if (cards.value.length < 10) {
     cards.value.push({
@@ -2193,6 +1518,151 @@ function removeCardButton(cardIndex, buttonIndex) {
   cards.value[cardIndex].components[2].buttons.splice(buttonIndex, 1);
 }
 
+async function onFileChange(e, cardIndex) {
+  const selectedFile = e.target.files[0];
+  if (!selectedFile || !cards.value[cardIndex]) return;
+
+  uploadingIndex.value = cardIndex;
+
+  const formData = new FormData();
+  formData.append("image", selectedFile);
+
+  try {
+    const res = await axios.post("/meta-upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    cards.value[cardIndex].components[0].example.header_handle[0] =
+      res.data.file_handle;
+    cards.value[cardIndex].image_url = URL.createObjectURL(selectedFile);
+  } catch (err) {
+    console.error("Upload failed:", err.response?.data || err.message);
+    alert("Upload failed. Check console for error.");
+  } finally {
+    uploadingIndex.value = null;
+  }
+}
+
+const cleanedCards = computed(() => {
+  return cards.value.map((card) => {
+    const cleanedComponents = card.components.map((component) => {
+      if (component.type === "buttons") {
+        return {
+          ...component,
+          buttons: component.buttons.map((btn) => {
+            if (btn.type === "quick_reply") {
+              return {
+                type: btn.type,
+                text: btn.text,
+              };
+            } else {
+              return btn;
+            }
+          }),
+        };
+      }
+      return component;
+    });
+    return {
+      components: cleanedComponents,
+    };
+  });
+});
+
+function CardsubmitForm() {
+  for (let i = 0; i < cards.value.length; i++) {
+    const card = cards.value[i];
+
+    const headerHandle = card.components[0].example.header_handle[0];
+    if (!headerHandle || headerHandle.trim() === "") {
+      alert(`❌ Card ${i + 1}: Header image must be uploaded.`);
+      return;
+    }
+
+    const bodyText = card.components[1].text;
+    if (!bodyText || bodyText.trim() === "") {
+      alert(`❌ Card ${i + 1}: Body text is required.`);
+      return;
+    }
+
+    const buttons = card.components[2].buttons;
+    if (buttons.length === 0) {
+      alert(`❌ Card ${i + 1}: At least one button is required.`);
+      return;
+    }
+
+    for (let j = 0; j < buttons.length; j++) {
+      const btn = buttons[j];
+      if (!btn.text || btn.text.trim() === "") {
+        alert(`❌ Card ${i + 1}, Button ${j + 1}: Button text is required.`);
+        return;
+      }
+      if (btn.type === "url") {
+        if (!btn.url || btn.url.trim() === "") {
+          alert(`❌ Card ${i + 1}, Button ${j + 1}: URL is required.`);
+          return;
+        }
+        if (!btn.example[0] || btn.example[0].trim() === "") {
+          alert(`❌ Card ${i + 1}, Button ${j + 1}: Example is required.`);
+          return;
+        }
+      }
+    }
+  }
+
+  if (!cardform.value.body.text.trim()) {
+    alert("❌ Body text (outside cards) is required.");
+    return;
+  }
+
+  isLoading.value = true;
+  isModalOpen.value = true;
+
+  const exampleValues = bodyExamplesInput.value
+    .split(",")
+    .map((val) => val.trim())
+    .filter((val) => val);
+
+  const finalJson = {
+    name: `crousel_${cardform.value.name}`,
+    language: cardform.value.language,
+    category: cardform.value.category,
+    components: [
+      {
+        type: "body",
+        text: cardform.value.body.text,
+        example: {
+          body_text: [exampleValues],
+        },
+      },
+      {
+        type: "carousel",
+        cards: cleanedCards.value,
+      },
+    ],
+  };
+
+  axios
+    .post("/crousel/create", finalJson, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    .then((response) => {
+      if (response.data.success === false) {
+        isLoading.value = false;
+        error.value = response.data.message || "Internal server error";;
+      } else {
+        isLoading.value = false;
+        window.location.href = "/templates";
+      }
+    })
+    .catch((err) => {
+      error.value = err.response.data.error || "Internal server error";
+      console.error("Submit error:", err);
+      isLoading.value = false;
+    });
+}
 
 function FlowSubmitForm() {
   if (!flowform.value.body.text.trim()) {
@@ -2219,8 +1689,10 @@ function FlowSubmitForm() {
     alert("❌ Flowjson is required.");
     return;
   }
+
   isLoading.value = true;
   isModalOpen.value = true;
+
   const finalFlowJson = {
     name: `flow_${flowform.value.name}`,
     language: flowform.value.language,
@@ -2242,8 +1714,7 @@ function FlowSubmitForm() {
       },
     ],
   };
-  isLoading.value = true;
-  isModalOpen.value = true;
+
   axios
     .post("/crousel/create", finalFlowJson, {
       headers: {
@@ -2253,306 +1724,171 @@ function FlowSubmitForm() {
     .then((response) => {
       if (response.data.success === false) {
         isLoading.value = false;
-        error.value = response.data.message;
+        error.value = response.data.message || "Internal server error";;
       } else {
-        isLoading.value = false; // hide loader first
-
-        window.location.href = "/templates";
-      }
-    })
-    .catch((err) => {
-      // isModalOpen.value = false;
-      error.value = err.response.data.error;
-      console.error("Submit error:", err);
-      isLoading.value = false;
-    });
-}
-
-let finalJson = null;
-
-function CardsubmitForm() {
-  // Validate cards before submitting
-  for (let i = 0; i < cards.value.length; i++) {
-    const card = cards.value[i];
-
-    // 1. Validate header image handle
-    const headerHandle = card.components[0].example.header_handle[0];
-    if (!headerHandle || headerHandle.trim() === "") {
-      alert(`❌ Card ${i + 1}: Header image must be uploaded.`);
-      return;
-    }
-
-    // 2. Validate body text
-    const bodyText = card.components[1].text;
-    if (!bodyText || bodyText.trim() === "") {
-      alert(`❌ Card ${i + 1}: Body text is required.`);
-      return;
-    }
-
-    // 3. Validate at least one button with filled fields
-    const buttons = card.components[2].buttons;
-    if (buttons.length === 0) {
-      alert(`❌ Card ${i + 1}: At least one button is required.`);
-      return;
-    }
-
-    for (let j = 0; j < buttons.length; j++) {
-      const btn = buttons[j];
-      if (!btn.text || btn.text.trim() === "") {
-        alert(`❌ Card ${i + 1}, Button ${j + 1}: Button text is required.`);
-        return;
-      }
-      if (btn.type === "url") {
-        if (!btn.url || btn.url.trim() === "") {
-          alert(`❌ Card ${i + 1}, Button ${j + 1}: URL is required.`);
-          return;
-        }
-        if (!btn.example[0] || btn.example[0].trim() === "") {
-          alert(`❌ Card ${i + 1}, Button ${j + 1}: Example is required.`);
-          return;
-        }
-      }
-    }
-  }
-
-
-  // Form-level body validation
-  if (!cardform.value.body.text.trim()) {
-    alert("❌ Body text (outside cards) is required.");
-    return;
-  }
-
-  // Everything validated, proceed to submit
-  isLoading.value = true;
-  isModalOpen.value = true;
-
-  const cleanedCards = cards.value.map((card) => {
-    const cleanedComponents = card.components.map((component) => {
-      if (component.type === "buttons") {
-        return {
-          ...component,
-          buttons: component.buttons.map((btn) => {
-            if (btn.type === "quick_reply") {
-              return {
-                type: btn.type,
-                text: btn.text,
-              };
-            } else {
-              return btn;
-            }
-          }),
-        };
-      }
-      return component;
-    });
-    return {
-      components: cleanedComponents,
-    };
-  });
-
-  const exampleValues = bodyExamplesInput.value
-    .split(",")
-    .map((val) => val.trim())
-    .filter((val) => val);
-
-  finalJson = {
-    name: `crousel_${cardform.value.name}`,
-    language: cardform.value.language,
-    category: cardform.value.category,
-    components: [
-      {
-        type: "body",
-        text: cardform.value.body.text,
-        example: {
-          body_text: [exampleValues],
-        },
-      },
-      {
-        type: "carousel",
-        cards: cleanedCards,
-      },
-    ],
-  };
-
-  isLoading.value = true;
-  isModalOpen.value = true;
-  axios
-    .post("/crousel/create", finalJson, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-    .then((response) => {
-      if (response.data.success === false) {
         isLoading.value = false;
-        error.value = response.data.message;
-      } else {
-        isLoading.value = false; // hide loader first
-
         window.location.href = "/templates";
       }
     })
     .catch((err) => {
+      error.value = err.response.data.error || "Internal server error";
       console.error("Submit error:", err);
       isLoading.value = false;
     });
 }
 
-const uploadingIndex = ref(null); // track which card is uploading
-
-async function onFileChange(e, cardIndex) {
-  const selectedFile = e.target.files[0];
-  if (!selectedFile || !cards.value[cardIndex]) return;
-
-  uploadingIndex.value = cardIndex;
-
-  const formData = new FormData();
-  formData.append("image", selectedFile);
-
-  try {
-    const res = await axios.post("/meta-upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    // Set the file_handle to that card's header_handle[0]
-    cards.value[cardIndex].components[0].example.header_handle[0] =
-      res.data.file_handle;
-  } catch (err) {
-    console.error("Upload failed:", err.response?.data || err.message);
-    alert("Upload failed. Check console for error.");
-  } finally {
-    uploadingIndex.value = null;
-  }
-}
+watch(form, () => {
+  isFormValid.value;
+});
 </script>
 
-<!-- Third Script for styling -->
+
 <style scoped>
-.button {
-  display: inline-block;
-  padding: 8px 24px;
-  border: 1px solid #4f4f4f;
-  border-radius: 4px;
-  transition: all 0.2s ease-in;
-  position: relative;
-  overflow: hidden;
-  font-size: 19px;
-  cursor: pointer;
-  color: black;
-  z-index: 1;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.button:before {
-  content: "";
+/* Smooth Animations */
+.animate-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.zoom-in {
+  animation: zoomIn 0.3s ease-out;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Focus States */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #ff5100;
+}
+
+/* Button Hover Effects */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Card Hover Effects */
+.bg-white {
+  transition: all 0.3s ease;
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Gradient Background Animation */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.bg-gradient-to-br,
+.bg-gradient-to-r {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+/* Smooth Transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* WhatsApp Message Bubble */
+.speech-bubble-left::before {
+  content: '';
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%) scaleY(1) scaleX(1.25);
-  top: 100%;
-  width: 140%;
-  height: 180%;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 50%;
-  display: block;
-  transition: all 0.5s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
-  z-index: -1;
+  left: -8px;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 8px 8px 0;
+  border-color: transparent white transparent transparent;
 }
 
-.button:after {
-  content: "";
-  position: absolute;
-  left: 55%;
-  transform: translateX(-50%) scaleY(1) scaleX(1.45);
-  top: 180%;
-  width: 160%;
-  height: 190%;
-  background-color: #39bda7;
-  border-radius: 50%;
-  display: block;
-  transition: all 0.5s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
-  z-index: -1;
+/* Card Shadow on Hover */
+.hover\:shadow-xl:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.button:hover {
-  color: #ffffff;
-  border: 1px solid #39bda7;
+/* Backdrop Blur */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
 }
 
-.button:hover:before {
-  top: -35%;
-  background-color: #39bda7;
-  transform: translateX(-50%) scaleY(1.3) scaleX(0.8);
-}
-
-.button:hover:after {
-  top: -45%;
-  background-color: #39bda7;
-  transform: translateX(-50%) scaleY(1.3) scaleX(0.8);
-}
-
-/* From Uiverse.io by Gaurang7717 */
-.Btn {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 45px;
-  height: 45px;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition-duration: 0.3s;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
-  background-color: #00d757;
-}
-
-.sign {
-  width: 100%;
-  transition-duration: 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sign svg {
-  width: 25px;
-}
-
-.sign svg path {
-  fill: white;
-}
-
-.text {
-  position: absolute;
-  right: 0%;
-  width: 0%;
-  opacity: 0;
-  color: white;
-  font-size: 1.2em;
-  font-weight: 600;
-  transition-duration: 0.3s;
-}
-
-.Btn:hover {
-  width: 150px;
-  border-radius: 40px;
-  transition-duration: 0.3s;
-}
-
-.Btn:hover .sign {
-  width: 30%;
-  transition-duration: 0.3s;
-  padding-left: 10px;
-}
-
-.Btn:hover .text {
-  opacity: 1;
-  width: 70%;
-  transition-duration: 0.3s;
-  padding-right: 10px;
-}
-
-.Btn:active {
-  transform: translate(2px, 2px);
+/* Disable Text Selection on Buttons */
+button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 </style>

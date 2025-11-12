@@ -659,6 +659,205 @@
             </div>
           </div>
         </div>
+        <!-- Right Panel - Preview -->
+        <div class="w-full lg:w-1/2 bg-gradient-to-br from-slate-100 via-orange-50/20 to-slate-100 p-8 flex items-center justify-center relative overflow-hidden">
+          <!-- Background Decorations -->
+          <div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#ff5100]/5 to-transparent rounded-full blur-3xl"></div>
+          <div class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-orange-200/20 to-transparent rounded-full blur-3xl"></div>
+
+          <!-- Preview Container -->
+          <div class="relative z-10 w-full max-w-md">
+            <div class="text-center mb-6">
+              <div class="inline-flex items-center space-x-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-slate-200 mb-3">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-sm font-medium text-slate-700">Live Preview</span>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800 mb-1">Message Preview</h3>
+              <p class="text-sm text-slate-600">See how your message will appear</p>
+            </div>
+
+            <!-- Phone Frame -->
+            <div class="bg-white rounded-3xl shadow-2xl p-3 border-8 border-slate-800 relative">
+              <!-- Phone Notch -->
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl"></div>
+
+              <!-- WhatsApp Preview -->
+              <div class="bg-gradient-to-b from-emerald-50 to-white rounded-2xl overflow-hidden" style="height: 600px;">
+                <div class="overflow-y-auto h-full p-4">
+                  <!-- Template Preview -->
+                  <div v-if="selectedType === 'template'" class="space-y-2">
+                    <div class="bg-white rounded-lg rounded-tl-none p-3 shadow-sm max-w-[280px]">
+                      <!-- Header -->
+                      <div v-if="form.header.format !== 'TEXT'" class="mb-3 bg-slate-200 flex justify-center py-8 rounded-lg">
+                        <component :is="form.header.format === 'IMAGE' ? ImageIcon : form.header.format === 'VIDEO' ? Video : FileIcon"
+                          class="w-12 h-12 text-slate-400" />
+                      </div>
+                      <h2 v-else-if="form.header.text" class="text-slate-700 text-sm mb-2 font-medium">
+                        {{ form.header.text }}
+                      </h2>
+
+                      <!-- Body -->
+                      <p v-if="form.category !== 'AUTHENTICATION'" class="text-sm text-slate-800 whitespace-pre-wrap" v-html="formattedMessage"></p>
+                      <p v-else class="text-sm text-slate-800 whitespace-pre-wrap" v-html="form.body.add_security_recommendation 
+                        ? '{{1}} is your verification code. For your security, do not share this code.'
+                        : '{{1}} is your verification code.'"></p>
+
+                      <!-- Footer -->
+                      <div class="text-slate-500 mt-2 text-xs">
+                        <span v-if="form.category !== 'AUTHENTICATION'">{{ form.footer.text }}</span>
+                        <span v-else-if="form.code_expiration">
+                          {{ $t("This code expires in") }} {{ form.footer.code_expiration_minutes }} minutes
+                        </span>
+                        <span class="float-right">9:15</span>
+                      </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div v-if="form.buttons.length > 0" class="space-y-1 max-w-[280px]">
+                      <button v-for="(item, index) in form.buttons" :key="index"
+                        class="w-full flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                        <component :is="item.type === 'copy_code' ? Copy : item.type === 'PHONE_NUMBER' ? Phone : item.type === 'URL' ? Link2 : MessageSquare"
+                          class="w-4 h-4" />
+                        <span>{{ item.text }}</span>
+                      </button>
+                    </div>
+
+                    <!-- Auth Buttons -->
+                    <div v-if="form.category === 'AUTHENTICATION' && form.authentication_button.otp_type !== 'zero_tap'"
+                      class="max-w-[280px]">
+                      <button class="w-full flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                        <Copy class="w-4 h-4" />
+                        <span v-if="form.authentication_button.otp_type === 'copy_code'">
+                          {{ form.authentication_button.text }}
+                        </span>
+                        <span v-else>{{ form.authentication_button.autofill_text }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Carousel Preview -->
+                  <div v-if="selectedType === 'carousel'" class="space-y-3">
+                    <div class="bg-white rounded-lg rounded-tl-none p-3 shadow-sm max-w-[280px]">
+                      <p class="text-sm text-slate-800 whitespace-pre-wrap">
+                        {{ cardform.body.text || 'Your message preview will appear here...' }}
+                      </p>
+                    </div>
+
+                    <div class="flex space-x-2 overflow-x-auto pb-2">
+                      <div v-for="(card, index) in cards" :key="index"
+                        class="min-w-[200px] bg-white rounded-lg shadow-md p-3 flex-shrink-0">
+                        <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
+                          <p class="text-sm text-slate-700">
+                            {{ card.components.find(c => c.type === 'body')?.text || 'No text' }}
+                          </p>
+                        </div>
+                        <div v-if="card.components.find(c => c.type === 'buttons')" class="space-y-1">
+                          <button v-for="(btn, btnIndex) in card.components.find(c => c.type === 'buttons')?.buttons"
+                            :key="btnIndex"
+                            class="w-full text-xs bg-slate-100 text-slate-800 py-1.5 rounded text-center">
+                            {{ btn.text || 'Button' }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Flow Preview -->
+                  <div v-if="selectedType === 'flow'" class="space-y-2">
+                    <div class="bg-white rounded-lg rounded-tl-none p-3 shadow-sm max-w-[280px]">
+                      <p class="text-sm text-slate-800 whitespace-pre-wrap">
+                        {{ flowform.body.text || 'Flow message preview...' }}
+                      </p>
+                    </div>
+                    <button class="w-full max-w-[280px] flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                      <ArrowRight class="w-4 h-4" />
+                      <span>{{ flowform.buttonText || 'Button Text' }}</span>
+                    </button>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div v-if="!form.body.text && cards.length === 0 && !flowform.body.text" 
+                    class="flex flex-col items-center justify-center h-full text-center px-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mb-4">
+                      <MessageSquare class="w-10 h-10 text-slate-400" />
+                    </div>
+                    <h4 class="font-semibold text-slate-700 mb-2">No Content Yet</h4>
+                    <p class="text-sm text-slate-500">Start adding content to see preview</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow Builder Modal -->
+    <div v-if="showFlowBuilder"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in zoom-in duration-300">
+        <button @click="showFlowBuilder = false"
+          class="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <X class="w-5 h-5 text-slate-600" />
+        </button>
+
+        <div class="mb-6">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mb-4">
+            <Workflow class="w-6 h-6 text-white" />
+          </div>
+          <h2 class="text-2xl font-bold text-slate-800 mb-2">Build WhatsApp Flow</h2>
+          <p class="text-sm text-slate-600">
+            Open the official <strong>Facebook Flow Playground</strong> to build your form. Copy the JSON output and paste it in the form.
+          </p>
+        </div>
+
+        <a href="https://developers.facebook.com/docs/whatsapp/flows/playground" target="_blank" rel="noopener"
+          class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+          <ExternalLink class="w-5 h-5" />
+          <span>Open Flow Playground</span>
+        </a>
+
+        <p class="text-xs text-slate-500 mt-4 flex items-start space-x-2">
+          <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>Note: Facebook prevents their tool from being embedded. It opens in a new tab.</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Success/Error Modal -->
+    <Modal :label="''" :isOpen="isModalOpen" :showHeader="false">
+      <div class="p-6">
+        <div v-if="error" class="text-center">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X class="w-8 h-8 text-red-600" />
+          </div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">{{ $t("Error") }}</h3>
+          <p class="text-sm text-slate-600 mb-6">{{ error }}</p>
+          <button @click="closeModal"
+            class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">
+            Close
+          </button>
+        </div>
+        <div v-else class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 class="w-8 h-8 text-green-600 animate-spin" />
+          </div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">{{ $t("Uploading Template") }}</h3>
+          <p class="text-sm text-slate-600">{{ $t("Your template is being uploaded!") }}</p>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Loading Overlay -->
+    <div v-if="isLoading && !isModalOpen" 
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+      <div class="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center space-y-4">
+        <Loader2 class="w-12 h-12 animate-spin text-[#ff5100]" />
+        <p class="text-slate-700 font-medium">Processing...</p>
+      </div>
+    </div>
+  </AppLayout>
+</template>
 
 
 
