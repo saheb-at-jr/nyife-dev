@@ -1259,6 +1259,51 @@ const removeButton = (index) => {
     }
 };
 
+const codeDeliveryOptions = [
+    {
+        value: "zero_tap",
+        label: "Zero-tap auto-fill",
+        description:
+            "This is recommended as the easiest option for your customers. Zero-tap will automatically send code without requiring your customer to tap a button. An auto-fill or copy code message will be sent if zero-tap and auto-fill aren’t possible.",
+    },
+    {
+        value: "one_tap",
+        label: "One-tap auto-fill",
+        description:
+            "The code sends to your app when customers tap the button. A copy code message will be sent if auto-fill isn’t possible.",
+    },
+    {
+        value: "copy_code",
+        label: "Copy code",
+        description:
+            "Basic authentication with quick setup. Your customers copy and paste the code into your app.",
+    },
+];
+
+const authTTLOptions = ref([
+    { value: '30', label: '30 seconds' },
+    { value: '60', label: '1 minute' },
+    { value: '120', label: '2 minutes' },
+    { value: '180', label: '3 minutes' },
+    { value: '300', label: '5 minutes' },
+    { value: '600', label: '10 minutes' },
+    { value: '800', label: '15 minutes' },
+]);
+
+const utilityTTLOptions = ref([
+    { value: '30', label: '30 seconds' },
+    { value: '60', label: '1 minute' },
+    { value: '120', label: '2 minutes' },
+    { value: '300', label: '5 minutes' },
+    { value: '600', label: '10 minutes' },
+    { value: '800', label: '15 minutes' },
+    { value: '1600', label: '30 minutes' },
+    { value: '3200', label: '1 hour' },
+    { value: '9600', label: '3 hours' },
+    { value: '19200', label: '6 hours' },
+    { value: '38400', label: '12 hours' },
+]);
+
 const updateHeaderExamples = (value) => {
     form.value.header.example = value;
     if (value) {
