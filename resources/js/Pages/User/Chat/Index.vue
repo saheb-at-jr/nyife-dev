@@ -173,7 +173,7 @@ onMounted(() => {
                     @toggleView="toggleContactView" @deleteThread="deleteThread" @closeThread="closeThread" />
 
                 <!-- Chat Messages Area -->
-                <div v-if="contact && !displayTemplate" class="flex-1 overflow-y-auto bg-[#efeae2] chat-bg"
+                <div v-if="contact && !displayTemplate" class="flex-1 overflow-y-auto bg-[#efeae2] chat-bg h-full"
                     ref="scrollContainer2">
                     <ChatThread v-if="!displayContactInfo && !loadingThread && !displayTemplate" :contactId="contact.id"
                         :initialMessages="chatThread" :hasMoreMessages="hasMoreMessages" :initialNextPage="nextPage" />

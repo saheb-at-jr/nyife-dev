@@ -30,8 +30,8 @@
     </SettingLayout>
 </template>
 <script setup>
-import SettingLayout from "./../Layout.vue";
 import { Link } from "@inertiajs/vue3";
+import SettingLayout from "./../Layout.vue";
 import AutoReplyTable from '@/Components/Tables/AutoReplyTable.vue';
 
 const props = defineProps(['rows', 'filters', 'aimodule', 'fbmodule']);

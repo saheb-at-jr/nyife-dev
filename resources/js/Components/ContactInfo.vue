@@ -207,7 +207,7 @@ const getAddressDetail = (value, key) => {
 </script>
 
 <template>
-    <div class="h-screen overflow-y-auto bg-gradient-to-br from-gray-50 to-orange-50/30">
+    <div class="h-[calc(100vh-154px)] overflow-y-auto bg-gradient-to-br from-gray-50 to-orange-50/30">
         <div class="max-w-4xl mx-auto p-8">
 
             <!-- Hero Section -->
@@ -349,7 +349,7 @@ const getAddressDetail = (value, key) => {
                     <div v-for="(input, index) in props.fields" :key="index" class="space-y-1">
                         <label class="text-sm font-medium text-gray-500">{{ $t(input.name) }}</label>
                         <p v-if="metadata && metadata[input.name] != null" class="text-gray-900">{{ metadata[input.name]
-                        }}</p>
+                            }}</p>
                         <p v-else class="text-gray-400">{{ $t('not set') }}</p>
                     </div>
                 </div>
@@ -408,7 +408,7 @@ const getAddressDetail = (value, key) => {
                     <div v-for="(input, index) in props.fields" :key="index" class="space-y-1">
                         <label class="text-sm font-medium text-gray-500">{{ $t(input.name) }}</label>
                         <p v-if="metadata && metadata[input.name] != null" class="text-gray-900">{{ metadata[input.name]
-                        }}</p>
+                            }}</p>
                         <p v-else class="text-gray-400">{{ $t('not set') }}</p>
                     </div>
                 </div>

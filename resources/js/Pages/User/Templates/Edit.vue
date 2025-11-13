@@ -716,7 +716,7 @@
                                             class="mr-auto rounded-lg rounded-tl-none my-[0.1em] p-2 text-sm bg-white flex flex-col relative speech-bubble-left max-w-[60%] !text-wrap overflow-x-auto">
                                             <!-- Header -->
                                             <div v-if="form.header.format !== 'TEXT'"
-                                                class="mb-3 bg-slate-200 flex justify-center rounded-lg">
+                                                class="mb-3 bg-slate-200 w-full aspect-video flex justify-center items-center rounded-lg">
                                                 <img v-if="form.header.format === 'IMAGE' && !!form.header.file_url"
                                                     :src="form.header.file_url" alt="Image"
                                                     class="w-full object-cover" />
@@ -792,8 +792,9 @@
 
                                         <div class="flex space-x-2 overflow-x-auto pb-2">
                                             <div v-for="(card, index) in cards" :key="index"
-                                                class="w-[150px] bg-white rounded-lg shadow-md p-3 flex-shrink-0">
-                                                <div class="mb-3 w-[126px] bg-slate-200 flex justify-center rounded-lg">
+                                                class="w-[150px] bg-white aspect-square rounded-lg shadow-md p-3 flex-shrink-0">
+                                                <div
+                                                    class="mb-3 w-[126px] bg-slate-200 flex items-center justify-center rounded-lg">
                                                     <img v-if="card?.image_url || card.components[0].example.header_handle[0]"
                                                         :src="card?.image_url || card.components[0].example.header_handle[0]"
                                                         alt="Image" class="w-full object-cover" />

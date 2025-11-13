@@ -311,23 +311,21 @@ const submitForm3 = () => {
                     </div>
                 </div>
 
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-3">
-                        <h2 @click="toggleView"
-                            class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-[#ff5100] transition-colors">
-                            {{ contact.full_name }}
-                        </h2>
-                        <FormSelectCombo v-if="ticketingIsEnabled && accountUser.teams[0]['role'] != 'agent'"
-                            v-model="user" :name="''" :loadOptions="loadUsers" :class="'col-span-1 md:block hidden'"
-                            :placeholder="'Select Agent'" @update:modelValue="changeTicketAgent()" />
-                    </div>
-                    <p @click="toggleView" class="text-sm text-gray-500 cursor-pointer">{{
+                <div @click="toggleView" class="flex-1 min-w-0 max-w-max">
+                    <h2
+                        class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-[#ff5100] transition-colors">
+                        {{ contact.full_name }}
+                    </h2>
+                    <p class="text-sm text-gray-500 cursor-pointer">{{
                         contact.formatted_phone_number }}</p>
                 </div>
             </div>
 
             <!-- Actions -->
             <div class="flex items-center gap-3">
+                <FormSelectCombo v-if="ticketingIsEnabled && accountUser.teams[0]['role'] != 'agent'" v-model="user"
+                    :name="''" :loadOptions="loadUsers" :class="'col-span-1 md:block hidden'"
+                    :placeholder="'Select Agent'" @update:modelValue="changeTicketAgent()" />
                 <button v-if="ticketState === 'open' && ticketingIsEnabled" @click="changeTicketStatus('closed')"
                     class="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-[#ff5100] hover:bg-[#e64900] text-white rounded-xl text-sm font-medium transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">

@@ -6,7 +6,6 @@
     import AlertModal from '@/Components/AlertModal.vue';
     import { useAlertModal } from '@/Composables/useAlertModal';
     import 'vue3-toastify/dist/index.css';
-    import Table from '@/Components/Table.vue';
     import TableHeader from '@/Components/TableHeader.vue';
     import TableHeaderRow from '@/Components/TableHeaderRow.vue';
     import TableHeaderRowItem from '@/Components/TableHeaderRowItem.vue';
@@ -46,10 +45,6 @@
 
     const isSearching = ref(false);
     const emit = defineEmits(['delete']);
-
-    function deleteItem(id) {
-        emit('delete', id);
-    }
 
     const clearSearch = () => {
         params.value.search = null;
