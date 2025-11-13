@@ -257,8 +257,158 @@
                 </div>
               </div>
 
-              <!-- Authentication Sections (same as create) -->
-              <!-- ... (keep authentication sections from create template) ... -->
+              <!-- Authentication Category Sections -->
+              <div v-if="form.category === 'AUTHENTICATION'" class="space-y-6">
+                <!-- Code Delivery Setup -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <Shield class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Code delivery setup") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">
+                    {{ $t("Choose how customers send the code from WhatsApp to your app.") }}
+                  </p>
+
+                  <div class="space-y-3">
+                    <div v-for="option in codeDeliveryOptions" :key="option.value"
+                      class="p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer"
+                      :class="form.authentication_button.otp_type === option.value ? 'border-[#ff5100] bg-[#ff5100]/5' : 'border-slate-200 hover:border-slate-300'"
+                      @click="form.authentication_button.otp_type = option.value">
+                      <div class="flex items-start space-x-3">
+                        <div class="mt-0.5">
+                          <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                            :class="form.authentication_button.otp_type === option.value ? 'border-[#ff5100]' : 'border-slate-400'">
+                            <div v-if="form.authentication_button.otp_type === option.value"
+                              class="w-2.5 h-2.5 rounded-full bg-[#ff5100]"></div>
+                          </div>
+                        </div>
+                        <div class="flex-1">
+                          <label class="font-medium text-slate-800 cursor-pointer">{{ $t(option.label) }}</label>
+                          <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ $t(option.description) }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- App Setup (for one_tap and zero_tap) -->
+                <div v-if="form.authentication_button.otp_type !== 'copy_code'"
+                  class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <Smartphone class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("App setup") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">{{ $t("You can add up to 5 apps.") }}</p>
+
+                  <div v-for="(item, index) in form.authentication_button.supported_apps" :key="index"
+                    class="flex gap-3 p-4 bg-slate-50 rounded-xl">
+                    <FormInput v-model="form.authentication_button.supported_apps[index].package_name"
+                      :name="$t('Package name')" :type="'text'" :class="'flex-1'" :labelClass="'mb-0'" />
+                    <FormInput v-model="form.authentication_button.supported_apps[index].signature_hash"
+                      :name="$t('App signature hash')" :type="'text'" :class="'flex-1'" :labelClass="'mb-0'" />
+                    <button v-if="form.authentication_button.supported_apps.length > 1"
+                      @click="removeSupportedApp(index)"
+                      class="mt-7 p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors">
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <button v-if="form.authentication_button.supported_apps.length < 5" @click="addSupportedApp()"
+                    class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all duration-200 border border-slate-300 flex items-center justify-center space-x-2">
+                    <Plus class="w-4 h-4" />
+                    <span>{{ $t("Add another app") }}</span>
+                  </button>
+                </div>
+
+                <!-- Content Options -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <FileText class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Content") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">
+                    {{ $t(`Content for authentication message templates can't be edited. You can add additional content from the options below.`) }}
+                  </p>
+
+                  <div class="space-y-3">
+                    <label
+                      class="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                      <input v-model="form.body.add_security_recommendation" type="checkbox"
+                        class="w-5 h-5 rounded border-slate-300 text-[#ff5100] focus:ring-[#ff5100] cursor-pointer" />
+                      <span class="text-sm font-medium text-slate-700">{{ $t("Add security recommendation") }}</span>
+                    </label>
+
+                    <label
+                      class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                      <input v-model="form.code_expiration" type="checkbox"
+                        class="w-5 h-5 rounded border-slate-300 text-[#ff5100] focus:ring-[#ff5100] cursor-pointer mt-0.5" />
+                      <div>
+                        <div class="text-sm font-medium text-slate-700">{{ $t("Add expiry time for the code") }}</div>
+                        <p class="text-xs text-slate-600 mt-1">
+                          {{ $t("After the code has expired, the auto-fill button will be disabled.") }}
+                        </p>
+                      </div>
+                    </label>
+
+                    <div v-if="form.code_expiration" class="p-4 bg-white border border-slate-200 rounded-xl">
+                      <label class="block text-sm font-medium text-slate-700 mb-2">{{ $t("Expires In") }}</label>
+                      <div class="flex items-center space-x-2">
+                        <input type="number" v-model="form.footer.code_expiration_minutes" step="any"
+                          class="w-32 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100] focus:border-transparent" />
+                        <span class="text-sm text-slate-600">{{ $t("Minutes") }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Authentication Buttons -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                  <div class="flex items-center space-x-2">
+                    <MousePointerClick class="w-5 h-5 text-[#ff5100]" />
+                    <h4 class="font-semibold text-slate-800">{{ $t("Buttons") }}</h4>
+                  </div>
+                  <p class="text-sm text-slate-600">
+                    {{ $t("You can customise the button text for both auto-fill and copy code.") }}
+                  </p>
+
+                  <div v-if="form.authentication_button.otp_type === 'copy_code'">
+                    <FormInput v-model="form.authentication_button.text" :name="$t('Copy code')" :type="'text'" />
+                  </div>
+                  <div v-else class="grid grid-cols-2 gap-4">
+                    <FormInput v-model="form.authentication_button.autofill_text" :name="$t('Auto-fill')"
+                      :type="'text'" />
+                    <FormInput v-model="form.authentication_button.text" :name="$t('Copy code')" :type="'text'" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message Validity Period -->
+              <div v-if="form.category === 'UTILITY' || form.category === 'AUTHENTICATION'"
+                class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
+                <div class="flex items-center space-x-2">
+                  <Clock class="w-5 h-5 text-[#ff5100]" />
+                  <h4 class="font-semibold text-slate-800">{{ $t("Message validity period") }}</h4>
+                </div>
+                <p class="text-sm text-slate-600">
+                  {{ $t("Set a custom validity period for your message delivery.") }}
+                </p>
+
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                  <div class="flex-1">
+                    <label class="text-sm font-medium text-slate-700">
+                      {{ $t("Set custom validity period") }}
+                    </label>
+                    <p class="text-xs text-slate-600 mt-1">
+                      {{ $t("Default is 10 minutes if not set") }}
+                    </p>
+                  </div>
+                  <FormToggleSwitch v-model="form.customize_ttl" />
+                </div>
+
+                <FormSelect v-if="form.customize_ttl" v-model="form.message_send_ttl_seconds"
+                  :options="form.category === 'UTILITY' ? utilityTTLOptions : authTTLOptions"
+                  :name="$t('Validity period')" :placeholder="$t('Select validity period')" />
+              </div>
             </div>
 
             <!-- Carousel Form -->
@@ -800,6 +950,66 @@ const categoryCrouselOptions = ref([
   { value: "MARKETING", label: "Marketing" }
 ]);
 
+const codeDeliveryOptions = [
+  {
+    value: "zero_tap",
+    label: "Zero-tap auto-fill",
+    description:
+      "This is recommended as the easiest option for your customers. Zero-tap will automatically send code without requiring your customer to tap a button.",
+  },
+  {
+    value: "one_tap",
+    label: "One-tap auto-fill",
+    description:
+      "The code sends to your app when customers tap the button. A copy code message will be sent if auto-fill isn't possible.",
+  },
+  {
+    value: "copy_code",
+    label: "Copy code",
+    description:
+      "Basic authentication with quick setup. Your customers copy and paste the code into your app.",
+  },
+];
+
+const authTTLOptions = ref([
+  { value: '30', label: '30 seconds' },
+  { value: '60', label: '1 minute' },
+  { value: '120', label: '2 minutes' },
+  { value: '180', label: '3 minutes' },
+  { value: '300', label: '5 minutes' },
+  { value: '600', label: '10 minutes' },
+  { value: '800', label: '15 minutes' },
+]);
+
+const utilityTTLOptions = ref([
+  { value: '30', label: '30 seconds' },
+  { value: '60', label: '1 minute' },
+  { value: '120', label: '2 minutes' },
+  { value: '300', label: '5 minutes' },
+  { value: '600', label: '10 minutes' },
+  { value: '800', label: '15 minutes' },
+  { value: '1600', label: '30 minutes' },
+  { value: '3200', label: '1 hour' },
+  { value: '9600', label: '3 hours' },
+  { value: '19200', label: '6 hours' },
+  { value: '38400', label: '12 hours' },
+]);
+
+const addSupportedApp = () => {
+  const appsCount = form.value.authentication_button.supported_apps.length;
+
+  if (appsCount < 5) {
+    form.value.authentication_button.supported_apps.push({
+      package_name: null,
+      signature_hash: null,
+    });
+  }
+};
+
+const removeSupportedApp = (index) => {
+  form.value.authentication_button.supported_apps.splice(index, 1);
+};
+
 const previousExamples = ref({});
 const formattedMessage = ref("");
 
@@ -830,7 +1040,52 @@ function initializeTemplateForm() {
     footerCharacterCount.value = (footerComponent.text || '').length;
   }
 
-  if (buttonsComponent && buttonsComponent.buttons) {
+  // Handle Authentication Templates
+  if (props.template.category === 'AUTHENTICATION') {
+    // Set message validity period if exists
+    if (props.template.message_send_ttl_seconds) {
+      form.value.message_send_ttl_seconds = props.template.message_send_ttl_seconds.toString();
+      form.value.customize_ttl = true;
+    }
+
+    if (buttonsComponent && buttonsComponent.buttons && buttonsComponent.buttons.length > 0) {
+      const authButton = buttonsComponent.buttons[0];
+      
+      // Extract OTP type from URL
+      if (authButton.type === 'URL' && authButton.url) {
+        const url = new URL(authButton.url);
+        const otpType = url.searchParams.get('otp_type');
+        
+        if (otpType) {
+          form.value.authentication_button.otp_type = otpType.toLowerCase();
+        }
+        
+        // Extract other parameters
+        const ctaDisplayName = url.searchParams.get('cta_display_name');
+        if (ctaDisplayName) {
+          form.value.authentication_button.autofill_text = ctaDisplayName;
+        }
+        
+        // Get button text
+        form.value.authentication_button.text = authButton.text || 'Copy code';
+        
+        // Extract package name and signature hash if present
+        const packageName = url.searchParams.get('package_name');
+        const signatureHash = url.searchParams.get('signature_hash');
+        
+        if (packageName && signatureHash) {
+          form.value.authentication_button.supported_apps = [
+            {
+              package_name: packageName,
+              signature_hash: signatureHash
+            }
+          ];
+        }
+      }
+    }
+  }
+  // Handle regular buttons for UTILITY/MARKETING
+  else if (buttonsComponent && buttonsComponent.buttons) {
     form.value.buttons = buttonsComponent.buttons.map(btn => {
       if (btn.type === 'PHONE_NUMBER') {
         return {

@@ -124,8 +124,10 @@
                                             class="px-2 py-1 bg-[#ff5100]/10 text-[#ff5100] text-xs font-medium rounded-full">Required</span>
                                     </div>
                                 </div>
+                                <BodyTextArea v-if="form.body.text" v-model="form.body.text"
+                                    @updateExamples="updateBodyExamples" />
 
-                                <BodyTextArea v-model="form.body.text" @updateExamples="updateBodyExamples" />
+                                <BodyTextArea v-else v-model="form.body.text" @updateExamples="updateBodyExamples" />
                             </div>
 
                             <!-- Header Section -->
@@ -215,9 +217,8 @@
                                 </div>
                                 <FormTextArea v-model="form.footer.text" :name="$t('Footer text')" :showLabel="false"
                                     :textAreaRows="2" />
-                                <span class="text-xs text-slate-500">{{ $t("Characters") }}: {{ footerCharacterCount
-                                    }}/{{
-                                        footerCharacterLimit }}</span>
+                                <span class="text-xs text-slate-500">{{ $t("Characters") }}: {{
+                                    footerCharacterCount }}/{{ footerCharacterLimit }}</span>
                             </div>
 
                             <!-- Buttons Section -->
@@ -284,6 +285,7 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Authentication Category Sections -->
                             <div v-if="form.category === 'AUTHENTICATION'" class="space-y-6">
                                 <!-- Code Delivery Setup -->
@@ -365,9 +367,7 @@
                                     <p class="text-sm text-slate-600">
                                         {{ $t(`Content for authentication message templates can't be edited. You can add
                                         additional
-                                        content
-                                        from
-                                        the options below.`) }}
+                                        content from the options below.`) }}
                                     </p>
 
                                     <div class="space-y-3">
@@ -432,6 +432,7 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Message Validity Period -->
                             <div v-if="form.category === 'UTILITY' || form.category === 'AUTHENTICATION'"
                                 class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 space-y-4">
@@ -764,6 +765,19 @@
                                                 <span>{{ item.text }}</span>
                                             </button>
                                         </div>
+
+                                        <!-- Auth Buttons -->
+                                        <div v-if="form.category === 'AUTHENTICATION' && form.authentication_button.otp_type !== 'zero_tap'"
+                                            class="max-w-[60%]">
+                                            <button
+                                                class="w-full flex items-center justify-center space-x-2 bg-white text-blue-600 py-2 rounded-lg text-sm font-medium">
+                                                <Copy class="w-4 h-4" />
+                                                <span v-if="form.authentication_button.otp_type === 'copy_code'">
+                                                    {{ form.authentication_button.text }}
+                                                </span>
+                                                <span v-else>{{ form.authentication_button.autofill_text }}</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <!-- Carousel Preview -->
@@ -926,6 +940,7 @@ import HeaderTextArea from "@/Components/Template/HeaderTextArea.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { Link } from "@inertiajs/vue3";
 import Modal from "@/Components/Modal.vue";
+import FormToggleSwitch from "@/Components/FormToggleSwitch.vue";
 import { router } from "@inertiajs/vue3";
 
 // Import Lucide Icons
@@ -933,7 +948,10 @@ import {
     FileText, Info, ArrowLeft, Send, Loader2, Zap, Layers, Workflow,
     Settings, ImageIcon, Video, FileIcon, AlignLeft, Phone, Link2, Copy, Trash2,
     Plus, MousePointerClick, Upload, CheckCircle,
-    ExternalLink, X, Reply, SquareArrowOutUpRight, AlertTriangle
+    ExternalLink, X, Reply, SquareArrowOutUpRight, AlertTriangle,
+    Shield,
+    Smartphone,
+    Clock
 } from "lucide-vue-next";
 
 const props = defineProps(["languages", "template"]);
@@ -950,7 +968,7 @@ const templateType = ref("template");
 // Parse metadata
 const metadata = ref(JSON.parse(props.template.metadata));
 
-// console.log("metadata : ", JSON.stringify(metadata.value.components, null, 2));
+console.log("metadata : ", JSON.stringify(metadata.value, null, 2));
 
 // Determine template type
 onMounted(() => {
@@ -966,42 +984,73 @@ onMounted(() => {
     }
 });
 
+const extractComponent = (type, key, fromButtons = false) => {
+    const component = metadata.value.components.find(c => c.type === type);
+
+    if (!component) return null;
+
+    if (fromButtons && component.buttons && component.buttons.length > 0) {
+        const button = component.buttons[0];
+        return button.hasOwnProperty(key) ? button[key] : null;
+    }
+
+    return component.hasOwnProperty(key) ? component[key] : null;
+};
+
+const extractButtonParam = (key) => {
+    const buttonsComponent = metadata.value.components.find(component => component.type === 'BUTTONS');
+
+    if (!buttonsComponent || !buttonsComponent.buttons || buttonsComponent.buttons.length === 0) {
+        return null;
+    }
+
+    const button = buttonsComponent.buttons[0];
+    if (!button.url) return null;
+
+    try {
+        const url = new URL(button.url);
+        return url.searchParams.get(key) || null;
+    } catch (e) {
+        return null;
+    }
+};
+
 // Simple Template Form
 const form = ref({
-    name: props.template.name,
-    category: props.template.category,
-    language: props.template.language,
-    message_send_ttl_seconds: null,
-    customize_ttl: false,
-    header: {
-        format: 'TEXT',
-        text: null,
-        example: [],
-        file_url: null
+    'name': props.template.name,
+    'category': props.template.category,
+    'language': props.template.language,
+    'message_send_ttl_seconds': props.template.message_send_ttl_seconds?.toString() || null,
+    'customize_ttl': !!props.template.message_send_ttl_seconds,
+    'header': {
+        'format': extractComponent('HEADER', 'format') ?? 'TEXT',
+        'text': extractComponent('HEADER', 'text'),
+        'example': extractComponent('HEADER', 'example')?.header_text,
     },
-    body: {
-        text: null,
-        variables: null,
-        add_security_recommendation: false,
-        example: []
+    'body': {
+        'text': extractComponent('BODY', 'text'),
+        'variables': null,
+        'add_security_recommendation': extractComponent('BODY', 'add_security_recommendation') || false,
+        'example': extractComponent('BODY', 'example')?.body_text?.[0],
     },
-    footer: {
-        text: null,
-        code_expiration_minutes: 5
+    'footer': {
+        'text': extractComponent('FOOTER', 'text'),
+        'code_expiration_minutes': extractComponent('FOOTER', 'code_expiration_minutes') || 5,
     },
-    code_expiration: false,
-    buttons: [],
-    authentication_button: {
-        type: "OTP",
-        otp_type: "zero_tap",
-        text: "Copy Code",
-        autofill_text: "Autofill",
-        zero_tap_terms_accepted: true,
-        supported_apps: [
+    'code_expiration': !!extractComponent('FOOTER', 'code_expiration_minutes'),
+    'set_custom_validity_period': false,
+    'buttons': extractComponent('BUTTONS', 'buttons') || [],
+    'authentication_button': {
+        'type': 'OTP',
+        "otp_type": extractButtonParam('otp_type') ? extractButtonParam('otp_type').toLowerCase() : 'copy_code',
+        'text': extractComponent('BUTTONS', 'text', true) || 'Copy Code',
+        "autofill_text": extractButtonParam('cta_display_name') || 'Autofill',
+        "zero_tap_terms_accepted": true,
+        "supported_apps": [
             {
-                package_name: null,
-                signature_hash: null
-            }
+                "package_name": extractButtonParam('package_name'),
+                "signature_hash": extractButtonParam('signature_hash'),
+            },
         ]
     }
 });
@@ -1113,7 +1162,6 @@ function initializeCarouselForm() {
     }
 
     const carouselComponent = metadata.value.components.find(c => c.type === 'CAROUSEL');
-    console.log("carouselComponent : ", carouselComponent);
     if (carouselComponent && carouselComponent.cards) {
         cards.value = carouselComponent.cards.map((card, index) => ({
             components: card.components.map(comp => {
@@ -1251,7 +1299,23 @@ const addButton = ($type) => {
             });
         }
     }
+
 };
+
+const addSupportedApp = () => {
+    const appsCount = form.value.authentication_button.supported_apps.length;
+
+    if (appsCount < 5) {
+        form.value.authentication_button.supported_apps.push({
+            'package_name': null,
+            'signature_hash': null,
+        });
+    }
+}
+
+const removeSupportedApp = (index) => {
+    form.value.authentication_button.supported_apps.splice(index, 1);
+}
 
 const removeButton = (index) => {
     if (index >= 0 && index < form.value.buttons.length) {
@@ -1259,18 +1323,19 @@ const removeButton = (index) => {
     }
 };
 
+
 const codeDeliveryOptions = [
     {
         value: "zero_tap",
         label: "Zero-tap auto-fill",
         description:
-            "This is recommended as the easiest option for your customers. Zero-tap will automatically send code without requiring your customer to tap a button. An auto-fill or copy code message will be sent if zero-tap and auto-fill aren’t possible.",
+            "This is recommended as the easiest option for your customers. Zero-tap will automatically send code without requiring your customer to tap a button.",
     },
     {
         value: "one_tap",
         label: "One-tap auto-fill",
         description:
-            "The code sends to your app when customers tap the button. A copy code message will be sent if auto-fill isn’t possible.",
+            "The code sends to your app when customers tap the button. A copy code message will be sent if auto-fill isn't possible.",
     },
     {
         value: "copy_code",
@@ -1349,7 +1414,7 @@ const isFormValid = computed(() => {
                 return false;
             }
 
-            if (form.value.body.example.length > 0) {
+            if (form?.value?.body?.example?.length > 0) {
                 const allKeysHaveValues = Object.keys(form.value.body.example).every(
                     (key) => {
                         const value = form.value.body.example[key];
@@ -1363,7 +1428,7 @@ const isFormValid = computed(() => {
             }
 
             if (
-                form.value.header.example.length > 0 &&
+                form?.value?.header?.example?.length > 0 &&
                 !Object.keys(form.value.header.example).every((key) => {
                     const value = form.value.header.example[key];
                     return value !== undefined && value !== null && value !== "";
