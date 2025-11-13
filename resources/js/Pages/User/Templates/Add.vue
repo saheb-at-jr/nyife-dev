@@ -661,7 +661,7 @@
                 <p class="text-sm text-slate-600 flex items-start space-x-2">
                   <Info class="w-4 h-4 mt-0.5 flex-shrink-0 text-[#ff5100]" />
                   <span>{{ $t("Note: Use the popup to create your flow. Copy the JSON from there and paste it above.")
-                  }}</span>
+                    }}</span>
                 </p>
               </div>
             </div>
@@ -705,13 +705,13 @@
                       class="mr-auto rounded-lg rounded-tl-none my-[0.1em] p-2 text-sm bg-white flex flex-col relative speech-bubble-left max-w-[60%] !text-wrap overflow-x-auto">
                       <!-- Header -->
                       <div v-if="form.header.format !== 'TEXT'"
-                        class="mb-3 bg-slate-200 flex justify-center py-8 rounded-lg">
+                        class="mb-3 bg-slate-200 w-full aspect-video flex items-center justify-center rounded-lg">
                         <img v-if="form.header.format === 'IMAGE' && !!form.header.file_url" :src="form.header.file_url"
-                          alt="Image" class="w-full h-full object-cover" />
+                          alt="Image" class="w-full object-cover" />
 
                         <video v-else-if="form.header.format === 'VIDEO' && !!form.header.file_url"
                           :src="form.header.file_url" autoplay muted loop playsinline
-                          class="w-full h-full object-cover rounded-xl"></video>
+                          class="w-full object-cover rounded-xl"></video>
 
 
                         <component v-else
@@ -777,9 +777,10 @@
                     <div class="flex space-x-2 overflow-x-auto pb-2">
                       <div v-for="(card, index) in cards" :key="index"
                         class="w-[150px] bg-white rounded-lg shadow-md p-3 flex-shrink-0">
-                        <div class="mb-3 w-[126px] aspect-square bg-slate-200 flex justify-center py-8 rounded-lg">
+                        <div
+                          class="mb-3 w-[126px] aspect-video bg-slate-200 flex items-center justify-center rounded-lg">
                           <img v-if="card.image_url" :src="card.image_url" alt="Image"
-                            class="w-full h-full object-cover" />
+                            class="w-full aspect-video object-cover" />
                           <component v-else :is="ImageIcon" class="w-12 h-12 text-slate-400" />
                         </div>
                         <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
@@ -883,7 +884,7 @@
             <X class="w-8 h-8 text-red-600" />
           </div>
           <h4 class="text-lg text-slate-800 font-semibold mb-2 text-start">{{ error.error.error_user_title
-          }}
+            }}
           </h4>
           <p class="text-sm text-slate-600 mb-6 text-start">{{ error.error.error_user_msg }}</p>
           <button @click="closeModal"
