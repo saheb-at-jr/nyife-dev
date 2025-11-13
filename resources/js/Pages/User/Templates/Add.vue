@@ -2,7 +2,7 @@
   <AppLayout>
     <div class="h-[calc(100vh-65px)] bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50 overflow-hidden">
       <!-- Header -->
-      <div class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
+      <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
         <div class="mx-auto px-6 py-4">
           <div class="flex items-center justify-between">
             <!-- Left: Title and Info -->

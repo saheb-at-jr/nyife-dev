@@ -1,16 +1,14 @@
 <?php
 
-use App\Jobs\CreateCampaignLogsJob;
-use App\Jobs\ProcessCampaignMessagesJob;
-use App\Models\Language;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\File;
 use App\Http\Controllers\BalanceController;
 use App\Http\Controllers\BalanceHistoryController;
-use App\Http\Controllers\UserPriceController;
 use App\Http\Controllers\PaymentControllerRazorpay;
+use App\Http\Controllers\UserPriceController;
+use App\Models\Language;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -22,16 +20,14 @@ use App\Http\Controllers\PaymentControllerRazorpay;
 |
 */
 
-//Installer routes
+// Installer routes
 Route::get('/install/{step?}', [App\Http\Controllers\InstallerController::class, 'index'])->name('install');
 Route::post('/install/configure-database', [App\Http\Controllers\InstallerController::class, 'configureDatabase']);
 Route::post('/install/configure-company', [App\Http\Controllers\InstallerController::class, 'configureCompany']);
 Route::post('/install/migrate', [App\Http\Controllers\InstallerController::class, 'runMigrations']);
 Route::get('/update', [App\Http\Controllers\InstallerController::class, 'update'])->name('install.update');
 Route::post('/update', [App\Http\Controllers\InstallerController::class, 'runUpdate']);
-
 Route::get('/chats', [App\Http\Controllers\User\ChatController::class, 'downloadInboundChat'])->name('chats.index');
-
 
 Route::prefix('/api/users')->group(function () {
     Route::get('{id}/balance-history', [BalanceHistoryController::class, 'index']);
@@ -43,14 +39,16 @@ Route::post('/api/users/{user}/update-prices', [UserPriceController::class, 'upd
 Route::get('/api/users/{user}/prices', [UserPriceController::class, 'getPrices']);
 
 Route::post('/verify-payment', [PaymentControllerRazorpay::class, 'verify']);
-
-
+Route::post('/upload-file', [App\Http\Controllers\User\TemplateController::class, 'uploadfile']);
+Route::post('/send/crousel', [App\Http\Controllers\User\CampaignController::class, 'storeCarousel']);
+Route::post('/meta-upload', [App\Http\Controllers\User\TemplateController::class, 'upload']);
 Route::get('/current-locale', function () {
     return response()->json(['locale' => app()->getLocale()]);
 });
 
 Route::get('/locales', function () {
     $locales = Language::all()->pluck('code');
+
     return response()->json($locales);
 });
 
@@ -58,13 +56,14 @@ Route::get('/translations/{locale}', function ($locale) {
     $path = base_path("lang/{$locale}.json");
     if (File::exists($path)) {
         $translations = File::get($path);
+
         return response()->json(json_decode($translations, true));
     } else {
         return response()->json(['error' => 'Locale not found'], 404);
     }
 });
 
-//Frontend Routes
+// Frontend Routes
 Route::match(['get', 'post'], '/', [App\Http\Controllers\FrontendController::class, 'index']);
 Route::match(['get', 'post'], '/pages/{slug}', [App\Http\Controllers\FrontendController::class, 'pages']);
 Route::match(['get', 'post'], '/privacy', [App\Http\Controllers\FrontendController::class, 'privacy']);
@@ -72,16 +71,16 @@ Route::match(['get', 'post'], '/terms-of-service', [App\Http\Controllers\Fronten
 Route::match(['get', 'post'], '/process-campaign', [App\Http\Controllers\FrontendController::class, 'buildTemplateChatMessage']);
 Route::get('/language/{locale}', [App\Http\Controllers\FrontendController::class, 'changeLanguage']);
 
-//File Route
+// File Route
 Route::get('media/{filename}', [App\Http\Controllers\FileController::class, 'show'])->where('filename', '.*');
 
-//Invite Routes
+// Invite Routes
 Route::get('/invite/{identifier}', [App\Http\Controllers\AuthController::class, 'viewInvite']);
 Route::post('/invite/{identifier}', [App\Http\Controllers\AuthController::class, 'invite']);
 
 Route::get('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 
-//Webhook
+// Webhook
 Route::match(['get', 'post'], '/webhook/whatsapp/{identifier?}', [App\Http\Controllers\WebhookController::class, 'handle']);
 Route::match(['get', 'post'], '/webhook/waba', [App\Http\Controllers\WebhookController::class, 'whatsappWebhook']);
 Route::match(['get', 'post'], '/webhook/{processor}', [App\Http\Controllers\WebhookController::class, 'processWebhook']);
@@ -118,6 +117,7 @@ Route::middleware(['auth:user'])->group(function () {
 
     Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
         $request->fulfill();
+
         return redirect('/dashboard');
     })->middleware(['auth', 'signed'])->name('verification.verify');
 
@@ -129,9 +129,9 @@ Route::middleware(['auth:user'])->group(function () {
         Route::post('/organization', [App\Http\Controllers\User\OrganizationController::class, 'store'])->name('user.organization.store');
 
         Route::group(['middleware' => ['check.organization']], function () {
-            //User Panel Routes
+            // User Panel Routes
             Route::match(['get', 'post'], '/dashboard', [App\Http\Controllers\User\DashboardController::class, 'index'])->name('dashboard');
-            
+
             Route::group(['middleware' => 'check.client.role'], function () {
                 Route::delete('dismiss-notification/{type}', [App\Http\Controllers\User\DashboardController::class, 'dismissNotification'])->name('dashboard.team.notification.dismiss');
                 Route::match(['get', 'post'], '/billing', [App\Http\Controllers\User\BillingController::class, 'index'])->name('user.billing.index');
@@ -140,16 +140,8 @@ Route::middleware(['auth:user'])->group(function () {
                 Route::post('/subscription/coupon/apply/{id}', [App\Http\Controllers\User\SubscriptionController::class, 'applyCoupon']);
                 Route::get('/subscription/coupon/remove/{id}', [App\Http\Controllers\User\SubscriptionController::class, 'removeCoupon']);
             });
-            
-            Route::group(['middleware' => 'check.subscription'], function () {
-                
-                Route::match(['get', 'post'], '/crousel/create', [App\Http\Controllers\User\TemplateController::class, 'crousel']);
-                Route::post('/upload-file', [App\Http\Controllers\User\TemplateController::class, 'uploadfile']);
-                Route::post('/send/crousel', [App\Http\Controllers\User\CampaignController::class, 'storeCarousel']);
-                Route::post('/meta-upload', [App\Http\Controllers\User\TemplateController::class, 'upload']);
-                // Route::post('/send/crousel', [App\Http\Controllers\User\TemplateController::class, 'sendCrouselMessage']);
-                Route::post('/campaigns', [App\Http\Controllers\User\CampaignController::class, 'store']);
 
+            Route::group(['middleware' => 'check.subscription'], function () {
                 Route::get('/chats/{uuid?}', [App\Http\Controllers\User\ChatController::class, 'index']);
                 Route::get('/chats/{id}/media', [App\Http\Controllers\User\ChatController::class, 'getMedia']);
                 Route::post('/chats', [App\Http\Controllers\User\ChatController::class, 'sendMessage']);
@@ -159,6 +151,7 @@ Route::middleware(['auth:user'])->group(function () {
                 Route::get('/chat/test/{id}', [App\Http\Controllers\User\ChatController::class, 'sendAutoReply']);
                 Route::post('/chats/update-sort-direction', [App\Http\Controllers\User\ChatController::class, 'updateChatSortDirection']);
                 Route::get('/chats/{contactId}/messages', [App\Http\Controllers\User\ChatController::class, 'loadMoreMessages']);
+                Route::match(['get', 'post'], '/crousel/create', [App\Http\Controllers\User\TemplateController::class, 'crousel']);
 
                 Route::get('/tickets/{status}', [App\Http\Controllers\User\ChatTicketController::class, 'index']);
                 Route::put('/tickets/{uuid}/update', [App\Http\Controllers\User\ChatTicketController::class, 'update']);
@@ -178,6 +171,7 @@ Route::middleware(['auth:user'])->group(function () {
                 Route::delete('/contact-groups', [App\Http\Controllers\User\ContactGroupController::class, 'delete']);
 
                 Route::get('/campaigns/{uuid?}', [App\Http\Controllers\User\CampaignController::class, 'index'])->name('campaigns');
+                Route::post('/campaigns', [App\Http\Controllers\User\CampaignController::class, 'store']);
                 Route::get('/campaigns/export/{uuid?}', [App\Http\Controllers\User\CampaignController::class, 'export']);
                 Route::delete('/campaigns/{uuid?}', [App\Http\Controllers\User\CampaignController::class, 'delete']);
 
@@ -227,21 +221,20 @@ Route::middleware(['auth:user'])->group(function () {
                     Route::post('/team/invite', [App\Http\Controllers\User\TeamController::class, 'invite'])->name('team.store');
                     Route::put('/team/{uuid}', [App\Http\Controllers\User\TeamController::class, 'update'])->name('team.update');
                     Route::delete('/team/{uuid}', [App\Http\Controllers\User\TeamController::class, 'delete'])->name('team.destroy');
-                    Route::put('/team/{uuid}/status', [App\Http\Controllers\User\ChatTicketController::class, 'updateTeamStatus']);
 
                     Route::get('/developer-tools/access-tokens', [App\Http\Controllers\User\DeveloperController::class, 'index']);
                     Route::post('/developer-tools/access-tokens', [App\Http\Controllers\User\DeveloperController::class, 'store']);
                     Route::delete('/developer-tools/access-tokens/{uuid}', [App\Http\Controllers\User\DeveloperController::class, 'delete']);
                 });
 
-                //Route::get('/whatsapp/message', [App\Http\Controllers\User\WhatsappController::class, 'sendMessage']);
+                // Route::get('/whatsapp/message', [App\Http\Controllers\User\WhatsappController::class, 'sendMessage']);
                 Route::resource('notes', App\Http\Controllers\User\ChatNoteController::class);
             });
         });
     });
 });
 
-//Admin Panel Routes
+// Admin Panel Routes
 Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index']);
     Route::resource('users', App\Http\Controllers\Admin\UserController::class);

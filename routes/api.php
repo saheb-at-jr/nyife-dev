@@ -26,8 +26,8 @@ Route::get('/translations/{locale}', function ($locale) {
     }
 
     $path = base_path("lang/{$locale}.json");
-    
-    if (!File::exists($path)) {
+
+    if (! File::exists($path)) {
         return response()->json(['error' => 'Translation file not found'], 404);
     }
 
@@ -36,10 +36,11 @@ Route::get('/translations/{locale}', function ($locale) {
 
 Route::middleware([AuthenticateBearerToken::class])->group(function () {
     Route::post('/send', [App\Http\Controllers\ApiController::class, 'sendMessage']);
+    Route::post('/send/interactive', [App\Http\Controllers\ApiController::class, 'sendInteractiveMessage']);
     Route::post('/send/template', [App\Http\Controllers\ApiController::class, 'sendTemplateMessage']);
     Route::post('/send/media', [App\Http\Controllers\ApiController::class, 'sendMediaMessage']);
     Route::post('/campaigns', [App\Http\Controllers\ApiController::class, 'storeCampaign']);
-    
+
     Route::get('/contacts', [App\Http\Controllers\ApiController::class, 'listContacts']);
     Route::post('/contacts', [App\Http\Controllers\ApiController::class, 'storeContact']);
     Route::put('/contacts/{uuid}', [App\Http\Controllers\ApiController::class, 'storeContact']);
