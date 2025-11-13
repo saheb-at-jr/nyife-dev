@@ -407,8 +407,7 @@ const getCategoryColor = (category) => {
                             </TableBodyRowItem>
 
                             <TableBodyRowItem class="hidden lg:table-cell py-6">
-                                <div class="flex items-center gap-2 max-w-xs">
-                                    <Eye class="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <div class="flex items-center gap-2 max-w-[10vw] 2xl:max-w-xs mr-2">
                                     <div
                                         class="px-3 py-2 bg-gradient-to-r from-gray-50 to-orange-50 rounded-lg border-2 border-primary/10 truncate text-xs text-gray-600 font-medium">
                                         {{ findBodyText(item.metadata) }}

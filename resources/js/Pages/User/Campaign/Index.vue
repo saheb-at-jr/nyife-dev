@@ -60,6 +60,7 @@
 </template>
 
 <script setup>
+
 import AppLayout from "./../Layout/App.vue";
 import CampaignTable from '@/Components/Tables/CampaignTable.vue';
 import { Megaphone } from "lucide-vue-next";

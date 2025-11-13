@@ -162,7 +162,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                 <!-- Main Content Area (70%) -->
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Stats Cards -->
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                         <div class="group relative">
                             <div
                                 class="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition">
@@ -231,7 +231,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                         props.campaign.total_delivered_count }}</h2>
                                     <h4 class="text-xs text-gray-600 font-medium capitalize">{{
                                         $t('Delivered')
-                                        }}</h4>
+                                    }}</h4>
                                 </div>
                             </div>
 
@@ -286,7 +286,6 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             </div>
                         </div>
                     </div>
-
 
                     <!-- Campaign Log Table -->
                     <div
