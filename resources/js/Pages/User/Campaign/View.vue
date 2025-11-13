@@ -171,13 +171,17 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/10">
 
                                 <div class="flex flex-col items-start text-center">
-                                    <div
+                                    <!-- <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                             viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                         </svg>
+                                    </div> -->
+                                    <div
+                                        class="mb-3 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl p-3 shadow-md">
+                                        <MessageSquare class="w-6 h-6 text-white" />
                                     </div>
                                     <h2 class="text-2xl font-bold text-gray-900 mb-1">{{
                                         props.campaign.total_message_count }}</h2>
@@ -196,9 +200,9 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/10">
                                 <div class="flex flex-col items-start text-center">
                                     <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-3">
+                                        class="w-12 h-12 rounded-xl bg-[#9333ea] flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2"
+                                            viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <line x1="22" y1="2" x2="11" y2="13" />
                                             <polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -220,9 +224,9 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-emerald-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/10">
                                 <div class="flex flex-col items-start text-center">
                                     <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-3">
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"
+                                            viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="20 6 9 17 4 12" />
                                         </svg>
@@ -245,9 +249,9 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/10">
                                 <div class="flex flex-col items-start text-center">
                                     <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-3">
+                                        class="w-12 h-12 rounded-xl bg-[#0891b2] flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"
+                                            viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                                         </svg>
@@ -269,9 +273,9 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                 class="relative bg-white border border-gray-200 rounded-2xl p-6 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/10">
                                 <div class="flex flex-col items-start text-center">
                                     <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-3">
+                                        class="w-12 h-12 rounded-xl bg-[#dc2626] flex items-center justify-center mb-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"
+                                            viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10" />
                                             <line x1="15" y1="9" x2="9" y2="15" />
@@ -433,7 +437,7 @@ import AppLayout from "./../Layout/App.vue";
 import CampaignLogTable from '@/Components/Tables/CampaignLogTable.vue';
 import WhatsappTemplate from '@/Components/WhatsappTemplate.vue';
 import { Link } from "@inertiajs/vue3";
-import { ArrowLeft } from "lucide-vue-next";
+import { ArrowLeft, MessageSquare } from "lucide-vue-next";
 
 const props = defineProps(['campaign', 'rows', 'filters']);
 </script>
