@@ -143,7 +143,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                         </Link>
 
                         <a :href="'/campaigns/export/' + props.campaign.uuid"
-                            class="group inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-md border-2 border-gray-200 transition-all duration-300 hover:shadow-lg hover:border-gray-300 hover:scale-105 active:scale-95">
+                            class="group inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round" class="transition-transform group-hover:-translate-y-0.5">
@@ -153,7 +153,6 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                             </svg>
                             {{ $t('Export as CSV') }}
                         </a>
-
                     </div>
                 </div>
             </div>
@@ -235,7 +234,7 @@ const props = defineProps(['campaign', 'rows', 'filters']);
                                         props.campaign.total_delivered_count }}</h2>
                                     <h4 class="text-xs text-gray-600 font-medium capitalize">{{
                                         $t('Delivered')
-                                    }}</h4>
+                                        }}</h4>
                                 </div>
                             </div>
 
