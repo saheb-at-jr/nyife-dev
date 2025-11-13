@@ -263,7 +263,7 @@
                                         class="p-4 bg-slate-50 rounded-xl border border-slate-200">
                                         <div class="flex items-center justify-between mb-3">
                                             <span class="text-sm font-medium text-slate-700">{{ formatText(button.type)
-                                            }}</span>
+                                                }}</span>
                                             <button @click="removeButton(index)"
                                                 class="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors">
                                                 <Trash2 class="w-4 h-4" />
@@ -314,10 +314,10 @@
                                                 <div class="flex-1">
                                                     <label class="font-medium text-slate-800 cursor-pointer">{{
                                                         $t(option.label)
-                                                        }}</label>
+                                                    }}</label>
                                                     <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{
                                                         $t(option.description)
-                                                        }}</p>
+                                                    }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -377,7 +377,7 @@
                                                 class="w-5 h-5 rounded border-slate-300 text-[#ff5100] focus:ring-[#ff5100] cursor-pointer" />
                                             <span class="text-sm font-medium text-slate-700">{{ $t(`Add security
                                                 recommendation`)
-                                                }}</span>
+                                            }}</span>
                                         </label>
 
                                         <label
@@ -399,7 +399,7 @@
                                             class="p-4 bg-white border border-slate-200 rounded-xl">
                                             <label class="block text-sm font-medium text-slate-700 mb-2">{{ $t(`Expires
                                                 In`)
-                                                }}</label>
+                                            }}</label>
                                             <div class="flex items-center space-x-2">
                                                 <input type="number" v-model="form.footer.code_expiration_minutes"
                                                     step="any"
@@ -653,7 +653,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-2">{{ $t("Flow JSON")
-                                    }}</label>
+                                        }}</label>
                                     <textarea v-model="flowform.flowJson" rows="6"
                                         class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff5100] focus:border-transparent font-mono text-sm"
                                         placeholder="Paste the JSON here"></textarea>
@@ -723,7 +723,7 @@
                                                 <video
                                                     v-else-if="form.header.format === 'VIDEO' && !!form.header.file_url"
                                                     :src="form.header.file_url" autoplay muted loop playsinline
-                                                    class="w-full object-cover rounded-xl"></video>
+                                                    class="w-full aspect-video object-cover rounded-xl"></video>
                                                 <component v-else
                                                     :is="form.header.format === 'IMAGE' ? ImageIcon : form.header.format === 'VIDEO' ? Video : FileIcon"
                                                     class="w-12 h-12 text-slate-400" />
@@ -745,7 +745,7 @@
                                             <!-- Footer -->
                                             <div class="text-slate-500 mt-2 text-xs">
                                                 <span v-if="form.category !== 'AUTHENTICATION'">{{ form.footer.text
-                                                }}</span>
+                                                    }}</span>
                                                 <span v-else-if="form.code_expiration">
                                                     {{ $t("This code expires in") }} {{
                                                         form.footer.code_expiration_minutes }}
@@ -792,20 +792,23 @@
 
                                         <div class="flex space-x-2 overflow-x-auto pb-2">
                                             <div v-for="(card, index) in cards" :key="index"
-                                                class="w-[150px] bg-white aspect-square rounded-lg shadow-md p-3 flex-shrink-0">
-                                                <div
-                                                    class="mb-3 w-[126px] bg-slate-200 flex items-center justify-center rounded-lg">
-                                                    <img v-if="card?.image_url || card.components[0].example.header_handle[0]"
-                                                        :src="card?.image_url || card.components[0].example.header_handle[0]"
-                                                        alt="Image" class="w-full object-cover" />
-                                                    <component v-else :is="ImageIcon"
-                                                        class="w-12 h-12 text-slate-400" />
-                                                </div>
-                                                <div v-if="card.components.find(c => c.type === 'BODY')" class="mb-2">
-                                                    <p class="text-sm text-slate-700">
-                                                        {{card.components.find(c => c.type === 'BODY')?.text || `No
-                                                        text`}}
-                                                    </p>
+                                                class="w-[150px] bg-white aspect-square flex flex-col justify-between rounded-lg shadow-md p-3 flex-shrink-0">
+                                                <div>
+                                                    <div
+                                                        class="mb-3 w-[126px] bg-slate-200 flex items-center justify-center rounded-lg">
+                                                        <img v-if="card?.image_url || card.components[0].example.header_handle[0]"
+                                                            :src="card?.image_url || card.components[0].example.header_handle[0]"
+                                                            alt="Image" class="w-full object-cover" />
+                                                        <component v-else :is="ImageIcon"
+                                                            class="w-12 h-12 text-slate-400" />
+                                                    </div>
+                                                    <div v-if="card.components.find(c => c.type === 'BODY')"
+                                                        class="mb-2">
+                                                        <p class="text-sm text-slate-700">
+                                                            {{card.components.find(c => c.type === 'BODY')?.text || `No
+                                                            text`}}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                                 <div v-if="card.components.find(c => c.type === 'BUTTONS')"
                                                     class="space-y-1">
@@ -902,7 +905,7 @@
                     </div>
                     <h4 class="text-lg text-slate-800 font-semibold mb-2 text-start">{{ error.error?.error_user_title ||
                         'Error'
-                    }}</h4>
+                        }}</h4>
                     <p class="text-sm text-slate-600 mb-6 text-start">{{ error.error?.error_user_msg || error }}</p>
                     <button @click="closeModal"
                         class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">

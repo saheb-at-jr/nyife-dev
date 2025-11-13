@@ -207,7 +207,7 @@ const getAddressDetail = (value, key) => {
 </script>
 
 <template>
-    <div class="h-[calc(100vh-154px)] overflow-y-auto bg-gradient-to-br from-gray-50 to-orange-50/30">
+    <div class="h-full overflow-y-auto bg-gradient-to-br from-gray-50 to-orange-50/30">
         <div class="max-w-4xl mx-auto p-8">
 
             <!-- Hero Section -->

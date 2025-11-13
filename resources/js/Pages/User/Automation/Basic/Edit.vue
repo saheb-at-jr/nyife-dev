@@ -211,7 +211,7 @@
                                                 </div>
                                                 <div class="flex items-center space-x-2">
                                                     <span class="text-sm">{{ form.response?.name ?? form.response
-                                                    }}</span>
+                                                        }}</span>
                                                     <button type="button" @click="clearResponse()">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                             viewBox="0 0 24 24">

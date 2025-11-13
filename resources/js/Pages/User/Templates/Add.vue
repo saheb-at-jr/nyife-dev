@@ -711,8 +711,7 @@
 
                         <video v-else-if="form.header.format === 'VIDEO' && !!form.header.file_url"
                           :src="form.header.file_url" autoplay muted loop playsinline
-                          class="w-full object-cover rounded-xl"></video>
-
+                          class="w-full aspect-video object-cover rounded-xl"></video>
 
                         <component v-else
                           :is="form.header.format === 'IMAGE' ? ImageIcon : form.header.format === 'VIDEO' ? Video : FileIcon"
@@ -776,17 +775,19 @@
 
                     <div class="flex space-x-2 overflow-x-auto pb-2">
                       <div v-for="(card, index) in cards" :key="index"
-                        class="w-[150px] bg-white rounded-lg shadow-md p-3 flex-shrink-0">
-                        <div
-                          class="mb-3 w-[126px] aspect-video bg-slate-200 flex items-center justify-center rounded-lg">
-                          <img v-if="card.image_url" :src="card.image_url" alt="Image"
-                            class="w-full aspect-video object-cover" />
-                          <component v-else :is="ImageIcon" class="w-12 h-12 text-slate-400" />
-                        </div>
-                        <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
-                          <p class="text-sm text-slate-700">
-                            {{card.components.find(c => c.type === 'body')?.text || 'No text'}}
-                          </p>
+                        class="w-[150px] bg-white rounded-lg shadow-md flex flex-col justify-between p-3 flex-shrink-0">
+                        <div>
+                          <div
+                            class="mb-3 w-[126px] aspect-video bg-slate-200 flex items-center justify-center rounded-lg">
+                            <img v-if="card.image_url" :src="card.image_url" alt="Image"
+                              class="w-full aspect-video object-cover" />
+                            <component v-else :is="ImageIcon" class="w-12 h-12 text-slate-400" />
+                          </div>
+                          <div v-if="card.components.find(c => c.type === 'body')" class="mb-2">
+                            <p class="text-sm text-slate-700">
+                              {{card.components.find(c => c.type === 'body')?.text || 'No text'}}
+                            </p>
+                          </div>
                         </div>
                         <div v-if="card.components.find(c => c.type === 'buttons')" class="space-y-1">
                           <button v-for="(btn, btnIndex) in card.components.find(c => c.type === 'buttons')?.buttons"

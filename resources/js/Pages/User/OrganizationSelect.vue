@@ -299,7 +299,10 @@ const focusActive = () => {
     nextTick(() => {
         cardRefs.value[activeIndex.value]?.focus?.();
         // ensure element visible (helpful on small screens)
-        cardRefs.value[activeIndex.value]?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+        cardRefs.value[activeIndex.value]?.scrollIntoView?.({
+            block: 'nearest',
+            // behavior: 'smooth'
+        });
     });
 };
 

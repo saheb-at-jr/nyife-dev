@@ -283,7 +283,7 @@ const scrollToBottom = () => {
     if (container) {
         container.scrollTo({
             top: container.scrollHeight,
-            behavior: 'smooth',
+            // behavior: 'smooth',
         });
     }
 };
