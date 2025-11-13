@@ -275,7 +275,7 @@
 <script setup>
 import AppLayout from './../../Layout/App.vue';
 import axios from 'axios';
-import { Link, router, useForm } from "@inertiajs/vue3";
+import { Link, useForm } from "@inertiajs/vue3";
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { trans } from 'laravel-vue-i18n';
 import FormInput from '@/Components/FormInput.vue';

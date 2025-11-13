@@ -10,15 +10,17 @@
                                     <h4 class="text-[16px]">{{ $t('Basic Replies') }}</h4>
                                     <span class="flex items-center mt-1 text-slate-500">
                                         {{ $t('Respond automatically to messages based on your own criteria') }}
-                                    </span> 
+                                    </span>
                                 </div>
                                 <div class="ml-auto">
-                                    <Link href="/automation/basic/create" class="float-right rounded-md bg-primary px-3 py-2 text-sm text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{ $t('Create') }}</Link>
+                                    <Link href="/automation/basic/create"
+                                        class="float-right rounded-md bg-primary px-3 py-2 text-sm text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                    {{ $t('Create') }}</Link>
                                 </div>
                             </div>
                             <div class="w-5/5">
                                 <!-- Table Component-->
-                                <AutoReplyTable :rows="props.rows" :filters="props.filters"/>
+                                <AutoReplyTable :rows="props.rows" :filters="props.filters" />
                             </div>
                         </div>
                     </div>
@@ -28,9 +30,9 @@
     </SettingLayout>
 </template>
 <script setup>
-    import SettingLayout from "./../Layout.vue";
-    import { Link } from "@inertiajs/vue3";
-    import AutoReplyTable from '@/Components/Tables/AutoReplyTable.vue';
+import SettingLayout from "./../Layout.vue";
+import { Link } from "@inertiajs/vue3";
+import AutoReplyTable from '@/Components/Tables/AutoReplyTable.vue';
 
-    const props = defineProps(['rows', 'filters', 'aimodule', 'fbmodule']);
+const props = defineProps(['rows', 'filters', 'aimodule', 'fbmodule']);
 </script>
