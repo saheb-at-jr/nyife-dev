@@ -17,21 +17,16 @@ use App\Services\WhatsappService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Redirect;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Session;
 
 class ChatTicketController extends BaseController
 {
     public function index(Request $request, $uuid = null)
     {
-         Log::info("This is request index");
-        Log::info($request  );
+        //
     }
 
     public function update(Request $request, $uuid)
     { 
-        Log::info("This is request update");
-        Log::info($request  );
         $contact = Contact::where('uuid', $uuid)->first();
 
         ChatTicket::where('contact_id', $contact->id)->update([
@@ -63,42 +58,12 @@ class ChatTicketController extends BaseController
     }
 
     public function assign(Request $request, $uuid)
-    {
-        Log::info("This is id from session");
-
-        Log::info("This is request assign");
-        Log::info($request);
-
+    { 
         $contact = Contact::where('uuid', $uuid)->first();
-        $team = Team::where('organization_id', session()->get('current_organization'))
-                    ->where('user_id', $request->id)
-                    ->first();
-
-        Log::info("team");
-        Log::info($team);
-
+        $team = Team::where('organization_id', session()->get('current_organization'))->where('user_id', $request->id)->first();
         $user = User::where('id', $request->id)->first();
         
-        if (!$team) {
-            return Redirect::back()->with(
-                'status', [
-                    'type' => 'error',
-                    'message' => __('Team not found!')
-                ]
-            );
-        }
-
-        // ✅ Check if team is active
-        if ($team->status !== 'active') {
-            return Redirect::back()->with(
-                'status', [
-                    'type' => 'error',
-                    'message' => __('Team is not active, cannot assign ticket.')
-                ]
-            );
-        }
-
-        if ($user) {
+        if($team && $user){
             ChatTicket::where('contact_id', $contact->id)->update([
                 'assigned_to' => $request->id
             ]);
@@ -123,52 +88,5 @@ class ChatTicketController extends BaseController
                 ]
             );
         }
-
-        return Redirect::back()->with(
-            'status', [
-                'type' => 'error',
-                'message' => __('User not found!')
-            ]
-        );
     }
-
-
-     public function updateTeamStatus(Request $request, $uuid)
-    {
-        Log::info("This is request updateTeamStatus");
-        Log::info($request);
-
-        $team = Team::where('uuid', $uuid)
-                    ->where('organization_id', session()->get('current_organization'))
-                    ->first();
-
-        Log::info("team");
-        Log::info($team);
-
-        if (!$team) {
-            return Redirect::back()->with(
-                'status', [
-                    'type' => 'error',
-                    'message' => __('Team not found!')
-                ]
-            );
-        }
-
-        // ✅ Toggle status
-        $newStatus = $team->status === 'active' ? 'suspended' : 'active';
-        Log::info($newStatus);
-
-        $team->update(['status' => $newStatus]);
-
-        Log::info("Team status updated to: " . $newStatus);
-
-        return Redirect::back()->with(
-            'status', [
-                'type' => 'success',
-                'message' => __('Team status updated to ' . ucfirst($newStatus) . ' successfully!')
-            ]
-        );
-    }
-
-
 }

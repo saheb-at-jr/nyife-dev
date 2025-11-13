@@ -31,12 +31,11 @@ class CampaignDetailsExport implements FromCollection, WithHeadings
             return [
                 'campaign_name' => $campaign->name,
                 'template_name' => $campaign->template->name,
-                'first_name' => $log->contact->first_name,
-                'last_name' => $log->contact->last_name,
-                'phone' => $log->contact->formatted_phone_number,
+                'first_name' => $log->contact?->first_name ?? '',
+                'last_name' => $log->contact?->last_name ?? '',
+                'phone' => $log->contact?->formatted_phone_number ?? '',
                 'updated_at' => $log->updated_at,
-                'status' => $log->chat->status == 'failed' ? 'Rejected by meta' : $log->chat->status  
-                // 'status' => 'test'
+                'status' => $log->status == 'success' ? $log->chat->status : $log->status
             ];
         });
 

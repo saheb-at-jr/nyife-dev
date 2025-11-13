@@ -17,7 +17,6 @@ use App\Services\ContactService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\log;
 use Inertia\Inertia;
 use Excel;
 use Validator;
@@ -280,7 +279,6 @@ class ContactController extends BaseController
     public function update(StoreContact $request, $uuid)
     {
         $contact = $this->contactService()->store($request, $uuid);
-        log::info('This is contact controller',['contact request' => $contact]);
 
         return redirect('/contacts/' . $contact->uuid)->with(
             'status', [

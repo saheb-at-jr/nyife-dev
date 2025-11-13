@@ -73,19 +73,38 @@ class PaymentControllerRazorpay extends Controller
 
         $paid_amount = $payment['amount'] / 100;
 
-        // Step 3: Update user balance
+        // Original paid amount
+        $paid_amount = $request->paid_amount;
+        
+        // Calculate GST (18%) 
+        $gstAmount = $paid_amount * 0.18;
+        
+        // Net amount to credit (after GST deduction)
+        $netAmount = $paid_amount - $gstAmount;
+        
+        // Update user balance
         $user = User::findOrFail($userId);
-        $user->balance += $paid_amount;
+        $user->balance += $netAmount;
         $user->save();
-
-        // Step 4: Save to BalanceHistory
+        
+        // History entry for credited amount (after GST deduction)
         BalanceHistory::create([
             'user_id'       => $userId,
-            'amount'        => $paid_amount,
+            'amount'        => $netAmount,
             'balance_after' => $user->balance,
             'type'          => 'credit',
-            'note'          => 'Razorpay Credited',
+            'note'          => 'Razorpay Payment Credited (after GST deduction)',
         ]);
+        
+        // History entry for GST deduction
+        BalanceHistory::create([
+            'user_id'       => $userId,
+            'amount'        => -$gstAmount,
+            'balance_after' => $user->balance, // remains same, no change to wallet
+            'type'          => 'debit',
+            'note'          => '18% GST Deduction from Razorpay Payment',
+        ]);
+
 
         // Step 5: Save payment details
         Payment::create([

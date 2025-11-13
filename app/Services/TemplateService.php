@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use DB;
 use Validator;
-use Illuminate\Support\Facades\Log;
+
 class TemplateService
 {
     private $whatsappService;
@@ -37,27 +37,6 @@ class TemplateService
         $wabaId = $config['whatsapp']['waba_id'] ?? null;
 
         $this->whatsappService = new WhatsappService($accessToken, $apiVersion, $appId, $phoneNumberId, $wabaId, $this->organizationId);
-    }
-
-    public function sendCrousel(Request $request)
-    {
-        return $this->whatsappService->sendCrousel($request);
-
-    }
-
-    public function createCrousel(Request $request)
-    {
-
-
-        return $this->whatsappService->createCrousel($request);
-
-    }
-
-
-    public function upload(Request $request)
-    {
-        return $this->whatsappService->upload($request);
-
     }
 
     public function getTemplates(Request $request, $uuid = null, $searchTerm = null)
@@ -114,28 +93,29 @@ class TemplateService
 
     public function createTemplate(Request $request)
     {
-        Log::info("Innside create template");
-        Log::info($request);
-        if ($request->isMethod('get')) {
+        if ($request->isMethod('get')){
             $data['languages'] = config('languages');
             $data['settings'] = Organization::where('id', $this->organizationId)->first();
-
+            
             return Inertia::render('User/Templates/Add', $data);
-        } else if ($request->isMethod('post')) {
-            $validator = Validator::make($request->all(), [
+        } else if ($request->isMethod('post')){
+            if ($response = $this->abortIfDemo('create')) {
+                return $response;
+            }
+
+            $validator = Validator::make($request->all(),[
                 'name' => 'required',
                 'category' => 'required',
                 'language' => 'required',
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => 'Some required fields have not been filled', 'errors' => $validator->messages()->get('*')]);
+                return response()->json(['success' => false,'message'=>'Some required fields have not been filled','errors'=>$validator->messages()->get('*')]);
             }
 
             return $this->whatsappService->createTemplate($request);
         }
     }
-
 
     public function updateTemplate(Request $request, $uuid)
     {
@@ -143,14 +123,14 @@ class TemplateService
             return $response;
         }
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(),[
             'name' => 'required',
             'category' => 'required',
             'language' => 'required',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['success' => false, 'message' => 'Some required fields have not been filled', 'errors' => $validator->messages()->get('*')]);
+            return response()->json(['success' => false,'message'=>'Some required fields have not been filled','errors'=>$validator->messages()->get('*')]);
         }
 
         return $this->whatsappService->updateTemplate($request, $uuid);
@@ -164,15 +144,15 @@ class TemplateService
 
         $query = $this->whatsappService->deleteTemplate($uuid);
 
-        if ($query->success === true) {
+        if($query->success === true){
             return response()->json([
                 'success' => true,
-                'message' => __('Template deleted successfully')
+                'message'=> __('Template deleted successfully')
             ]);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => __('something went wrong. Refresh the page and try again')
+                'message'=> __('something went wrong. Refresh the page and try again')
             ]);
         }
     }
@@ -180,7 +160,7 @@ class TemplateService
     protected function abortIfDemo($type)
     {
         if (app()->environment('demo') && $this->organizationId == 1) {
-            if ($type == 'delete') {
+            if($type == 'delete'){
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to do this in this demo account. To test template features please create your own account.'
@@ -198,8 +178,15 @@ class TemplateService
 
         return null;
     }
+    public function createCrousel(Request $request)
+    {
+        return $this->whatsappService->createCrousel($request);
+    }
+        public function upload(Request $request)
+    {
+        return $this->whatsappService->upload($request);
 
-
+    }
     public function uploadfile(Request $request)
     {
         return $this->whatsappService->uploadfile($request);

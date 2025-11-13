@@ -50,23 +50,4 @@ class ContactGroup extends Model {
     {
         return $this->where('organization_id', $organizationId)->where('deleted_at', null)->count();
     }
-
-      public function getContactPhones()
-    {
-        return $this->contacts()
-            ->select('contacts.id', 'contacts.uuid', 'contacts.phone') // disambiguate all
-            ->get()
-            ->filter(function ($contact) {
-                return !empty($contact->phone); // remove nulls
-            })
-            ->map(function ($contact) {
-                return [
-                    'id' => $contact->id,
-                    'uuid' => $contact->uuid,
-                    'phone' => $contact->phone,
-                ];
-            })
-            ->values()
-            ->toArray();
-    }
 }

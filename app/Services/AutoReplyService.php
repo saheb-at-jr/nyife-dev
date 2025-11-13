@@ -23,19 +23,15 @@ class AutoReplyService
 {
     public function getRows(object $request)
     {
-        Log::info('Fetching AutoReply rows', ['request' => $request->all()]);
         $organizationId = session()->get('current_organization');
         $model = new AutoReply;
         $searchTerm = $request->query('search');
 
-        $result = AutoReplyResource::collection($model->listAll($organizationId, $searchTerm));
-        Log::info('Fetched AutoReply rows', ['count' => $result->count()]);
-        return $result;
+        return AutoReplyResource::collection($model->listAll($organizationId, $searchTerm));
     }
 
     public function store(object $request, $uuid = null)
     {
-        Log::info('Storing AutoReply', ['uuid' => $uuid, 'request' => $request->all()]);
         $model = $uuid == null ? new AutoReply : AutoReply::where('uuid', $uuid)->first();
         $model['name'] = $request->name;
         $model['trigger'] = $request->trigger;
@@ -44,7 +40,6 @@ class AutoReplyService
         $metadata['type'] = $request->response_type;
         if($request->response_type === 'image' || $request->response_type === 'audio'){
             if($request->hasFile('response')){
-                Log::info('Uploading media response');
                 $storage = Setting::where('key', 'storage_system')->first()->value;
                 $fileName = $request->file('response')->getClientOriginalName();
                 $fileContent = $request->file('response');
@@ -53,23 +48,19 @@ class AutoReplyService
                     $file = Storage::disk('local')->put('public', $fileContent);
                     $mediaFilePath = $file;
                     $mediaUrl = rtrim(config('app.url'), '/') . '/media/' . ltrim($mediaFilePath, '/');
-                    Log::info('Stored media locally', ['path' => $mediaFilePath, 'url' => $mediaUrl]);
                 } else if($storage === 'aws') {
                     $filePath = 'uploads/media/received'  . session()->get('current_organization') . '/' . $fileName;
                     $file = Storage::disk('s3')->put($filePath, $fileContent, 'public');
                     $mediaFilePath = Storage::disk('s3')->url($filePath);
                     $mediaUrl = $mediaFilePath;
-                    Log::info('Stored media on AWS S3', ['path' => $filePath, 'url' => $mediaUrl]);
                 }
 
                 $uploadedMedia = MediaService::upload($request->file('response'));
-                Log::info('Uploaded media to MediaService', ['uploadedMedia' => $uploadedMedia]);
 
                 $metadata['data']['file']['name'] = $fileName;
                 $metadata['data']['file']['location'] = $mediaFilePath;
                 $metadata['data']['file']['url'] = $mediaUrl;
             } else {
-                Log::info('No new file uploaded, using existing metadata');
                 $media = json_decode($model->metadata)->data;
                 $metadata['data']['file']['name'] = $media->file->name;
                 $metadata['data']['file']['location'] = $media->file->location;
@@ -77,10 +68,8 @@ class AutoReplyService
             }
         } else if($request->response_type === 'text') {
             $metadata['data']['text'] = $request->response;
-            Log::info('Storing text response', ['text' => $request->response]);
         } else {
             $metadata['data']['template'] = $request->response;
-            Log::info('Storing template response', ['template' => $request->response]);
         }
 
         $model['metadata'] = json_encode($metadata);
@@ -90,31 +79,23 @@ class AutoReplyService
             $model['organization_id'] = session()->get('current_organization');
             $model['created_by'] = auth()->user()->id;
             $model['created_at'] = now();
-            Log::info('Creating new AutoReply');
-        } else {
-            Log::info('Updating existing AutoReply', ['uuid' => $uuid]);
         }
 
         $model->save();
-        Log::info('AutoReply saved successfully', ['id' => $model->id]);
 
         // Prepare a clean contact object for webhook
         $cleanModel = $model->makeHidden(['id', 'organization_id', 'created_by']);
 
         // Trigger webhook
         WebhookHelper::triggerWebhookEvent($uuid === null ? 'autoreply.created' : 'autoreply.updated', $cleanModel);
-        Log::info('Webhook triggered for AutoReply', ['event' => $uuid === null ? 'autoreply.created' : 'autoreply.updated']);
     }
 
     public function destroy($uuid)
     {
-        Log::info('Deleting AutoReply', ['uuid' => $uuid]);
         AutoReply::where('uuid', $uuid)->update([
             'deleted_by' => auth()->user()->id,
             'deleted_at' => now()
         ]);
-
-        Log::info('AutoReply deleted successfully', ['uuid' => $uuid]);
 
         // Trigger webhook
         WebhookHelper::triggerWebhookEvent('autoreply.deleted', [
@@ -123,20 +104,17 @@ class AutoReplyService
                 'deleted_at' => now()->toISOString()
             ],
         ]);
-        Log::info('Webhook triggered for AutoReply deletion', ['uuid' => $uuid]);
     }
 
     public function checkAutoReply(Chat $chat, $isNewContact)
     {
-        Log::info('Checking AutoReply', ['chat_id' => $chat->id, 'isNewContact' => $isNewContact]);
         $organizationId = $chat->organization_id;
 
-        return $this->replySequence($organizationId, $chat, $isNewContact);
+        $this->replySequence($organizationId, $chat, $isNewContact);
     }
 
     private function replySequence($organizationId, $chat, $isNewContact)
     {
-        Log::info('Running reply sequence', ['organizationId' => $organizationId, 'chat_id' => $chat->id]);
         $organizationConfig = Organization::where('id', $organizationId)->first();
         $metadataArray = $organizationConfig->metadata ? json_decode($organizationConfig->metadata, true) : [];
         $activeFlow = false;
@@ -146,7 +124,6 @@ class AutoReplyService
             if (class_exists(\Modules\FlowBuilder\Services\FlowExecutionService::class)) {
                 $query = new \Modules\FlowBuilder\Services\FlowExecutionService($organizationId);
                 $activeFlow = $query->hasActiveFlow($chat);
-                Log::info('Checked active flow', ['activeFlow' => $activeFlow]);
             }
         }
 
@@ -154,10 +131,11 @@ class AutoReplyService
         if ($activeFlow) {
             $response_sequence = ['Automated Flows'];
         } else {
+            // Use the response sequence from metadata or fallback to default
             $response_sequence = $metadataArray['automation']['response_sequence'] ?? ['Basic Replies', 'Automated Flows', 'AI Reply Assistant'];
         }
-        Log::info('Response sequence determined', ['sequence' => $response_sequence]);
 
+        // Define mapping of sequence items to functions
         $sequenceFunctions = [
             'Basic Replies' => function() use ($chat) {
                 return $this->handleBasicReplies($chat);
@@ -170,16 +148,19 @@ class AutoReplyService
             },
         ];
 
+        // Initialize a variable to hold the response (or handle chaining, etc.)
         $response = null;
 
+        // Iterate through the sequence, applying each function in order
         foreach ($response_sequence as $sequenceItem) {
             if (isset($sequenceFunctions[$sequenceItem])) {
-                Log::info('Executing sequence item', ['item' => $sequenceItem]);
                 $response = $sequenceFunctions[$sequenceItem]();
-                Log::info('Sequence item response', ['item' => $sequenceItem, 'response' => $response]);
+
+                // \Log::info($sequenceItem);
+                // \Log::info($response);
 
                 if ($response) {
-                    Log::info('Response found, stopping sequence', ['item' => $sequenceItem]);
+                    // If a response is found, exit the loop
                     break;
                 }
             }
@@ -190,7 +171,6 @@ class AutoReplyService
 
     private function handleBasicReplies($chat)
     {
-        Log::info('Handling Basic Replies', ['chat_id' => $chat->id]);
         $organizationId = $chat->organization_id;
         $text = '';
         $metadata = json_decode($chat->metadata, true);
@@ -208,33 +188,28 @@ class AutoReplyService
         }
         
         $receivedMessage = " " . $text;
-        Log::info('Received message for basic replies', ['message' => $receivedMessage]);
 
+        //Check basic reply flow
         $autoReplies = AutoReply::where('organization_id', $organizationId)
             ->where('deleted_at', null)
             ->get();
-        Log::info('Fetched AutoReplies for organization', ['count' => $autoReplies->count()]);
 
         foreach ($autoReplies as $autoReply) {
             $triggerValues = $this->getTriggerValues($autoReply->trigger);
-            Log::info('Checking triggers', ['autoReplyId' => $autoReply->id, 'triggers' => $triggerValues]);
 
             foreach ($triggerValues as $trigger) {
                 if ($this->checkMatch($receivedMessage, $trigger, $autoReply->match_criteria)) {
-                    Log::info('Match found, sending reply', ['trigger' => $trigger, 'criteria' => $autoReply->match_criteria]);
                     $this->sendReply($chat, $autoReply);
                     return true;
                 }
             }
         }
 
-        Log::info('No match found in Basic Replies');
-        return false;
+        return false; // No reply was sent
     }
 
     private function handleAIReplyAssistant($chat)
     {
-        Log::info('Handling AI Reply Assistant', ['chat_id' => $chat->id]);
         $text = '';
         $metadata = json_decode($chat->metadata, true);
 
@@ -251,23 +226,19 @@ class AutoReplyService
         }
         
         $receivedMessage = " " . $text;
-        Log::info('Received message for AI assistant', ['message' => $receivedMessage]);
 
         if (file_exists(base_path('modules/IntelliReply/Services/AIResponseService.php'))) {
             $query = new \Modules\IntelliReply\Services\AIResponseService();
             if ($query->handleAIResponse($chat, $receivedMessage)) {
-                Log::info('AI assistant generated response');
                 return true;
             }
         }
 
-        Log::info('No AI assistant response generated');
-        return false;
+        return false; // No reply was sent
     }
 
     private function handleAutomatedFlows($organizationId, $chat, $isNewContact)
     {
-        Log::info('Handling Automated Flows', ['chat_id' => $chat->id, 'isNewContact' => $isNewContact]);
         $text = '';
         $metadata = json_decode($chat->metadata, true);
 
@@ -284,17 +255,11 @@ class AutoReplyService
         }
 
         $receivedMessage = " " . $text;
-        Log::info('Received message for automated flows', ['message' => $receivedMessage]);
 
         if (file_exists(base_path('modules/FlowBuilder/Services/FlowExecutionService.php'))) {
             $query = new \Modules\FlowBuilder\Services\FlowExecutionService($organizationId);
-            $result = $query->executeFlow($chat, $isNewContact, $receivedMessage);
-            Log::info('Executed automated flow', ['result' => $result]);
-            return $result;
+            return $query->executeFlow($chat, $isNewContact, $receivedMessage);
         }
-
-        Log::info('No automated flow service found');
-        return false;
     }
 
     private function getTriggerValues($trigger)
@@ -306,22 +271,27 @@ class AutoReplyService
 
     private function checkMatch($receivedMessage, $trigger, $criteria)
     {
-        Log::info('Checking match', ['message' => $receivedMessage, 'trigger' => $trigger, 'criteria' => $criteria]);
         $normalizedTrigger = trim($trigger);
 
         if ($criteria === 'exact match') {
+            // Check if the text contains Arabic characters
             $hasArabic = preg_match('/[\p{Arabic}]/u', $receivedMessage . $normalizedTrigger);
             
             if ($hasArabic) {
+                // For Arabic text, use exact case-sensitive matching
                 return $receivedMessage === " " . $normalizedTrigger;
             } else {
+                // For English text, use case-insensitive matching
                 return strtolower($receivedMessage) === " " . strtolower($normalizedTrigger);
             }
         } else if ($criteria === 'contains') {
             $triggerWords = explode(' ', $normalizedTrigger);
+            
+            // Check if the text contains Arabic characters
             $hasArabic = preg_match('/[\p{Arabic}]/u', $receivedMessage . $normalizedTrigger);
             
             if ($hasArabic) {
+                // For Arabic text, use simple string matching without word boundaries
                 foreach ($triggerWords as $word) {
                     if (strpos($receivedMessage, $word) !== false) {
                         return true;
@@ -329,6 +299,7 @@ class AutoReplyService
                 }
                 return false;
             } else {
+                // For non-Arabic text, use case-insensitive regex approach
                 $pattern = '/\b(' . implode('|', array_map('preg_quote', $triggerWords)) . ')\b/i';
                 return preg_match($pattern, strtolower($receivedMessage)) === 1;
             }
@@ -339,7 +310,6 @@ class AutoReplyService
 
     protected function sendReply(Chat $chat, AutoReply $autoreply)
     {
-        Log::info('Sending reply', ['chat_id' => $chat->id, 'autoreply_id' => $autoreply->id]);
         $contact = Contact::where('id', $chat->contact_id)->first();
         $organization_id = $chat->organization_id;
         $metadata = json_decode($autoreply->metadata);
@@ -347,18 +317,15 @@ class AutoReplyService
 
         if($replyType === 'text'){
             $message = $this->replacePlaceholders($organization_id, $contact->uuid, $metadata->data->text);
-            Log::info('Sending text reply', ['message' => $message]);
             $this->initializeWhatsappService($organization_id)->sendMessage($contact->uuid, $message);
         } else if($replyType === 'audio' || $replyType === 'image'){
             $location = strpos($metadata->data->file->location, 'public\\') === 0 ? 'local' : 'amazon';
-            Log::info('Sending media reply', ['type' => $replyType, 'file' => $metadata->data->file]);
             $this->initializeWhatsappService($organization_id)->sendMedia($contact->uuid, $replyType, $metadata->data->file->name, $metadata->data->file->location, $metadata->data->file->url, $location);
         }
     }
 
     private function initializeWhatsappService($organizationId)
     {
-        Log::info('Initializing WhatsappService', ['organizationId' => $organizationId]);
         $config = Organization::where('id', $organizationId)->first()->metadata;
         $config = $config ? json_decode($config, true) : [];
 
@@ -372,7 +339,6 @@ class AutoReplyService
     }
 
     private function replacePlaceholders($organizationId, $contactUuid, $message){
-        Log::info('Replacing placeholders in message', ['contactUuid' => $contactUuid]);
         $organization = Organization::where('id', $organizationId)->first();
         $contact = Contact::with('contactGroups')->where('uuid', $contactUuid)->first();
         $address = $contact->address ? json_decode($contact->address, true) : [];
@@ -407,8 +373,10 @@ class AutoReplyService
         }
 
         $mergedData = array_merge($data, $transformedMetadata);
-        Log::info('Prepared data for placeholder replacement', ['data' => $mergedData]);
 
+        //Log::info($mergedData);
+
+        // First handle URL-encoded placeholders with {url:placeholder} syntax
         $message = preg_replace_callback('/\{url:(\w+)\}/', function ($matches) use ($mergedData) {
             $key = $matches[1];
             if (isset($mergedData[$key])) {
@@ -417,6 +385,7 @@ class AutoReplyService
             return $matches[0];
         }, $message);
         
+        // Then handle regular placeholders
         return preg_replace_callback('/\{(\w+)\}/', function ($matches) use ($mergedData) {
             $key = $matches[1];
             return isset($mergedData[$key]) ? $mergedData[$key] : $matches[0];

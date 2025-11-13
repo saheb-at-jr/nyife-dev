@@ -28,6 +28,8 @@ use Illuminate\Validation\Rule;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use DB;
+use Illuminate\Support\Facades\Log;
+use App\Models\BalanceHistory;
 
 class ApiController extends Controller
 {
@@ -444,6 +446,82 @@ class ApiController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+     
+     
+     
+    public function sendInteractiveMessage(Request $request)
+    {   
+        $rules = [
+            'phone' => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
+                if (!PhoneService::isValid($value)) {
+                    $fail('The phone number is not valid.');
+                }
+            }],
+            
+        ];
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return response()->json([
+                'statusCode' => 400,
+                'message' => __('The provided data is invalid.'),
+                'errors' => $validator->errors()
+            ], 400);
+        }
+        
+        if(!SubscriptionService::isSubscriptionActive($request->organization)){
+            return response()->json([
+                'statusCode' => 403,
+                'message' => __('Please renew or subscribe to a plan to continue!'),
+            ], 403);
+        }
+
+        //Check if the whatsapp connection exists
+        if(!$this->isWhatsAppConnected($request->organization)){
+            return response()->json([
+                'statusCode' => 403,
+                'message' => __('Please setup your whatsapp account!'),
+            ], 403);
+        }
+        
+          // Check if the contact exists, if not, create a new one
+        $phone = $request->phone;
+
+        if (substr($phone, 0, 1) !== '+') {
+            $phone = '+' . $phone;
+        }
+        
+        $header = [];
+
+        $phone = new PhoneNumber($phone);
+        $phone = $phone->formatE164();
+
+        $contact = Contact::where('organization_id', $request->organization)->where('phone', $phone)->first();
+
+        if(!$contact){
+            $contact = new Contact();
+            $contact->organization_id = $request->organization;
+            $contact->first_name = $request->first_name;
+            $contact->last_name = $request->last_name;
+            $contact->email = $request->email;
+            $contact->phone = $phone;
+            $contact->created_by = 0;
+            $contact->save();
+        }
+
+        // Extract the UUID of the contact
+        $this->initializeWhatsappService($request->organization);
+        $type = 'interactive list';
+        
+        $message = $this->whatsappService->sendInteractiveMessage($contact->uuid, $request->message, 0, $type, $request->list, $header, $request->footer, $request->title);
+    
+        return response()->json([
+            'statusCode' => 200,
+            'data' => $message,
+        ], 200);
+    }
+
+     
+     
     public function sendMessage(Request $request){
         $rules = [
             'phone' => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
@@ -521,6 +599,57 @@ class ApiController extends Controller
     }
 
     public function sendTemplateMessage(Request $request){
+        Log::info($request);
+        
+        $template = Template::where('name', $request->template['name'])
+        ->where('organization_id', $request->organization)
+        ->first();
+        $templateCategory = $template->category ?? 'general';
+        Log::info("Template category: " . $templateCategory);
+        Log::info("Template: " . $template);
+        $userId = $template->created_by;
+        
+        $user = $userId ? \App\Models\User::find($userId) : null;
+
+        if (!$user || $user->balance < 1) {
+          return response()->json([
+                'statusCode' => 403,
+                'message' => __('Insufficient Balance'),
+            ], 403);
+        }
+
+        $marketingPrice = (float) ($user->marketing_price ?? 0);
+        $utilityPrice   = (float) ($user->utility_price ?? 0);
+        $authPrice      = (float) ($user->auth_price ?? 0);
+        
+
+        $category = strtolower((string) $templateCategory);
+        
+        switch ($category) {
+            case 'marketing': $perContactPrice = $marketingPrice; break;
+            case 'utility':   $perContactPrice = $utilityPrice;   break;
+            case 'auth':      $perContactPrice = $authPrice;      break;
+            default:          $perContactPrice = $marketingPrice; break;
+        }
+        
+        $calculatedCharge = $perContactPrice;
+        $charge = round($calculatedCharge, 2);
+
+        $oldBalance = (float) $user->balance;
+        $newBalance = round($oldBalance - $charge, 2);
+
+        $user->balance = $newBalance;
+        $user->save();
+
+        BalanceHistory::create([
+            'user_id' => $userId,
+            'amount' => -$charge,
+            'balance_after' => $newBalance,
+            'type' => 'debit',
+            'note' => "API charges"
+        ]);
+
+        
         $rules = [
             'phone' => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
                 if (!PhoneService::isValid($value)) {
@@ -579,6 +708,8 @@ class ApiController extends Controller
             $contact->created_by = 0;
             $contact->save();
         }
+        
+        Log::info($contact);
 
         // Extract the UUID of the contact
         $this->initializeWhatsappService($request->organization);

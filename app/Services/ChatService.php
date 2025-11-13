@@ -494,13 +494,9 @@ class ChatService
             'nextPage' => $chatLogs->currentPage() + 1
         ];
     }
-
-
-
-
-
-
-      public function getInboundChats($request, $uuid = null, $searchTerm = null)
+    
+    
+        public function getInboundChats($request, $uuid = null, $searchTerm = null)
     {
         $days = $request->input('days', 1); // default = last 1 day
 
@@ -555,7 +551,7 @@ class ChatService
         // Retrieve the list of contacts with chats
         $contacts = $contact->contactsWithChats($this->organizationId, $searchTerm, $ticketingActive, $ticketState, $sortDirection, $role, $allowAgentsToViewAllChats);
         $rowCount = $contact->contactsWithChatsCount($this->organizationId, $searchTerm, $ticketingActive, $ticketState, $sortDirection, $role, $allowAgentsToViewAllChats);
-        Log::info('rowCount ' . json_encode($rowCount));
+        // Log::info('rowCount ' . json_encode($rowCount));
 
         $pusherSettings = Setting::whereIn('key', [
             'pusher_app_id',

@@ -164,8 +164,7 @@ class SendCampaignJob implements ShouldQueue
                     // Skip if the log is already being processed or processed
                     if ($campaignLog->status === 'ongoing' || $campaignLog->status === 'success') {
                         continue;
-                    } 
-                    
+                    }
                     $this->sendTemplateMessage($campaignLog);
                 }
             });

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\BalanceHistory;
-use Redirect;
+
 class BalanceController extends Controller
 {
     // Increment balance for a user
@@ -32,38 +32,31 @@ class BalanceController extends Controller
         ]);
 
         // 4. Return response
-        return Redirect::back()->with(
-            'status',
-            [
-                'type' => 'success',
-                'message' => __('Balance incremented successfully')
-            ]
-        );
-        // return response()->json([
-        //     'message' => 'Balance incremented successfully',
-        //     'user' => $user
-        // ]);
+        return response()->json([
+            'message' => 'Balance incremented successfully',
+            'user' => $user
+        ]);
     }
 
 
     public function decrementBalance(Request $request, $id)
-    {
-        // 1. Validate input
-        $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-        ]);
+{
+    // 1. Validate input
+    $request->validate([
+        'amount' => 'required|numeric|min:0.01',
+    ]);
 
-        // 2. Find user
-        $user = User::findOrFail($id);
+    // 2. Find user
+    $user = User::findOrFail($id);
 
-        // 3. Check for sufficient balance
-        if ($user->balance < $request->amount) {
-            return response()->json([
-                'message' => 'Insufficient balance'
-            ], 400);
-        }
+    // 3. Check for sufficient balance
+    if ($user->balance < $request->amount) {
+        return response()->json([
+            'message' => 'Insufficient balance'
+        ], 400);
+    }
 
-        // 4. Decrement balance inside transaction
+    // 4. Decrement balance inside transaction
         $user->balance -= $request->amount;
         $user->save();
 
@@ -74,14 +67,14 @@ class BalanceController extends Controller
             'type' => 'debit',
             'note' => $request->note ?? 'Balance Debited',
         ]);
+    
 
+    // 5. Return response
+    return response()->json([
+        'message' => 'Balance debited successfully',
+        'user' => $user
+    ]);
+}
 
-        // 5. Return response
-        return response()->json([
-            'message' => 'Balance debited successfully',
-            'user' => $user
-        ]);
-    }
-
-
+    
 }

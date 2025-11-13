@@ -27,15 +27,8 @@ class CampaignService
 {
     use TemplateTrait;
 
-    public function store(object $request)
-    {
+    public function store(object $request){
         $organizationId = session()->get('current_organization');
-        Log::info('Storing campaign started', [
-            'organization_id' => $organizationId,
-            'template_uuid' => $request->template,
-            'contacts' => $request->contacts,
-            'request' => $request->all()
-        ]);
 
         $timezone = Setting::where('key', 'timezone')->value('value');
         $organization = Organization::find($organizationId);
@@ -47,39 +40,41 @@ class CampaignService
 
         try {
             DB::transaction(function () use ($request, $organizationId, $template, $contactGroup, $timezone) {
-                Log::info('Inside DB transaction for campaign creation');
+                //Request metadata
                 $mediaId = null;
-                if (in_array($request->header['format'], ['IMAGE', 'DOCUMENT', 'VIDEO'])) {
-                    Log::info('Campaign has media header', ['format' => $request->header['format']]);
+                if(in_array($request->header['format'], ['IMAGE', 'DOCUMENT', 'VIDEO'])){
                     $header = $request->header;
-
+                    
                     if ($request->header['parameters']) {
                         $metadata['header']['format'] = $header['format'];
                         $metadata['header']['parameters'] = [];
-
+                
                         foreach ($request->header['parameters'] as $key => $parameter) {
-                            Log::info('Processing campaign header parameter', ['key' => $key, 'selection' => $parameter['selection']]);
                             if ($parameter['selection'] === 'upload') {
+                                //$path = $parameter['value']->store('public');
+                                //$imageUrl = config('app.url') . '/media/' . $path;
+
                                 $storage = Setting::where('key', 'storage_system')->first()->value;
                                 $fileName = $parameter['value']->getClientOriginalName();
                                 $fileContent = $parameter['value'];
 
-                                if ($storage === 'local') {
+                                if($storage === 'local'){
                                     $file = Storage::disk('local')->put('public', $fileContent);
                                     $mediaFilePath = $file;
+                    
                                     $mediaUrl = rtrim(config('app.url'), '/') . '/media/' . ltrim($mediaFilePath, '/');
-                                    Log::info('Stored campaign media locally', ['file' => $mediaFilePath]);
-                                } else if ($storage === 'aws') {
+                                } else if($storage === 'aws') {
                                     $file = $parameter['value'];
                                     $uploadedFile = $file->store('uploads/media/sent/' . $organizationId, 's3');
                                     $mediaFilePath = Storage::disk('s3')->url($uploadedFile);
+                    
                                     $mediaUrl = $mediaFilePath;
-                                    Log::info('Stored campaign media on S3', ['file' => $uploadedFile]);
                                 }
 
                                 $contentType = $this->getContentTypeFromUrl($mediaUrl);
                                 $mediaSize = $this->getMediaSizeInBytesFromUrl($mediaUrl);
 
+                                //save media
                                 $chatMedia = new ChatMedia;
                                 $chatMedia->name = $fileName;
                                 $chatMedia->path = $mediaUrl;
@@ -89,12 +84,10 @@ class CampaignService
                                 $chatMedia->save();
 
                                 $mediaId = $chatMedia->id;
-                                Log::info('Saved ChatMedia record', ['media_id' => $mediaId]);
                             } else {
                                 $mediaUrl = $parameter['value'];
-                                Log::info('Using existing media url', ['url' => $mediaUrl]);
                             }
-
+                
                             $metadata['header']['parameters'][] = [
                                 'type' => $parameter['type'],
                                 'selection' => $parameter['selection'],
@@ -111,10 +104,10 @@ class CampaignService
                 $metadata['buttons'] = $request->buttons;
                 $metadata['media'] = $mediaId;
 
-
+                // Convert $request->time from organization's timezone to UTC
                 $scheduledAt = $request->skip_schedule ? Carbon::now('UTC') : Carbon::parse($request->time, $timezone)->setTimezone('UTC');
-                Log::info('Scheduled time determined for campaign', ['scheduled_at' => $scheduledAt]);
 
+                //Create campaign
                 $campaign = new Campaign;
                 $campaign['organization_id'] = $organizationId;
                 $campaign['name'] = $request->name;
@@ -125,10 +118,10 @@ class CampaignService
                 $campaign['status'] = 'scheduled';
                 $campaign['scheduled_at'] = $scheduledAt;
                 $campaign->save();
-
-                Log::info('Campaign created successfully', ['campaign_id' => $campaign->id]);
             });
         } catch (\Exception $e) {
+            // Handle the exception here if needed.
+            // The transaction has already been rolled back automatically.
             Log::error('Failed to store campaign', [
                 'error_message' => $e->getMessage(),
                 'organization_id' => $organizationId,
@@ -140,7 +133,66 @@ class CampaignService
         }
     }
 
-    public function storeCarousel(Request $request)
+    private function getMediaInfo($path)
+    {
+        $fullPath = storage_path('app/public/' . $path);
+
+        return [
+            'name' => pathinfo($fullPath, PATHINFO_FILENAME),
+            'type' => File::extension($fullPath),
+            'size' => Storage::size($path), // Size in bytes
+        ];
+    }
+
+    public function sendCampaign(){
+        //Laravel jobs implementation
+        SendCampaignJob::dispatch();
+    }
+
+    public function destroy($uuid)
+    {
+        Campaign::where('uuid', $uuid)->update([
+            'deleted_by' => auth()->user()->id,
+            'deleted_at' => now()
+        ]);
+    }
+
+    private function getContentTypeFromUrl($url) {
+        try {
+            // Make a HEAD request to fetch headers only
+            $response = Http::head($url);
+    
+            // Check if the Content-Type header is present
+            if ($response->hasHeader('Content-Type')) {
+                return $response->header('Content-Type');
+            }
+    
+            return null;
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('Error fetching headers: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function getMediaSizeInBytesFromUrl($url) {
+        $url = ltrim($url, '/');
+        $imageContent = file_get_contents($url);
+    
+        if ($imageContent !== false) {
+            return strlen($imageContent);
+        }
+    
+        return null;
+    }
+    
+    
+    
+    
+    
+    
+    
+        public function storeCarousel(Request $request)
     {
         $organizationId = session()->get('current_organization');
 
@@ -251,7 +303,7 @@ class CampaignService
                 // Log::info('metadata for campaign', ['metadata' => $metadata]);
 
                 // Determine scheduling time
-                $scheduledAt = $request->skip_schedule
+                $scheduledAt = $request->skip_schedule 
                     ? Carbon::now('UTC')
                     : Carbon::parse($request->time, $timezone)->setTimezone('UTC');
 
@@ -288,70 +340,5 @@ class CampaignService
         }
 
         return response()->json(['message' => 'Campaign stored successfully']);
-    }
-
-
-
-    private function getMediaInfo($path)
-    {
-        $fullPath = storage_path('app/public/' . $path);
-        Log::info('Getting media info', ['path' => $fullPath]);
-
-        return [
-            'name' => pathinfo($fullPath, PATHINFO_FILENAME),
-            'type' => File::extension($fullPath),
-            'size' => Storage::size($path),
-        ];
-    }
-
-    public function sendCampaign()
-    {
-        Log::info('Dispatching SendCampaignJob');
-        SendCampaignJob::dispatch();
-    }
-
-    public function destroy($uuid)
-    {
-        Log::info('Deleting campaign', ['uuid' => $uuid]);
-        Campaign::where('uuid', $uuid)->update([
-            'deleted_by' => auth()->user()->id,
-            'deleted_at' => now()
-        ]);
-        Log::info('Campaign deleted', ['uuid' => $uuid]);
-    }
-
-    private function getContentTypeFromUrl($url)
-    {
-        try {
-            Log::info('Fetching content type from url', ['url' => $url]);
-            $response = Http::head($url);
-
-            if ($response->hasHeader('Content-Type')) {
-                $type = $response->header('Content-Type');
-                Log::info('Content type fetched', ['url' => $url, 'content_type' => $type]);
-                return $type;
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            Log::error('Error fetching headers', ['url' => $url, 'error' => $e->getMessage()]);
-            return null;
-        }
-    }
-
-    private function getMediaSizeInBytesFromUrl($url)
-    {
-        $url = ltrim($url, '/');
-        Log::info('Fetching media size from url', ['url' => $url]);
-        $imageContent = @file_get_contents($url);
-
-        if ($imageContent !== false) {
-            $size = strlen($imageContent);
-            Log::info('Fetched media size', ['url' => $url, 'size_bytes' => $size]);
-            return $size;
-        }
-
-        Log::warning('Failed to fetch media size', ['url' => $url]);
-        return null;
     }
 }

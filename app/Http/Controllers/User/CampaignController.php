@@ -12,38 +12,16 @@ use App\Models\CampaignLog;
 use App\Models\ContactGroup;
 use App\Models\Organization;
 use App\Models\Template;
+use App\Models\BalanceHistory;
 use App\Services\CampaignService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Log; // ✅ add Log facade
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
-
-
 class CampaignController extends BaseController
 {
-
-
-    public function storeCarousel(Request $request)
-    {
-        Log::debug('Storing campaign', ['request' => $request->all()]);
-
-        $this->campaignService->storeCarousel($request);
-
-        Log::info('Campaign created successfully');
-
-        return Redirect::route('campaigns')->with(
-            'status',
-            [
-                'type' => 'success',
-                'message' => __('Campaign created successfully!')
-            ]
-        );
-    }
-
-
     private $campaignService;
 
     public function __construct(CampaignService $campaignService)
@@ -51,158 +29,181 @@ class CampaignController extends BaseController
         $this->campaignService = $campaignService;
     }
 
-    public function index(Request $request, $uuid = null)
-    {
+    public function index(Request $request, $uuid = null){
         $organizationId = session()->get('current_organization');
-        Log::debug('CampaignController@index called', [
-            'uuid' => $uuid,
-            'organization_id' => $organizationId,
-            'request_query' => $request->query(),
-        ]);
-
         if ($uuid == null) {
-            Log::debug('Fetching campaigns list');
-            
             $searchTerm = $request->query('search');
             $settings = Organization::where('id', $organizationId)->first();
-
             $rows = CampaignResource::collection(
                 Campaign::with(['template', 'campaignLogs'])
                     ->where('organization_id', $organizationId)
-                    ->whereNull('deleted_at')
+                    ->where('deleted_at', null)
                     ->where(function ($query) use ($searchTerm) {
-                        if ($searchTerm) {
-                            $query->where('name', 'like', '%' . $searchTerm . '%')
-                                ->orWhereHas('template', function ($templateQuery) use ($searchTerm) {
-                                    $templateQuery->where('name', 'like', '%' . $searchTerm . '%');
-                                });
-                        }
+                        $query->where('name', 'like', '%' . $searchTerm . '%')
+                              ->orWhereHas('template', function ($templateQuery) use ($searchTerm) {
+                                  $templateQuery->where('name', 'like', '%' . $searchTerm . '%');
+                              });
                     })
                     ->latest()
                     ->paginate(10)
             );
 
-            Log::debug('Campaigns fetched', ['count' => $rows->count()]);
-
             return Inertia::render('User/Campaign/Index', [
-                'title' => __('Campaigns'),
+                'title'=> __('Campaigns'),
                 'allowCreate' => true,
                 'rows' => $rows,
                 'filters' => request()->all(['search']),
                 'settings' => $settings
             ]);
         } else if ($uuid == 'create') {
-            Log::debug('Creating new campaign form');
-
             $data['settings'] = Organization::where('id', $organizationId)->first();
             $data['templates'] = Template::where('organization_id', $organizationId)
-                ->whereNull('deleted_at')
+                ->where('deleted_at', null)
                 ->where('status', 'APPROVED')
                 ->get();
-            $data['contactGroups'] = ContactGroup::where('organization_id', $organizationId)
-                ->whereNull('deleted_at')
-                ->get();
-            $data['title'] = __('Create campaign');
 
-            Log::debug('Campaign create form data prepared', [
-                'templates_count' => $data['templates']->count(),
-                'groups_count' => $data['contactGroups']->count(),
-            ]);
+            $data['contactGroups'] = ContactGroup::where('organization_id', $organizationId)
+                ->where('deleted_at', null)
+                ->get();
+
+            $data['title'] = __('Create campaign');
 
             return Inertia::render('User/Campaign/Create', $data);
         } else {
-            Log::debug('Viewing campaign details', ['uuid' => $uuid]);
-
             $data['campaign'] = Campaign::with('contactGroup', 'template')->where('uuid', $uuid)->first();
 
             if ($data['campaign']) {
                 $counts = $data['campaign']->getCounts();
-                Log::debug('Campaign found', [
-                    'id' => $data['campaign']->id,
-                    'counts' => $counts
-                ]);
-
                 $data['campaign']['total_message_count'] = $counts->total_message_count ?? 0;
                 $data['campaign']['total_sent_count'] = $counts->total_sent_count ?? 0;
                 $data['campaign']['total_delivered_count'] = $counts->total_delivered_count ?? 0;
                 $data['campaign']['total_failed_count'] = $counts->total_failed_count ?? 0;
                 $data['campaign']['total_read_count'] = $counts->total_read_count ?? 0;
             } else {
-                Log::warning('Campaign not found', ['uuid' => $uuid]);
-
                 $data['campaign']['total_message_count'] = 0;
                 $data['campaign']['total_sent_count'] = 0;
                 $data['campaign']['total_delivered_count'] = 0;
-                $data['campaign']['total_read_count'] = 0;
                 $data['campaign']['total_failed_count'] = 0;
+                $data['campaign']['total_read_count'] = 0;
             }
 
-            $searchTerm = $request->query('search');
             $data['filters'] = request()->all(['search']);
 
+            $searchTerm = $request->query('search');
             $data['rows'] = CampaignLogResource::collection(
                 CampaignLog::with('contact', 'chat.logs')
-                    ->where('campaign_id', $data['campaign']->id ?? 0)
+                    ->where('campaign_id', $data['campaign']->id)
                     ->where(function ($query) use ($searchTerm) {
-                        if ($searchTerm) {
-                            $query->whereHas('contact', function ($contactQuery) use ($searchTerm) {
-                                $contactQuery->where('first_name', 'like', '%' . $searchTerm . '%')
-                                    ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
-                                    ->orWhere('phone', 'like', '%' . $searchTerm . '%');
-                            });
-                        }
+                        $query->whereHas('contact', function ($contactQuery) use ($searchTerm) {
+                            $contactQuery->where('first_name', 'like', '%' . $searchTerm . '%')
+                                         ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
+                                         ->orWhere('phone', 'like', '%' . $searchTerm . '%');
+                        });
                     })
                     ->orderBy('id')
                     ->paginate(10)
             );
-
-            Log::debug('Campaign logs fetched', ['logs_count' => $data['rows']->count()]);
-
             $data['title'] = __('View campaign');
 
             return Inertia::render('User/Campaign/View', $data);
         }
     }
 
-    public function store(StoreCampaign $request)
-    {
-        Log::debug('Storing campaign', ['request' => $request->all()]);
+    public function store(StoreCampaign $request){
+        $templateUuid = $request->input('template');
+        $templateCategory = null;
+
+        if ($templateUuid) {
+            $template = \App\Models\Template::where('uuid', $templateUuid)->first();
+            $templateCategory = $template ? $template->category : null;
+        }
+
+        $contactsGroupUuid = $request->input('contacts');
+        $contactsCount = null;
+
+        if ($contactsGroupUuid) {
+            $group = \App\Models\ContactGroup::where('uuid', $contactsGroupUuid)->first();
+            $contactsCount = $group ? $group->contacts()->count() : 0;
+        }
+
+        $userId = method_exists($request, 'user') && $request->user()
+                    ? $request->user()->id
+                    : auth()->id();
+
+        $user = $userId ? \App\Models\User::find($userId) : null;
+
+        if (!$user || $user->balance < 1) {
+            return Redirect::route('campaigns')->with('status', [
+                'type' => 'error',
+                'message' => __('Insufficient balance to create campaign.')
+            ]);
+        }
+
+        $marketingPrice = (float) ($user->marketing_price ?? 0);
+        $utilityPrice   = (float) ($user->utility_price ?? 0);
+        $authPrice      = (float) ($user->auth_price ?? 0);
+        $contactsCount  = (int) ($contactsCount ?? 0);
+
+        $category = strtolower((string) $templateCategory);
+        switch ($category) {
+            case 'marketing': $perContactPrice = $marketingPrice; break;
+            case 'utility':   $perContactPrice = $utilityPrice;   break;
+            case 'auth':      $perContactPrice = $authPrice;      break;
+            default:          $perContactPrice = $marketingPrice; break;
+        }
+
+        $calculatedCharge = $perContactPrice * $contactsCount;
+        $charge = round($calculatedCharge, 2);
+
+        $oldBalance = (float) $user->balance;
+        $newBalance = round($oldBalance - $charge, 2);
+
+        $user->balance = $newBalance;
+        $user->save();
+
+        BalanceHistory::create([
+            'user_id' => $userId,
+            'amount' => -$charge,
+            'balance_after' => $newBalance,
+            'type' => 'debit',
+            'note' => "Campaign charge for {$contactsCount} contacts"
+        ]);
 
         $this->campaignService->store($request);
 
-        Log::info('Campaign created successfully');
+        return Redirect::route('campaigns')->with(
+            'status', [
+                'type' => 'success', 
+                'message' => __('Campaign created successfully!')
+            ]
+        );
+    }
+
+    public function export($uuid = null){
+        return Excel::download(new CampaignDetailsExport($uuid), 'campaign.csv');
+    }
+
+    public function delete($uuid){
+        $this->campaignService->destroy($uuid);
+
+        return Redirect::back()->with(
+            'status', [
+                'type' => 'success', 
+                'message' => __('Row deleted successfully!')
+            ]
+        );
+    }
+
+    public function storeCarousel(Request $request)
+    {
+        
+        $this->campaignService->storeCarousel($request);
 
         return Redirect::route('campaigns')->with(
             'status',
             [
                 'type' => 'success',
                 'message' => __('Campaign created successfully!')
-            ]
-        );
-    }
-
-    
-
-    public function export($uuid = null)
-    {
-        Log::debug('Exporting campaign details', ['uuid' => $uuid]);
-
-        return Excel::download(new CampaignDetailsExport($uuid), 'campaign.csv');
-    }
-
-    public function delete($uuid)
-    {
-        Log::debug('Deleting campaign', ['uuid' => $uuid]);
-
-        $this->campaignService->destroy($uuid);
-
-        Log::info('Campaign deleted successfully', ['uuid' => $uuid]);
-
-        return Redirect::back()->with(
-            'status',
-            [
-                'type' => 'success',
-                'message' => __('Row deleted successfully!')
             ]
         );
     }

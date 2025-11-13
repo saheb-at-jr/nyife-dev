@@ -9,7 +9,6 @@ use App\Models\Chat;
 use App\Models\ChatLog;
 use App\Models\ChatMedia;
 use App\Models\Contact;
-use App\Models\ContactGroup;
 use App\Models\Organization;
 use App\Models\Setting;
 use App\Models\Template;
@@ -23,9 +22,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Session;
 use App\Models\User;
-use App\Models\BalanceHistory;
 use Illuminate\Support\Str;
-
 class WhatsappService
 {
     private $accessToken;
@@ -44,36 +41,16 @@ class WhatsappService
         $this->wabaId = $wabaId;
         $this->organizationId = $organizationId;
 
-        Log::info('Initializing WhatsappService', [
-            'organization_id' => $organizationId,
-            'api_version' => $apiVersion,
-            'app_id' => $appId,
-            'phone_number_id' => $phoneNumberId,
-            'waba_id' => $wabaId,
-        ]);
-
-        $pusherKey = Setting::where('key', 'pusher_app_key')->first()->value ?? null;
-        $pusherSecret = Setting::where('key', 'pusher_app_secret')->first()->value ?? null;
-        $pusherAppId = Setting::where('key', 'pusher_app_id')->first()->value ?? null;
-        $pusherCluster = Setting::where('key', 'pusher_app_cluster')->first()->value ?? null;
-
-        Log::info('Configuring Pusher', [
-            'key' => $pusherKey,
-            'app_id' => $pusherAppId,
-            'cluster' => $pusherCluster,
-        ]);
-
         Config::set('broadcasting.connections.pusher', [
             'driver' => 'pusher',
-            'key' => $pusherKey,
-            'secret' => $pusherSecret,
-            'app_id' => $pusherAppId,
+            'key' => Setting::where('key', 'pusher_app_key')->first()->value,
+            'secret' => Setting::where('key', 'pusher_app_secret')->first()->value,
+            'app_id' => Setting::where('key', 'pusher_app_id')->first()->value,
             'options' => [
-                'cluster' => $pusherCluster,
+                'cluster' => Setting::where('key', 'pusher_app_cluster')->first()->value,
             ],
         ]);
     }
-
 
     /**
      * This function sends a text message via a POST request to the specified phone number using Facebook's messaging API.
@@ -82,43 +59,50 @@ class WhatsappService
      * @param string $messageContent The content of the message to be sent.
      * @return mixed Returns the response from the HTTP request.
      */
-    public function sendMessage($contactUuId, $messageContent, $userId = null, $type = "text", $buttons = [], $header = [], $footer = null, $buttonLabel = null)
+    public function sendMessage($contactUuId, $messageContent, $userId = NULL, $type="text", $buttons = [], $header = [], $footer = null, $buttonLabel = null)
     {
-        Log::info('Sending WhatsApp message started', [
-            'contact_uuid' => $contactUuId,
-            'type' => $type,
-            'user_id' => $userId,
-            'buttons' => $buttons,
-            'header' => $header,
-            'footer' => $footer,
-            'button_label' => $buttonLabel,
-        ]);
-
+        Log::info("--------------------------------");
+        Log::info($contactUuId);
+        Log::info("--------------------------------");
+        Log::info($messageContent);
+        Log::info("--------------------------------");
+        Log::info($userId);
+        Log::info("--------------------------------");
+        Log::info($type);
+        Log::info("--------------------------------");
+        Log::info($buttons);
+        Log::info("--------------------------------");
+        Log::info($header);
+        Log::info("--------------------------------");
+        Log::info($footer);
+        Log::info("--------------------------------");
+        Log::info($buttonLabel);
+        Log::info("--------------------------------");
         $contact = Contact::where('uuid', $contactUuId)->first();
-        if (!$contact) {
-            Log::warning('Contact not found for sendMessage', ['contact_uuid' => $contactUuId]);
-            return null;
-        }
-
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+        
         $headers = $this->setHeaders();
 
         $requestData['messaging_product'] = 'whatsapp';
         $requestData['recipient_type'] = 'individual';
         $requestData['to'] = $contact->phone;
-
-        if ($type === "text") {
+        if($type == "text"){
             $requestData['type'] = 'text';
-            $requestData['text']['preview_url'] = true;
+            $requestData['text']['preview_url'] = true; //If you have added url either http or https a preview will be displayed
             $requestData['text']['body'] = clean($messageContent);
-            Log::info('Prepared text message payload', ['body' => $requestData['text']['body']]);
-        } else {
+        } else if($type == "interactive buttons" || $type == "interactive call to action url" || $type == "interactive list"){
             $requestData['type'] = 'interactive';
-            $requestData['interactive']['body']['text'] = clean($messageContent);
 
-            if ($type === "interactive buttons") {
+            if($type == "interactive buttons"){
                 $requestData['interactive']['type'] = 'button';
-                foreach ($buttons as $button) {
+            } else if($type == "interactive call to action url"){
+                $requestData['interactive']['type'] = 'cta_url';
+            } else if($type == "interactive list"){
+                $requestData['interactive']['type'] = 'list';
+            }
+
+            if($type == "interactive buttons"){
+                foreach($buttons as $button){
                     $requestData['interactive']['action']['buttons'][] = [
                         'type' => 'reply',
                         'reply' => [
@@ -127,34 +111,31 @@ class WhatsappService
                         ],
                     ];
                 }
-                Log::info('Prepared interactive buttons payload', ['buttons' => $requestData['interactive']['action']['buttons']]);
-            } elseif ($type === "interactive call to action url") {
-                $requestData['interactive']['type'] = 'cta_url';
+            } else if($type == "interactive call to action url"){
                 $requestData['interactive']['action']['name'] = "cta_url";
                 $requestData['interactive']['action']['parameters'] = $buttons;
-                Log::info('Prepared CTA URL payload', ['parameters' => $buttons]);
-            } elseif ($type === "interactive list") {
-                $requestData['interactive']['type'] = 'list';
+            } else if($type == "interactive list"){
                 $requestData['interactive']['action']['sections'] = $buttons;
                 $requestData['interactive']['action']['button'] = $buttonLabel;
-                Log::info('Prepared interactive list payload', ['sections' => $buttons, 'button_label' => $buttonLabel]);
             }
 
             if (!empty($header)) {
                 $requestData['interactive']['header'] = $header;
             }
+
+            $requestData['interactive']['body']['text'] = clean($messageContent);
+
             if ($footer != null) {
-                $requestData['interactive']['footer'] = ['text' => clean($footer)];
+                $requestData['interactive']['footer'] = [
+                    'text' => clean($footer),
+                ];
             }
         }
 
-        Log::info('Sending HTTP request to WhatsApp API', ['url' => $url, 'request_data' => $requestData]);
-
+        Log::info($requestData);
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
 
-        Log::info('WhatsApp API response received', ['response' => $responseObject]);
-
-        if (!empty($responseObject->success) && $responseObject->success === true) {
+        if($responseObject->success === true){
             $response['text']['body'] = clean($messageContent);
             $response['type'] = 'text';
 
@@ -167,10 +148,9 @@ class WhatsappService
                 'metadata' => json_encode($response),
                 'status' => 'delivered',
             ]);
-            Log::info('Chat record created', ['chat_id' => $chat->id]);
 
-            $chat = Chat::with('contact', 'media')->where('id', $chat->id)->first();
-            $responseObject->data->chat = $chat;
+            $chat = Chat::with('contact','media')->where('id', $chat->id)->first();
+            $responseObject->data->chat = $chat; 
 
             $chatlogId = ChatLog::insertGetId([
                 'contact_id' => $contact->id,
@@ -178,23 +158,156 @@ class WhatsappService
                 'entity_id' => $chat->id,
                 'created_at' => now()
             ]);
-            Log::info('ChatLog created', ['chatlog_id' => $chatlogId]);
 
             $chatLogArray = ChatLog::where('id', $chatlogId)->where('deleted_at', null)->first();
-            $chatArray = [['type' => 'chat', 'value' => $chatLogArray->relatedEntities]];
-
+            $chatArray = array([
+                'type' => 'chat',
+                'value' => $chatLogArray->relatedEntities
+            ]);
+            
             event(new NewChatEvent($chatArray, $contact->organization_id));
-            Log::info('NewChatEvent triggered', ['organization_id' => $contact->organization_id]);
-        } else {
-            Log::warning('WhatsApp message failed to send', ['response' => $responseObject]);
         }
 
+        // Trigger webhook
         WebhookHelper::triggerWebhookEvent('message.sent', [
             'data' => $responseObject,
         ], $contact->organization_id);
 
-        Log::info('Webhook triggered for message.sent', ['organization_id' => $contact->organization_id]);
+        return $responseObject;
+    }
+    
+    public function sendInteractiveMessage(
+        $contactUuId,
+        $messageContent,
+        $userId = NULL,
+        $type = "text",
+        $buttons = [],
+        $header = [],
+        $footer = null,
+        $buttonLabel = null
+    ) {
+        // Log::info("--------------------------------");
+        // Log::info($contactUuId);
+        // Log::info("--------------------------------");
+        // Log::info($messageContent);
+        // Log::info("--------------------------------");
+        // Log::info($userId);
+        // Log::info("--------------------------------");
+        // Log::info($type);
+        // Log::info("--------------------------------");
+        // Log::info($buttons);
+        // Log::info("--------------------------------");
+        // Log::info($header);
+        // Log::info("--------------------------------");
+        // Log::info($footer);
+        // Log::info("--------------------------------");
+        // Log::info($buttonLabel);
+        // Log::info("--------------------------------");
+    
+        $contact = Contact::where('uuid', $contactUuId)->first();
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+        $headers = $this->setHeaders();
+    
+        // Base payload
+        $requestData = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $contact->phone,
+        ];
+    
+        // --- TEXT ---
+        if ($type === "text") {
+            $requestData['type'] = 'text';
+            $requestData['text'] = [
+                'preview_url' => true,
+                'body' => clean($messageContent),
+            ];
+        }
+    
+        // --- INTERACTIVE MESSAGES ---
+        else if (in_array($type, ["interactive buttons", "interactive call to action url", "interactive list"])) {
+            $requestData['type'] = 'interactive';
+    
+            if ($type === "interactive buttons") {
+                $requestData['interactive']['type'] = 'button';
+                foreach ($buttons as $button) {
+                    $requestData['interactive']['action']['buttons'][] = [
+                        'type' => 'reply',
+                        'reply' => [
+                            'id' => $button['id'],
+                            'title' => $button['title'],
+                        ],
+                    ];
+                }
+            } elseif ($type === "interactive call to action url") {
+                $requestData['interactive']['type'] = 'cta_url';
+                $requestData['interactive']['action']['name'] = "cta_url";
+                $requestData['interactive']['action']['parameters'] = $buttons;
+            } elseif ($type === "interactive list") {
+                $requestData['interactive']['type'] = 'list';
+                $requestData['interactive']['action']['sections'] = $buttons;
+                $requestData['interactive']['action']['button'] = $buttonLabel;
+            }
+    
+            // ✅ Fix: Proper structure for body text (no nesting)
+            $requestData['interactive']['body'] = [
+                'text' => clean($messageContent),
+            ];
+    
+            if (!empty($header)) {
+                $requestData['interactive']['header'] = $header;
+            }
+    
+            if ($footer) {
+                $requestData['interactive']['footer'] = [
+                    'text' => clean($footer),
+                ];
+            }
+        }
+    
+        
+        // Send request
+        $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
+        
+        if($responseObject->success === true){
+            $response['text']['body'] = clean($messageContent);
+            $response['type'] = 'text';
 
+            $chat = Chat::create([
+                'organization_id' => $contact->organization_id,
+                'wam_id' => $responseObject->data->messages[0]->id,
+                'contact_id' => $contact->id,
+                'type' => 'outbound',
+                'user_id' => $userId,
+                'metadata' => json_encode($response),
+                'status' => 'delivered',
+            ]);
+
+            $chat = Chat::with('contact','media')->where('id', $chat->id)->first();
+            $responseObject->data->chat = $chat; 
+
+            $chatlogId = ChatLog::insertGetId([
+                'contact_id' => $contact->id,
+                'entity_type' => 'chat',
+                'entity_id' => $chat->id,
+                'created_at' => now()
+            ]);
+
+            $chatLogArray = ChatLog::where('id', $chatlogId)->where('deleted_at', null)->first();
+            $chatArray = array([
+                'type' => 'chat',
+                'value' => $chatLogArray->relatedEntities
+            ]);
+            
+            event(new NewChatEvent($chatArray, $contact->organization_id));
+        }
+        
+    
+        // Webhook trigger
+        WebhookHelper::triggerWebhookEvent('message.sent', [
+            'data' => $responseObject,
+        ], $contact->organization_id);
+    
         return $responseObject;
     }
 
@@ -208,70 +321,9 @@ class WhatsappService
      */
     public function sendTemplateMessage($contactUuId, $templateContent, $userId = NULL, $campaignId = NULL, $mediaId = NULL)
     {
-        Log::info('sendTemplateMessage: Started sending WhatsApp template message', [
-            'contact_uuid' => $contactUuId,
-            'campaign_id' => $campaignId,
-            'media_id' => $mediaId,
-            'user_id' => $userId,
-            'template_content' => $templateContent,
-        ]);
-
-        $user = User::findOrFail($userId);
-
-        if ($user->balance < 1) {
-            Log::warning('Balance deduction skipped: insufficient balance', [
-                'user_id' => $userId,
-                'current_balance' => $user->balance,
-            ]);
-            return;
-        }
-
-
-
-        $campaign = Campaign::find($campaignId);
-
-        if (!$campaign) {
-            Log::warning('Campaign not found', ['campaign_id' => $campaignId]);
-            return;
-        }
-
-        $metadata = json_decode($campaign->metadata, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::warning('Invalid campaign metadata JSON', [
-                'campaign_id' => $campaignId,
-                'error' => json_last_error_msg(),
-            ]);
-            return;
-        }
-
-        // Extract possible carousel structures
-        $carousel = $metadata['carousel'] ?? [];
-
-        if ($carousel) {
-            $templateName = $templateContent['name'];
-            $templateCustom = [
-                "name" => $templateName,
-                "language" => [
-                    "code" => "en"
-                ],
-                "components" => [$carousel[0]]
-            ];
-            Log::info("----------------------------------------------");
-            Log::info("templateCustom");
-            Log::info(json_encode($templateCustom));
-            Log::info("----------------------------------------------");
-
-            $templateContent = [];
-            $templateContent = $templateCustom;
-
-        }
-
-
-
-        Log::info('templateContent is here: ' . json_encode($templateContent));
         $contact = Contact::where('uuid', $contactUuId)->first();
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
-
+        
         $headers = $this->setHeaders();
 
         $requestData['messaging_product'] = 'whatsapp';
@@ -280,70 +332,27 @@ class WhatsappService
         $requestData['type'] = 'template';
         $requestData['template'] = $templateContent;
 
+        //\Log::info('WhatsApp API Request: ' . json_encode($requestData));
 
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
 
-        if ($responseObject->success === true) {
-            if ($campaignId != NULL) {
+        if($responseObject->success === true){
+            if($campaignId != NULL){
                 $campaign = Campaign::where('id', $campaignId)->first();
                 $templateMetadata = json_decode($campaign->metadata);
-            }
-            $previousBalance = $user->balance;
-            $newBalance = $previousBalance - 0.84;
-
-            $user->balance = $newBalance;
-            $user->save();
-
-            Log::info('Balance deducted successfully', [
-                'user_id' => $userId,
-                'previous_balance' => $previousBalance,
-                'deducted_amount' => 0.84,
-                'new_balance' => $newBalance,
-            ]);
-
-            $isCarousel = !empty($carousel);
-
-            $chatMetadata = $campaignId != NULL
-                ? $this->buildCampaignTemplateChatMessage($templateMetadata ?? null, $contactUuId)
-                : $this->buildTemplateChatMessage($templateContent, $contact);
-
-            // 🟡 Add body manually for carousel
-            if ($isCarousel) {
-                $chatMetadataArray = json_decode($chatMetadata, true);
-
-                // Ensure metadata is valid JSON
-                if (json_last_error() !== JSON_ERROR_NONE || !is_array($chatMetadataArray)) {
-                    $chatMetadataArray = [];
-                }
-
-                // Force add text body
-                $chatMetadataArray['type'] = 'text';
-                $chatMetadataArray['text'] = [
-                    'body' => 'Your carousel message has been sent successfully.'
-                ];
-
-                $chatMetadata = json_encode($chatMetadataArray);
             }
 
             $chat = Chat::create([
                 'organization_id' => $contact->organization_id,
-                'wam_id' => $responseObject->data->messages[0]->id ?? 'manual_carousel_' . uniqid(),
+                'wam_id' => $responseObject->data->messages[0]->id,
                 'contact_id' => $contact->id,
                 'type' => 'outbound',
                 'user_id' => $userId,
-                'metadata' => $chatMetadata,
-                'media_id' => $campaignId != NULL
-                    ? $this->getMediaIdFromCampaign($campaignId)
-                    : $mediaId,
-                'status' => isset($responseObject->data->messages[0]->message_status)
-                    ? $responseObject->data->messages[0]->message_status
-                    : ($isCarousel ? 'sent' : 'unknown'),
+                'metadata' => $campaignId != NULL ? $this->buildCampaignTemplateChatMessage($templateMetadata, $contactUuId) : $this->buildTemplateChatMessage($templateContent, $contact),
+                'media_id' => $campaignId != NULL ? $this->getMediaIdFromCampaign($campaignId) : $mediaId,
+                'status' => isset($responseObject->data->messages[0]->message_status) ? $responseObject->data->messages[0]->message_status : 'sent',
                 'created_at' => now()
             ]);
-
-            Log::info("This is chat payload");
-            Log::info($chat);
-
 
 
 
@@ -357,12 +366,10 @@ class WhatsappService
             ]);
 
             $chatLogArray = ChatLog::where('id', $chatlogId)->where('deleted_at', null)->first();
-            $chatArray = array(
-                [
-                    'type' => 'chat',
-                    'value' => $chatLogArray->relatedEntities
-                ]
-            );
+            $chatArray = array([
+                'type' => 'chat',
+                'value' => $chatLogArray->relatedEntities
+            ]);
 
             event(new NewChatEvent($chatArray, $contact->organization_id));
         }
@@ -374,39 +381,137 @@ class WhatsappService
 
         return $responseObject;
     }
+    
+    private function buildTemplateChatMessage($templateContent, $contact){
+        //Get the template
+        $template = Template::where('organization_id', $contact->organization_id)
+            ->where('name', $templateContent['name'])
+            ->where('language', $templateContent['language']['code'])
+            ->first();
 
-    private function getMediaIdFromCampaign($campaignId)
-    {
-        Log::info('Fetching media ID from campaign', ['campaign_id' => $campaignId]);
 
-        $campaign = Campaign::where('id', $campaignId)->first();
 
-        if (!$campaign) {
-            Log::warning('Campaign not found', ['campaign_id' => $campaignId]);
-            return null;
+        $template = json_decode($template->metadata);
+        $templateMetadatas = $template->components;
+        $array = [];
+        $array['type'] = 'text';
+
+        foreach($templateMetadatas as $templateMetadata){
+            if($templateMetadata->type == 'HEADER'){
+                if($templateMetadata->format == 'IMAGE' || $templateMetadata->format == 'VIDEO' || $templateMetadata->format == 'DOCUMENT' || $templateMetadata->format == 'LOCATION'){
+                    $array['type'] = strtolower($templateMetadata->format);
+                } else if($templateMetadata->format == 'TEXT' && isset($templateMetadata->text)){
+                    $headerText = $templateMetadata->text;
+
+                    // Check for parameters in templateContent components
+                    if (isset($templateContent['components']) && !empty($templateContent['components'])) {
+                        foreach($templateContent['components'] as $component) {
+                            if ($component['type'] === 'header' && isset($component['parameters'])) {
+                                $headerParameters = $component['parameters'];
+
+                                if($headerParameters && count($headerParameters) >= 1){
+                                    foreach($headerParameters as $index => $parameter){
+                                        $placeholder = '{{' . ($index + 1) . '}}';
+                                        $value = $parameter['type'] === 'text' ? $parameter['text'] : $this->getParameters($contact, $parameter['text']);
+
+                                        $headerText = str_replace($placeholder, $value, $headerText);
+                                    }
+                                }
+
+                                break; // Found header parameters, no need to continue
+                            }
+                        }
+                    }
+
+                    $array['header']['text'] = $headerText;
+                }
+            }
+
+            //BODY
+            if($templateMetadata->type == 'BODY'){
+                if(isset($templateMetadata->text)){
+                    $bodyText = $templateMetadata->text;
+
+
+
+                    // Check for parameters in templateContent components
+                    if (isset($templateContent['components']) && !empty($templateContent['components'])) {
+                        foreach($templateContent['components'] as $component) {
+                            if ($component['type'] === 'body' && isset($component['parameters'])) {
+                                $bodyParameters = $component['parameters'];
+                                
+
+
+                                if($bodyParameters && count($bodyParameters) >= 1){
+                                    foreach($bodyParameters as $index => $parameter){
+                                        $placeholder = '{{' . ($index + 1) . '}}';
+                                        $value = $parameter['type'] === 'text' ? $parameter['text'] : $this->getParameters($contact, $parameter['text']);
+
+
+
+                                        $bodyText = str_replace($placeholder, $value, $bodyText);
+                                    }
+                                }
+
+
+                                break; // Found body parameters, no need to continue
+                            }
+                        }
+                    }
+
+                    if($array['type'] == 'text'){
+                        $array[$array['type']]['body'] = $bodyText;
+                    } else {
+                        $array[$array['type']]['caption'] = $bodyText;
+                    }
+                }
+            }
+
+            //FOOTER
+            if($templateMetadata->type == 'FOOTER'){
+                $array[$array['type']]['footer'] = $templateMetadata->text;
+            }
+
+            //BUTTONS
+            if($templateMetadata->type == 'BUTTONS'){
+                foreach($templateMetadata->buttons as $key => $button){
+                    $array['buttons'][$key]['type'] = $button->type;
+                    $array['buttons'][$key]['text'] = $button->text;
+                    $array['buttons'][$key]['value'] = $button->text;
+    
+                    if(isset($button->parameters)){
+                        $array['buttons'][$key]['parameters'] = $button->parameters;
+                    }
+                }
+            }
         }
 
-        $templateMetadata = json_decode($campaign->metadata);
-        $mediaId = $templateMetadata->media ?? null;
+        //\Log::info(json_encode($array));
+        return json_encode($array);
+    }
 
-        Log::info('Media ID retrieved from campaign', [
-            'campaign_id' => $campaignId,
-            'media_id' => $mediaId
-        ]);
+    private function getMediaIdFromCampaign($campaignId){
+        $campaign = Campaign::where('id', $campaignId)->first();
+        $templateMetadata = json_decode($campaign->metadata);
+        $mediaId = null;
+
+        if(isset($templateMetadata->media)){
+            $mediaId = $templateMetadata->media;
+        }
 
         return $mediaId;
     }
 
     private function buildCampaignTemplateChatMessage($templateMetadata, $contactUuId)
     {
-        Log::info('Building campaign template chat message', [
-            'contact_uuid' => $contactUuId,
-            'template_metadata' => $templateMetadata
-        ]);
+        // Log::info('Building campaign template chat message', [
+        //     'contact_uuid' => $contactUuId,
+        //     'template_metadata' => $templateMetadata
+        // ]);
 
         $contact = Contact::where('uuid', $contactUuId)->first();
         if (!$contact) {
-            Log::warning('Contact not found in buildCampaignTemplateChatMessage', ['contact_uuid' => $contactUuId]);
+            // Log::warning('Contact not found in buildCampaignTemplateChatMessage', ['contact_uuid' => $contactUuId]);
             return json_encode([]);
         }
 
@@ -419,7 +524,7 @@ class WhatsappService
         } else {
             $array['type'] = 'text';
         }
-        Log::info('Message type determined', ['type' => $array['type']]);
+        // Log::info('Message type determined', ['type' => $array['type']]);
 
         // HEADER
         if (isset($templateMetadata->header->text)) {
@@ -434,7 +539,7 @@ class WhatsappService
             }
 
             $array['header']['text'] = $headerText;
-            Log::info('Header text processed', ['header_text' => $headerText]);
+            // Log::info('Header text processed', ['header_text' => $headerText]);
         }
 
         // BODY
@@ -442,7 +547,7 @@ class WhatsappService
             $bodyText = $templateMetadata->body->text;
 
             if (!empty($templateMetadata->body->parameters)) {
-                foreach ($templateMetadata->body->parameters as $index => $parameter) {
+                foreach ($templateMetadata->body->parameters as $index => $parameter) { 
                     $placeholder = '{{' . ($index + 1) . '}}';
                     $value = $parameter->selection === 'static' ? $parameter->value : $this->getParameters($contact, $parameter->value);
                     $bodyText = str_replace($placeholder, $value, $bodyText);
@@ -454,13 +559,13 @@ class WhatsappService
             } else {
                 $array[$array['type']]['caption'] = $bodyText;
             }
-            Log::info('Body text processed', ['body_text' => $bodyText]);
+            // Log::info('Body text processed', ['body_text' => $bodyText]);
         }
 
         // FOOTER
         if (isset($templateMetadata->footer->text)) {
             $array[$array['type']]['footer'] = $templateMetadata->footer->text;
-            Log::info('Footer text processed', ['footer_text' => $templateMetadata->footer->text]);
+            // Log::info('Footer text processed', ['footer_text' => $templateMetadata->footer->text]);
         }
 
         // BUTTONS
@@ -476,159 +581,27 @@ class WhatsappService
                     $array['buttons'][$key]['parameters'] = $button->parameters;
                 }
             }
-            Log::info('Buttons processed', ['buttons' => $array['buttons'] ?? []]);
+            // Log::info('Buttons processed', ['buttons' => $array['buttons'] ?? []]);
         }
 
-        Log::info('Campaign template chat message built', ['chat_message' => $array]);
+        // Log::info('Campaign template chat message built', ['chat_message' => $array]);
 
         return json_encode($array);
     }
 
-
-    private function buildTemplateChatMessage($templateContent, $contact)
-    {
-        Log::info('Building template chat message started', [
-            'contact_uuid' => $contact->uuid,
-            'template_content' => $templateContent
-        ]);
-
-        // Get the template
-        $template = Template::where('organization_id', $contact->organization_id)
-            ->where('name', $templateContent['name'])
-            ->where('language', $templateContent['language']['code'])
-            ->first();
-
-        if (!$template) {
-            Log::warning('Template not found', [
-                'organization_id' => $contact->organization_id,
-                'template_name' => $templateContent['name'],
-                'language_code' => $templateContent['language']['code']
-            ]);
-            return json_encode([]);
+    private function getParameters($contact, $parameter){
+        if($parameter === 'first name'){
+            return $contact->first_name;
+        } else if($parameter === 'last name'){
+            return $contact->last_name;
+        } else if($parameter === 'name'){
+            return $contact->first_name . ' ' . $contact->last_name;
+        } else if($parameter === 'email'){
+            return $contact->email;
+        } else if($parameter === 'phone'){
+            return $contact->phone;
         }
-
-        $template = json_decode($template->metadata);
-        $templateMetadatas = $template->components ?? [];
-        $array = [];
-        $array['type'] = 'text';
-
-        foreach ($templateMetadatas as $templateMetadata) {
-            // HEADER
-            if ($templateMetadata->type === 'HEADER') {
-                if (in_array($templateMetadata->format, ['IMAGE', 'VIDEO', 'DOCUMENT', 'LOCATION'])) {
-                    $array['type'] = strtolower($templateMetadata->format);
-                } elseif ($templateMetadata->format === 'TEXT' && isset($templateMetadata->text)) {
-                    $headerText = $templateMetadata->text;
-
-                    if (!empty($templateContent['components'])) {
-                        foreach ($templateContent['components'] as $component) {
-                            if ($component['type'] === 'header' && !empty($component['parameters'])) {
-                                foreach ($component['parameters'] as $index => $parameter) {
-                                    $placeholder = '{{' . ($index + 1) . '}}';
-                                    $value = $parameter['type'] === 'text' ? $parameter['text'] : $this->getParameters($contact, $parameter['text']);
-                                    $headerText = str_replace($placeholder, $value, $headerText);
-                                }
-                                break;
-                            }
-                        }
-                    }
-
-                    $array['header']['text'] = $headerText;
-                    Log::info('Header text processed', ['header_text' => $headerText]);
-                }
-            }
-
-            // BODY
-            if ($templateMetadata->type === 'BODY' && isset($templateMetadata->text)) {
-                $bodyText = $templateMetadata->text;
-
-                if (!empty($templateContent['components'])) {
-                    foreach ($templateContent['components'] as $component) {
-                        if ($component['type'] === 'body' && !empty($component['parameters'])) {
-                            foreach ($component['parameters'] as $index => $parameter) {
-                                $placeholder = '{{' . ($index + 1) . '}}';
-                                $value = $parameter['type'] === 'text' ? $parameter['text'] : $this->getParameters($contact, $parameter['text']);
-                                $bodyText = str_replace($placeholder, $value, $bodyText);
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                if ($array['type'] === 'text') {
-                    $array[$array['type']]['body'] = $bodyText;
-                } else {
-                    $array[$array['type']]['caption'] = $bodyText;
-                }
-                Log::info('Body text processed', ['body_text' => $bodyText]);
-            }
-
-            // FOOTER
-            if ($templateMetadata->type === 'FOOTER') {
-                $array[$array['type']]['footer'] = $templateMetadata->text;
-                Log::info('Footer text processed', ['footer_text' => $templateMetadata->text]);
-            }
-
-            // BUTTONS
-            if ($templateMetadata->type === 'BUTTONS') {
-                foreach ($templateMetadata->buttons as $key => $button) {
-                    $array['buttons'][$key] = [
-                        'type' => $button->type,
-                        'text' => $button->text,
-                        'value' => $button->text,
-                    ];
-
-                    if (isset($button->parameters)) {
-                        $array['buttons'][$key]['parameters'] = $button->parameters;
-                    }
-                }
-                Log::info('Buttons processed', ['buttons' => $array['buttons']]);
-            }
-        }
-
-        Log::info('Template chat message built', ['chat_message' => $array]);
-        return json_encode($array);
     }
-
-
-    private function getParameters($contact, $parameter)
-    {
-        $value = null;
-
-        switch (strtolower($parameter)) {
-            case 'first name':
-                $value = $contact->first_name;
-                break;
-            case 'last name':
-                $value = $contact->last_name;
-                break;
-            case 'name':
-                $value = trim($contact->first_name . ' ' . $contact->last_name);
-                break;
-            case 'email':
-                $value = $contact->email;
-                break;
-            case 'phone':
-                $value = $contact->phone;
-                break;
-            default:
-                $value = null;
-                Log::warning('Unknown parameter in getParameters', [
-                    'contact_uuid' => $contact->uuid ?? null,
-                    'parameter' => $parameter
-                ]);
-                break;
-        }
-
-        Log::info('Parameter replaced', [
-            'contact_uuid' => $contact->uuid ?? null,
-            'parameter' => $parameter,
-            'value' => $value
-        ]);
-
-        return $value;
-    }
-
 
     /**
      * This function sends media content via a POST request and uploads the media to Facebook's resumable API.
@@ -673,58 +646,35 @@ class WhatsappService
      */
     public function sendMedia($contactUuId, $mediaType, $mediaFileName, $mediaFilePath, $mediaUrl, $location, $caption = NULL, $transcription = NULL)
     {
-        Log::info('sendMedia called', [
-            'contact_uuid' => $contactUuId,
-            'media_type' => $mediaType,
-            'media_file_name' => $mediaFileName,
-            'media_url' => $mediaUrl,
-            'location' => $location,
-            'caption' => $caption
-        ]);
-
         $contact = Contact::where('uuid', $contactUuId)->first();
-        if (!$contact) {
-            Log::warning('Contact not found in sendMedia', ['contact_uuid' => $contactUuId]);
-            return null;
-        }
-
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+        
         $headers = $this->setHeaders();
 
-        $requestData = [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => $contact->phone,
-            'type' => $mediaType,
-            $mediaType => [
-                'link' => $mediaUrl
-            ]
-        ];
+        $requestData['messaging_product'] = 'whatsapp';
+        $requestData['recipient_type'] = 'individual';
+        $requestData['to'] = $contact->phone;
+        $requestData['type'] = $mediaType;
+        $requestData[$mediaType]['link'] = $mediaUrl;
 
-        if ($mediaType == 'document') {
+        if($mediaType == 'document'){
             $requestData[$mediaType]['filename'] = $mediaFileName;
         }
 
-        if ($caption != NULL && $mediaType != 'audio') {
+        if($caption != NULL && $mediaType != 'audio'){
             $requestData[$mediaType]['caption'] = $caption;
         }
 
-        Log::info('Sending media request', ['request_data' => $requestData]);
-
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
-        Log::info('Media send HTTP response', ['response' => $responseObject]);
 
-        if ($responseObject->success === true) {
+        //Log::info(json_encode($responseObject));
+
+        if($responseObject->success === true){
+            //Log::info($mediaUrl);
             $wamId = $responseObject->data->messages[0]->id;
             $contentType = $this->getContentTypeFromUrl($mediaUrl);
             $mediaData = $this->formatMediaResponse($wamId, $mediaUrl, $mediaType, $contentType, $transcription);
             $mediaSize = $this->getMediaSizeInBytesFromUrl($mediaUrl);
-
-            Log::info('Media data prepared', [
-                'wam_id' => $wamId,
-                'content_type' => $contentType,
-                'size' => $mediaSize
-            ]);
 
             $chat = Chat::create([
                 'organization_id' => $contact->organization_id,
@@ -734,8 +684,6 @@ class WhatsappService
                 'metadata' => json_encode($mediaData),
                 'status' => 'sent'
             ]);
-
-            Log::info('Chat record created for media', ['chat_id' => $chat->id]);
 
             $chatlogId = ChatLog::insertGetId([
                 'contact_id' => $contact->id,
@@ -752,29 +700,23 @@ class WhatsappService
                 'size' => $mediaSize,
             ]);
 
-            Chat::where('id', $chat->id)->update(['media_id' => $media->id]);
-            Log::info('Media record linked to chat', ['chat_id' => $chat->id, 'media_id' => $media->id]);
+            Chat::where('id', $chat->id)->update([
+                'media_id' => $media->id
+            ]);
 
-            $chat = Chat::with('contact', 'media')->where('id', $chat->id)->first();
+            $chat = Chat::with('contact','media')->where('id', $chat->id)->first();
             $responseObject->data->chat = $chat;
 
             $chatLogArray = ChatLog::where('id', $chatlogId)->where('deleted_at', null)->first();
-            $chatArray = [
-                [
-                    'type' => 'chat',
-                    'value' => $chatLogArray->relatedEntities
-                ]
-            ];
+            $chatArray = array([
+                'type' => 'chat',
+                'value' => $chatLogArray->relatedEntities
+            ]);
 
             event(new NewChatEvent($chatArray, $contact->organization_id));
-            Log::info('NewChatEvent triggered for media', ['contact_uuid' => $contactUuId]);
-        } else {
-            Log::warning('Failed to send media', [
-                'contact_uuid' => $contactUuId,
-                'media_url' => $mediaUrl,
-                'response' => $responseObject
-            ]);
         }
+
+        //\Log::info(json_encode($responseObject, true));
 
         // Trigger webhook
         WebhookHelper::triggerWebhookEvent('message.sent', [
@@ -784,47 +726,25 @@ class WhatsappService
         return $responseObject;
     }
 
-    private function getContentTypeFromUrl($url)
-    {
-        Log::info('Fetching content type from URL', ['url' => $url]);
-
+    function getContentTypeFromUrl($url) {
         try {
             // Make a HEAD request to fetch headers only
             $response = Http::head($url);
-
-            if ($response->successful()) {
-                if ($response->hasHeader('Content-Type')) {
-                    $contentType = $response->header('Content-Type');
-                    Log::info('Content-Type fetched', [
-                        'url' => $url,
-                        'content_type' => $contentType
-                    ]);
-                    return $contentType;
-                } else {
-                    Log::warning('Content-Type header missing', ['url' => $url]);
-                }
-            } else {
-                Log::warning('HEAD request failed', [
-                    'url' => $url,
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
+    
+            // Check if the Content-Type header is present
+            if ($response->hasHeader('Content-Type')) {
+                return $response->header('Content-Type');
             }
-
+    
             return null;
         } catch (\Exception $e) {
-            Log::error('Exception fetching Content-Type', [
-                'url' => $url,
-                'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString()
-            ]);
+            // Log the error for debugging
+            Log::error('Error fetching headers: ' . $e->getMessage());
             return null;
         }
     }
 
-
-    private function formatMediaResponse($wamId, $mediaUrl, $mediaType, $contentType, $transcription = null)
-    {
+    function formatMediaResponse($wamId, $mediaUrl, $mediaType, $contentType, $transcription = null){
         $response = [
             "id" => $wamId,
             "type" => $mediaType,
@@ -837,47 +757,18 @@ class WhatsappService
             $response['transcript'] = $transcription;
         }
 
-        Log::info('Formatted media response', [
-            'wam_id' => $wamId,
-            'media_url' => $mediaUrl,
-            'media_type' => $mediaType,
-            'content_type' => $contentType,
-            'transcription' => $transcription,
-            'response_array' => $response
-        ]);
-
         return $response;
     }
 
-
-    private function getMediaSizeInBytesFromUrl($url)
-    {
-        Log::info('Fetching media size from URL', ['url' => $url]);
-
-        try {
-            $imageContent = file_get_contents($url);
-
-            if ($imageContent !== false) {
-                $size = strlen($imageContent);
-                Log::info('Media size fetched', [
-                    'url' => $url,
-                    'size_bytes' => $size
-                ]);
-                return $size;
-            } else {
-                Log::warning('Failed to fetch media content', ['url' => $url]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Exception fetching media size', [
-                'url' => $url,
-                'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString()
-            ]);
+    function getMediaSizeInBytesFromUrl($url) {
+        $imageContent = file_get_contents($url);
+    
+        if ($imageContent !== false) {
+            return strlen($imageContent);
         }
-
+    
         return null;
     }
-
 
     /**
      * This function allows you to react to a specific message with an emoji via a POST request to Facebook's messaging API.
@@ -889,37 +780,19 @@ class WhatsappService
      */
     public function reactToMessage($phoneNumber, $wamId, $emoji)
     {
-        Log::info('Reacting to WhatsApp message', [
-            'phone_number' => $phoneNumber,
-            'wam_id' => $wamId,
-            'emoji' => $emoji
-        ]);
-
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
         $headers = $this->setHeaders();
 
-        $requestData = [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => $phoneNumber,
-            'type' => 'reaction',
-            'reaction' => [
-                'message_id' => $wamId,
-                'emoji' => $emoji
-            ]
-        ];
-
-        Log::info('WhatsApp API request data for reaction', ['request_data' => $requestData]);
+        $requestData['messaging_product'] = 'whatsapp';
+        $requestData['recipient_type'] = 'individual';
+        $requestData['to'] = $phoneNumber;
+        $requestData['type'] = 'reaction';
+        $requestData['reaction']['message_id'] = $wamId;
+        $requestData['reaction']['emoji'] = $emoji;
 
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
 
-        if ($responseObject->success ?? false) {
-            Log::info('Reaction sent successfully', ['response' => $responseObject]);
-        } else {
-            Log::warning('Failed to send reaction', ['response' => $responseObject]);
-        }
-
-        return $responseObject;
+        dd($responseObject);
     }
 
     /**
@@ -931,62 +804,42 @@ class WhatsappService
      */
     public function sendLocation($phoneNumber, $location)
     {
-        Log::info('Sending WhatsApp location', [
-            'phone_number' => $phoneNumber,
-            'location' => [
-                'longitude' => $location->longitude,
-                'latitude' => $location->latitude,
-                'name' => $location->name,
-                'address' => $location->address,
-            ]
-        ]);
-
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
         $headers = $this->setHeaders();
 
-        $requestData = [
-            'messaging_product' => 'whatsapp',
-            'to' => $phoneNumber,
-            'type' => 'location',
-            'location' => [
-                'longitude' => $location->longitude,
-                'latitude' => $location->latitude,
-                'name' => $location->name,
-                'address' => $location->address,
-            ]
-        ];
-
-        Log::info('WhatsApp API request data for location', ['request_data' => $requestData]);
+        $requestData['messaging_product'] = 'whatsapp';
+        $requestData['to'] = $phoneNumber;
+        $requestData['type'] = 'location';
+        $requestData['location']['longitude'] = $location->longitude;
+        $requestData['location']['latitude'] = $location->latitude;
+        $requestData['location']['name'] = $location->name;
+        $requestData['location']['address'] = $location->address;
 
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
 
-        if ($responseObject->success ?? false) {
-            Log::info('Location sent successfully', ['response' => $responseObject]);
-        } else {
-            Log::warning('Failed to send location', ['response' => $responseObject]);
-        }
-
-        return $responseObject;
+        dd($responseObject);
     }
-
+    
+    
+    
 
     public function createTemplate(Request $request)
     {
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->wabaId}/message_templates";
-
+        
         $requestData = [
             "name" => $request->name,
             "language" => $request->language,
             "category" => $request->category,
         ];
 
-        if ($request->customize_ttl && $request->message_send_ttl_seconds) {
+        if($request->customize_ttl && $request->message_send_ttl_seconds){
             $requestData['message_send_ttl_seconds'] = $request->message_send_ttl_seconds;
         }
 
-        if ($request->category != 'AUTHENTICATION') {
-            if ($request->header['format'] === 'TEXT') {
-                if (isset($request->header['text'])) {
+        if($request->category != 'AUTHENTICATION'){
+            if($request->header['format'] === 'TEXT'){
+                if(isset($request->header['text'])){
                     $headerComponent = [];
 
                     $headerComponent['type'] = "HEADER";
@@ -1000,13 +853,13 @@ class WhatsappService
                     $requestData['components'][] = $headerComponent;
                 }
             }
+        
 
-
-            if (($request->header['format'] === 'IMAGE' || $request->header['format'] === 'VIDEO' || $request->header['format'] === 'DOCUMENT')) {
-                if (isset($request->header['example'])) {
+            if(($request->header['format'] === 'IMAGE' || $request->header['format'] === 'VIDEO' || $request->header['format'] === 'DOCUMENT')){
+                if(isset($request->header['example'])){
                     $fileUploadResponse = $this->initiateResumableUploadSession($request->header['example']);
 
-                    if (!$fileUploadResponse->success) {
+                    if(!$fileUploadResponse->success){
                         return $fileUploadResponse;
                     }
 
@@ -1022,8 +875,8 @@ class WhatsappService
                 }
             }
         }
-
-        if ($request->category == 'AUTHENTICATION') {
+        
+        if($request->category == 'AUTHENTICATION'){
             $bodyComponent = [];
             $bodyComponent['type'] = "BODY";
             $bodyComponent['add_security_recommendation'] = $request->body['add_security_recommendation'];
@@ -1032,7 +885,7 @@ class WhatsappService
         } else {
             $bodyComponent = [];
 
-            if ($request->body['text'] != null) {
+            if($request->body['text'] != null){
                 $bodyComponent['type'] = "BODY";
                 $bodyComponent['text'] = $request->body['text'];
 
@@ -1045,8 +898,8 @@ class WhatsappService
         }
 
         if ($request->has('footer')) {
-            if ($request->category != 'AUTHENTICATION') {
-                if (isset($request->footer['text']) && $request->footer['text'] != null) {
+            if($request->category != 'AUTHENTICATION'){
+                if(isset($request->footer['text']) &&  $request->footer['text'] != null){
                     $requestData['components'][] = [
                         "type" => "FOOTER",
                         "text" => $request->footer['text']
@@ -1060,12 +913,12 @@ class WhatsappService
             }
         }
 
-        if ($request->category != 'AUTHENTICATION') {
+        if($request->category != 'AUTHENTICATION'){
             if ($request->has('buttons')) {
                 if (!isset($requestData['components'])) {
                     $requestData['components'] = [];
                 }
-
+            
                 $requestData['components'][] = [
                     'type' => 'BUTTONS',
                     'buttons' => []
@@ -1081,7 +934,7 @@ class WhatsappService
                         ];
                     }
                 }
-
+            
                 foreach ($request->buttons as $button) {
                     if ($button['type'] !== 'QUICK_REPLY') {
                         if ($button['type'] === 'URL') {
@@ -1094,7 +947,7 @@ class WhatsappService
                             $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
                                 'type' => $button['type'],
                                 'text' => $button['text'],
-                                'phone_number' => $button['country'] . $button['phone_number'],
+                                'phone_number' => $button['country'].$button['phone_number'],
                             ];
                         } elseif ($button['type'] === 'COPY_CODE') {
                             $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
@@ -1117,7 +970,7 @@ class WhatsappService
                 'text' => $request->authentication_button['text'],
             ];
 
-            if ($request->authentication_button['otp_type'] != 'copy_code') {
+            if($request->authentication_button['otp_type'] != 'copy_code'){
                 $button['autofill_text'] = $request->authentication_button['autofill_text'];
                 $button['supported_apps'] = $request->authentication_button['supported_apps'];
             }
@@ -1187,30 +1040,185 @@ class WhatsappService
         return $responseObject;
     }
 
-
     public function updateTemplate(Request $request, $uuid)
     {
         $template = Template::where('uuid', $uuid)->first();
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$template->meta_id}";
-
+        
         $requestData = [
+            //"name" => $request->name,
+            //"language" => $request->language,
             "category" => $template->status == 'APPROVED' ? $template->category : $request->category,
         ];
 
-        if ($request->customize_ttl && $request->message_send_ttl_seconds) {
+        if($request->customize_ttl && $request->message_send_ttl_seconds){
             $requestData['message_send_ttl_seconds'] = $request->message_send_ttl_seconds;
         }
 
-        // Prepare header, body, footer, and buttons (existing logic) ...
+        if($request->category != 'AUTHENTICATION'){
+            if($request->header['format'] === 'TEXT'){
+                if(isset($request->header['text'])){
+                    $headerComponent = [];
 
-        // Log request data before sending
-        Log::info('WhatsApp Template Update Request', [
-            'organization_id' => session()->get('current_organization'),
-            'template_uuid' => $uuid,
-            'request_data' => $requestData,
-        ]);
+                    $headerComponent['type'] = "HEADER";
+                    $headerComponent['format'] = $request->header['format'];
+                    $headerComponent['text'] = $request->header['text'];
 
-        $client = new \GuzzleHttp\Client();
+                    if (!empty($request->header['example'])) {
+                        $headerComponent['example']['header_text'] = $request->header['example'];
+                    }
+
+                    $requestData['components'][] = $headerComponent;
+                }
+            }
+
+            if(($request->header['format'] === 'IMAGE' || $request->header['format'] === 'VIDEO' || $request->header['format'] === 'DOCUMENT')){
+                if(isset($request->header['example'])){
+                    $fileUploadResponse = $this->initiateResumableUploadSession($request->header['example']);
+
+                    if(!$fileUploadResponse->success){
+                        return $fileUploadResponse;
+                    }
+
+                    $requestData['components'][] = [
+                        "type" => "HEADER",
+                        "format" => $request->header['format'],
+                        "example" => [
+                            "header_handle" => [
+                                $fileUploadResponse->data->h
+                            ]
+                        ]
+                    ];
+                } else {
+                    // Decode existing metadata
+                    $metadata = json_decode($template->metadata, true);
+
+                    // Extract existing header if available
+                    $existingHeader = [];
+                    if (isset($metadata['components'])) {
+                        foreach ($metadata['components'] as $component) {
+                            if ($component['type'] === 'HEADER') {
+                                $existingHeader = $component;
+                                break;
+                            }
+                        }
+                    }
+
+                    $requestData['components'][] = $existingHeader;
+                }
+            }
+        }
+
+        if($request->category == 'AUTHENTICATION'){
+            $bodyComponent = [];
+            $bodyComponent['type'] = "BODY";
+            $bodyComponent['add_security_recommendation'] = $request->body['add_security_recommendation'];
+
+            $requestData['components'][] = $bodyComponent;
+        } else {
+            if($request->body['text'] != null){
+                $bodyComponent = [];
+
+                $bodyComponent['type'] = "BODY";
+                $bodyComponent['text'] = $request->body['text'];
+
+                if (!empty($request->body['example'])) {
+                    $bodyComponent['example']['body_text'][] = $request->body['example'];
+                }
+
+                $requestData['components'][] = $bodyComponent;
+            }
+        }
+
+        if ($request->has('footer')) {
+            if($request->category != 'AUTHENTICATION'){
+                if($request->footer['text'] != null){
+                    $requestData['components'][] = [
+                        "type" => "FOOTER",
+                        "text" => $request->footer['text']
+                    ];
+                }
+            } else {
+                $requestData['components'][] = [
+                    "type" => "FOOTER",
+                    "code_expiration_minutes" => $request->footer['code_expiration_minutes']
+                ];
+            }
+        }
+
+        if($request->category != 'AUTHENTICATION'){
+            if ($request->has('buttons')) {
+                if (!isset($requestData['components'])) {
+                    $requestData['components'] = [];
+                }
+            
+                $requestData['components'][] = [
+                    'type' => 'BUTTONS',
+                    'buttons' => []
+                ];
+
+                $quickReplyButtons = [];
+
+                foreach ($request->buttons as $button) {
+                    if ($button['type'] === 'QUICK_REPLY') {
+                        $quickReplyButtons[] = [
+                            'type' => $button['type'],
+                            'text' => $button['text'],
+                        ];
+                    }
+                }
+            
+                foreach ($request->buttons as $button) {
+                    if ($button['type'] !== 'QUICK_REPLY') {
+                        if ($button['type'] === 'URL') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type' => $button['type'],
+                                'text' => $button['text'],
+                                'url' => $button['url'],
+                            ];
+                        } elseif ($button['type'] === 'PHONE_NUMBER') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type' => $button['type'],
+                                'text' => $button['text'],
+                                'phone_number' => $button['country'] ?? '' . $button['phone_number'],
+                            ];
+                        } elseif ($button['type'] === 'COPY_CODE') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type' => $button['type'],
+                                'example' => $button['example'],
+                            ];
+                        }
+                    }
+                }
+
+                // Add the quick reply buttons at the start
+                if (!empty($quickReplyButtons)) {
+                    $requestData['components'][count($requestData['components']) - 1]['buttons'] = array_merge($quickReplyButtons, $requestData['components'][count($requestData['components']) - 1]['buttons']);
+                }
+            }
+        } else {
+            $button = [
+                'type' => $request->authentication_button['type'],
+                'otp_type' => $request->authentication_button['otp_type'],
+                'text' => $request->authentication_button['text'],
+            ];
+
+            if($request->authentication_button['otp_type'] != 'copy_code'){
+                $button['autofill_text'] = $request->authentication_button['autofill_text'];
+                $button['supported_apps'] = $request->authentication_button['supported_apps'];
+            }
+
+            if ($request->authentication_button['otp_type'] === 'zero_tap') {
+                $button['zero_tap_terms_accepted'] = $request->authentication_button['zero_tap_terms_accepted'];
+            }
+
+            $requestData['components'][] = [
+                'type' => 'BUTTONS',
+                'buttons' => [$button],
+            ];
+        }
+
+        $client = new Client();
         $responseObject = new \stdClass();
 
         try {
@@ -1222,60 +1230,38 @@ class WhatsappService
                 'json' => $requestData,
             ]);
 
-            $responseBody = json_decode($response->getBody()->getContents());
-
             $responseObject->success = true;
-            $responseObject->data = $responseBody;
+            $responseObject->data = json_decode($response->getBody()->getContents());
 
-            Log::info('WhatsApp Template Updated Successfully', [
-                'template_uuid' => $uuid,
-                'template_id' => $responseBody->id ?? null,
-                'status' => $responseBody->status ?? null,
-            ]);
-
-            // Update Template in Database
+            //Update Template In Database
             if ($template) {
                 $template->organization_id = session()->get('current_organization');
                 $template->category = $template->status == 'APPROVED' ? $template->category : $request->category;
+                //$template->metadata = json_encode($requestData);
                 $template->status = 'PENDING';
                 $template->created_by = auth()->user()->id;
-                $template->updated_at = now();
+                $template->updated_at = now(); // No need to set `created_at` when updating
                 $template->save();
             } else {
+                // Handle case where template is not found (optional)
                 throw new \Exception('Template not found');
             }
-
-        } catch (\GuzzleHttp\Exception\ConnectException $e) {
-            Log::error('WhatsApp Template Update Connection Error', [
-                'template_uuid' => $uuid,
-                'message' => $e->getMessage(),
-                'organization_id' => session()->get('current_organization'),
-            ]);
-
+        } catch (ConnectException $e) {
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
             $responseObject->message = $e->getMessage();
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+        } catch (GuzzleException $e) {
             $response = $e->getResponse();
-            $responseBody = json_decode($response->getBody()->getContents());
-
-            Log::error('WhatsApp Template Update API Error', [
-                'template_uuid' => $uuid,
-                'error' => $responseBody ?? $e->getMessage(),
-                'organization_id' => session()->get('current_organization'),
-            ]);
-
             $responseObject->success = false;
-            $responseObject->data = $responseBody;
-            $responseObject->message = $responseBody->error->error_user_msg ?? $responseBody->error->message ?? $e->getMessage();
-        } catch (\Exception $e) {
-            Log::error('Unexpected Error Updating WhatsApp Template', [
-                'template_uuid' => $uuid,
-                'message' => $e->getMessage(),
-                'organization_id' => session()->get('current_organization'),
-            ]);
+            $responseObject->data = json_decode($response->getBody()->getContents());
 
+            if (isset($responseObject->data->error->error_user_msg)) {
+                $responseObject->message = $responseObject->data->error->error_user_msg;
+            } else {
+                $responseObject->message = $responseObject->data->error->message;
+            }
+        } catch (Exception $e) {
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
@@ -1304,11 +1290,12 @@ class WhatsappService
 
                 //dd($responseObject);
 
-                foreach ($responseObject->data as $templateData) {
+                foreach($responseObject->data as $templateData){
                     $template = Template::where('organization_id', session()->get('current_organization'))
                         ->where('meta_id', $templateData->id)->first();
 
-                    if ($template) {
+                    if($template){
+                        $template->category = $templateData->category;
                         $template->metadata = json_encode($templateData);
                         $template->status = $templateData->status;
                         $template->updated_at = now();
@@ -1328,15 +1315,14 @@ class WhatsappService
                         $template->updated_at = now();
                         $template->save();
                     }
-                }
-                ;
+                };
 
-                if (isset($responseObject->paging) && isset($responseObject->paging->next)) {
+                if(isset($responseObject->paging) && isset($responseObject->paging->next)) {
                     $url = $responseObject->paging->next;
                 } else {
                     $url = null; // Break the loop if no next page URL is available
                 }
-            } while ($url);
+            } while($url);
         } catch (ConnectException $e) {
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
@@ -1380,7 +1366,7 @@ class WhatsappService
 
         $responseObject = $this->sendHttpRequest('DELETE', $url, $requestData, $headers);
 
-        if ($responseObject->success) {
+        if($responseObject->success){
             $template->deleted_at = now();
             $template->save();
         }
@@ -1388,110 +1374,15 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function getMedia($mediaId)
+    function getMedia($mediaId)
     {
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$mediaId}";
         $headers = $this->setHeaders();
 
-        Log::info('Fetching WhatsApp Media', [
-            'media_id' => $mediaId,
-            'url' => $url,
-        ]);
+        $responseObject = $this->sendHttpRequest('GET', $url, NULL, $headers);
 
-        try {
-            $responseObject = $this->sendHttpRequest('GET', $url, null, $headers);
-
-            if ($responseObject->success === true) {
-                Log::info('WhatsApp Media Retrieved Successfully', [
-                    'media_id' => $mediaId,
-                    'response' => $responseObject->data,
-                ]);
-            } else {
-                Log::warning('WhatsApp Media Retrieval Failed', [
-                    'media_id' => $mediaId,
-                    'response' => $responseObject->data,
-                ]);
-            }
-
-            return $responseObject;
-        } catch (\Exception $e) {
-            Log::error('Error fetching WhatsApp media', [
-                'media_id' => $mediaId,
-                'message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString(),
-            ]);
-
-            $responseObject = new \stdClass();
-            $responseObject->success = false;
-            $responseObject->data = new \stdClass();
-            $responseObject->data->error = $e->getMessage();
-
-            return $responseObject;
-        }
+        return $responseObject;
     }
-
-    public function uploadfile(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|max:10240' // 100MB max
-        ]);
-
-        $file = $request->file('file');
-        Log::info('Uploading file: ' . $file->getClientOriginalName());
-
-        // Optional: store in temp/backup
-        $path = $file->store('uploads', 'public');
-        Log::info("Temp file stored at: storage/app/public/{$path}");
-
-        try {
-            Log::info("Sending file to WhatsApp Cloud API...");
-
-            $response = \Illuminate\Support\Facades\Http::withToken($this->accessToken)
-                ->attach(
-                    'file',
-                    fopen($file->getRealPath(), 'r'),
-                    $file->getClientOriginalName()
-                )
-                ->post("https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/media", [
-                    'messaging_product' => 'whatsapp',
-                    'type' => 'image', // You can make this dynamic
-                ]);
-
-            $responseData = $response->json();
-            Log::info('WhatsApp API response:', $responseData);
-
-            if ($response->successful() && isset($responseData['id'])) {
-                $mediaId = $responseData['id'];
-                $extension = $file->getClientOriginalExtension();
-                $fileName = "{$mediaId}.{$extension}";
-
-                $storedPath = $file->storeAs("public", $fileName);
-                Log::info("File saved locally as: storage/app/{$storedPath}");
-
-                $publicUrl = asset("media/public/{$fileName}");
-                Log::info("Public URL: {$publicUrl}");
-
-                return response()->json([
-                    'media_id' => $mediaId,
-                    'public_url' => $publicUrl,
-                    'file_name' => $file->getClientOriginalName(),
-                ], 200);
-            } else {
-                Log::error("Failed to upload to WhatsApp", $responseData);
-                return response()->json([
-                    'error' => 'Failed to upload media to WhatsApp',
-                    'details' => $responseData
-                ], 500);
-            }
-        } catch (\Exception $e) {
-            Log::error("Exception during upload: " . $e->getMessage());
-            return response()->json([
-                'error' => 'Exception occurred during upload',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
 
     function checkHealth()
     {
@@ -1543,9 +1434,9 @@ class WhatsappService
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->accessToken
             ])->post("https://graph.facebook.com/{$this->apiVersion}/{$this->wabaId}/subscribed_apps", [
-                        'override_callback_uri' => $callbackUrl,
-                        'verify_token' => $verifyToken
-                    ])->throw()->json();
+                'override_callback_uri' => $callbackUrl,
+                'verify_token' => $verifyToken
+            ])->throw()->json();
 
             $responseObject->success = true;
             $responseObject->data = new \stdClass();
@@ -1570,16 +1461,15 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function getBusinessProfile()
-    {
+    public function getBusinessProfile(){
         $responseObject = new \stdClass();
 
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->accessToken
             ])->get("https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/whatsapp_business_profile", [
-                        'fields' => 'about,address,description,email,profile_picture_url,websites,vertical',
-                    ])->throw()->json();
+                'fields' => 'about,address,description,email,profile_picture_url,websites,vertical',
+            ])->throw()->json();
 
             if (isset($response['data']['error'])) {
                 $responseObject->success = false;
@@ -1587,7 +1477,7 @@ class WhatsappService
                 $responseObject->data->error = new \stdClass();
                 $responseObject->data->error->code = $response['data']['error']['code'];
                 $responseObject->data->error->message = $response['data']['error']['message'];
-            } else {
+            } else {    
                 $responseObject->success = true;
                 $responseObject->data = new \stdClass();
                 $responseObject->data = (object) $response['data'][0];
@@ -1602,10 +1492,9 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function updateBusinessProfile(Request $request)
-    {
+    public function updateBusinessProfile(Request $request){
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/whatsapp_business_profile";
-
+        
         $headers = $this->setHeaders();
 
         $requestData['messaging_product'] = 'whatsapp';
@@ -1614,18 +1503,18 @@ class WhatsappService
         $requestData['description'] = $request->description;
         $requestData['vertical'] = $request->industry;
         $requestData['email'] = $request->email;
-
+            
         $profile_picture_url = NULL;
 
-        if ($request->hasFile('profile_picture_url')) {
+        if($request->hasFile('profile_picture_url')){
             $storage = Setting::where('key', 'storage_system')->first()->value;
             $fileContent = $request->file('profile_picture_url');
 
-            if ($storage === 'local') {
+            if($storage === 'local'){
                 $file = Storage::disk('local')->put('public', $fileContent);
                 $mediaFilePath = $file;
                 $profile_picture_url = rtrim(config('app.url'), '/') . '/media/' . ltrim($mediaFilePath, '/');
-            } else if ($storage === 'aws') {
+            } else if($storage === 'aws') {
                 $file = $request->file('profile_picture_url');
                 $uploadedFile = $file->store('uploads/media/sent/' . $this->organizationId, 's3');
                 $mediaFilePath = Storage::disk('s3')->url($uploadedFile);
@@ -1634,14 +1523,14 @@ class WhatsappService
 
             $fileUploadResponse = $this->initiateResumableUploadSession($request->file('profile_picture_url'));
 
-            if ($fileUploadResponse->success) {
+            if($fileUploadResponse->success){
                 $requestData['profile_picture_handle'] = $fileUploadResponse->data->h;
             }
         }
 
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
 
-        if ($responseObject->success === true) {
+        if($responseObject->success === true){
             $organizationConfig = Organization::where('id', $this->organizationId)->first();
             $metadataArray = $organizationConfig->metadata ? json_decode($organizationConfig->metadata, true) : [];
 
@@ -1650,7 +1539,7 @@ class WhatsappService
             $metadataArray['whatsapp']['business_profile']['description'] = $request->description;
             $metadataArray['whatsapp']['business_profile']['industry'] = $request->industry;
             $metadataArray['whatsapp']['business_profile']['email'] = $request->email;
-            if ($profile_picture_url != NULL) {
+            if($profile_picture_url != NULL){
                 $metadataArray['whatsapp']['business_profile']['profile_picture_url'] = $profile_picture_url;
             }
 
@@ -1663,15 +1552,14 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function deRegisterPhone()
-    {
+    public function deRegisterPhone(){
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/deregister";
-
+        
         $headers = $this->setHeaders();
 
         $responseObject = $this->sendHttpRequest('POST', $url, NULL, $headers);
 
-        if ($responseObject->success === true) {
+        if($responseObject->success === true){
             dd($responseObject);
         }
 
@@ -1679,8 +1567,7 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function getPhoneNumberId()
-    {
+    public function getPhoneNumberId(){
         $responseObject = new \stdClass();
 
         try {
@@ -1697,7 +1584,7 @@ class WhatsappService
                 $responseObject->data->error = new \stdClass();
                 $responseObject->data->error->code = $response['data']['error']['code'];
                 $responseObject->data->error->message = $response['data']['error']['message'];
-            } else {
+            } else {    
                 $responseObject->success = true;
                 $responseObject->data = new \stdClass();
                 $responseObject->data = (object) $response['data'][0];
@@ -1712,16 +1599,15 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function getPhoneNumberStatus()
-    {
+    public function getPhoneNumberStatus(){
         $responseObject = new \stdClass();
 
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->accessToken
             ])->get("https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}", [
-                        'fields' => 'status, code_verification_status , quality_score, health_status',
-                    ])->throw()->json();
+                'fields' => 'status, code_verification_status , quality_score, health_status',
+            ])->throw()->json();
 
             if (isset($response['data']['error'])) {
                 $responseObject->success = false;
@@ -1729,7 +1615,7 @@ class WhatsappService
                 $responseObject->data->error = new \stdClass();
                 $responseObject->data->error->code = $response['data']['error']['code'];
                 $responseObject->data->error->message = $response['data']['error']['message'];
-            } else {
+            } else {    
                 $responseObject->success = true;
                 $responseObject->data = new \stdClass();
                 $responseObject->data = (object) $response;
@@ -1744,16 +1630,15 @@ class WhatsappService
         return $responseObject;
     }
 
-    public function getAccountReviewStatus()
-    {
+    public function getAccountReviewStatus(){
         $responseObject = new \stdClass();
 
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->accessToken
             ])->get("https://graph.facebook.com/{$this->apiVersion}/{$this->wabaId}", [
-                        'fields' => 'account_review_status',
-                    ])->throw()->json();
+                'fields' => 'account_review_status',
+            ])->throw()->json();
 
             if (isset($response['data']['error'])) {
                 $responseObject->success = false;
@@ -1761,7 +1646,7 @@ class WhatsappService
                 $responseObject->data->error = new \stdClass();
                 $responseObject->data->error->code = $response['data']['error']['code'];
                 $responseObject->data->error->message = $response['data']['error']['message'];
-            } else {
+            } else {    
                 $responseObject->success = true;
                 $responseObject->data = new \stdClass();
                 $responseObject->data = (object) $response;
@@ -1780,7 +1665,7 @@ class WhatsappService
     {
         $response = $this->getMedia($mediaId);
 
-        if (!$response->success) {
+        if(!$response->success){
             return $response;
         }
 
@@ -1796,19 +1681,9 @@ class WhatsappService
 
     function initiateResumableUploadSession($file)
     {
-        Log::info('Initiating resumable upload session', [
-            'file_name' => $file->getClientOriginalName(),
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-        ]);
-
         $sessionResponse = $this->createResumableUploadSession($file);
 
-        if (!$sessionResponse->success) {
-            Log::error('Failed to create upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'response' => $sessionResponse,
-            ]);
+        if(!$sessionResponse->success){
             return $sessionResponse;
         }
 
@@ -1831,18 +1706,7 @@ class WhatsappService
 
             $responseObject->success = true;
             $responseObject->data = json_decode($response->getBody()->getContents());
-
-            Log::info('Resumable upload session initiated successfully', [
-                'upload_session_id' => $uploadSessionId,
-                'file_name' => $file->getClientOriginalName(),
-                'response' => $responseObject->data,
-            ]);
         } catch (ConnectException $e) {
-            Log::error('Connection error during resumable upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'message' => $e->getMessage(),
-            ]);
-
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
@@ -1852,19 +1716,12 @@ class WhatsappService
             $responseObject->success = false;
             $responseObject->data = json_decode($response->getBody()->getContents());
 
-            Log::error('Guzzle exception during resumable upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'response' => $responseObject->data,
-            ]);
-
-            $responseObject->message = $responseObject->data->error->error_user_msg ?? $responseObject->data->error->message;
+            if (isset($responseObject->data->error->error_user_msg)) {
+                $responseObject->message = $responseObject->data->error->error_user_msg;
+            } else {
+                $responseObject->message = $responseObject->data->error->message;
+            }
         } catch (Exception $e) {
-            Log::error('General exception during resumable upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString(),
-            ]);
-
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
@@ -1880,13 +1737,6 @@ class WhatsappService
         $fileType = $file->getMimeType();
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->appId}/uploads";
 
-        Log::info('Creating resumable upload session', [
-            'file_name' => $file->getClientOriginalName(),
-            'file_length' => $fileLength,
-            'file_type' => $fileType,
-            'url' => $url,
-        ]);
-
         $client = new Client();
         $responseObject = new \stdClass();
 
@@ -1898,20 +1748,11 @@ class WhatsappService
                     'access_token' => $this->accessToken,
                 ]
             ]);
-
+        
+            $status = $response->getStatusCode();
             $responseObject->success = true;
             $responseObject->data = json_decode($response->getBody()->getContents());
-
-            Log::info('Upload session created successfully', [
-                'file_name' => $file->getClientOriginalName(),
-                'response' => $responseObject->data,
-            ]);
         } catch (ConnectException $e) {
-            Log::error('Connection error creating upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'message' => $e->getMessage(),
-            ]);
-
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
@@ -1921,28 +1762,19 @@ class WhatsappService
             $responseObject->success = false;
             $responseObject->data = json_decode($response->getBody()->getContents());
 
-            Log::error('Guzzle exception creating upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'response' => $responseObject->data,
-            ]);
-
-            $responseObject->message = $responseObject->data->error->error_user_msg ?? $responseObject->data->error->message;
+            if (isset($responseObject->data->error->error_user_msg)) {
+                $responseObject->message = $responseObject->data->error->error_user_msg;
+            } else {
+                $responseObject->message = $responseObject->data->error->message;
+            }
         } catch (Exception $e) {
-            Log::error('General exception creating upload session', [
-                'file_name' => $file->getClientOriginalName(),
-                'message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString(),
-            ]);
-
+            $response = $e->getResponse();
             $responseObject->success = false;
-            $responseObject->data = new \stdClass();
-            $responseObject->data->error = new \stdClass();
-            $responseObject->data->error->message = $e->getMessage();
+            $responseObject->data = json_decode($response->getBody()->getContents());
         }
 
         return $responseObject;
     }
-
 
     //Set the headers for request
     public function setHeaders()
@@ -1959,40 +1791,19 @@ class WhatsappService
         $client = new Client();
         $responseObject = new \stdClass();
 
-        // Log the request
-        Log::info('Sending HTTP request', [
-            'method' => $method,
-            'url' => $url,
-            'headers' => $headers,
-            'data' => $data,
-        ]);
-
         try {
             $requestOptions = [
                 'headers' => $headers,
             ];
 
-            if (!empty($data) && in_array($method, ['POST', 'PUT', 'DELETE'])) {
+            if (isset($data) && $method === 'POST' || $method === 'PUT' || $method === 'DELETE') {
                 $requestOptions['json'] = $data;
             }
 
             $response = $client->request($method, $url, $requestOptions);
             $responseObject->success = true;
             $responseObject->data = json_decode($response->getBody()->getContents());
-
-            // Log the successful response
-            Log::info('HTTP request successful', [
-                'method' => $method,
-                'url' => $url,
-                'response' => $responseObject->data,
-            ]);
         } catch (ConnectException $e) {
-            Log::error('Connection error during HTTP request', [
-                'method' => $method,
-                'url' => $url,
-                'message' => $e->getMessage(),
-            ]);
-
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
@@ -2002,21 +1813,12 @@ class WhatsappService
             $responseObject->success = false;
             $responseObject->data = json_decode($response->getBody()->getContents());
 
-            Log::error('Guzzle exception during HTTP request', [
-                'method' => $method,
-                'url' => $url,
-                'response' => $responseObject->data,
-            ]);
-
-            $responseObject->message = $responseObject->data->error->error_user_msg ?? $responseObject->data->error->message;
+            if (isset($responseObject->data->error->error_user_msg)) {
+                $responseObject->message = $responseObject->data->error->error_user_msg;
+            } else {
+                $responseObject->message = $responseObject->data->error->message;
+            }
         } catch (Exception $e) {
-            Log::error('General exception during HTTP request', [
-                'method' => $method,
-                'url' => $url,
-                'message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString(),
-            ]);
-
             $responseObject->success = false;
             $responseObject->data = new \stdClass();
             $responseObject->data->error = new \stdClass();
@@ -2025,10 +1827,147 @@ class WhatsappService
 
         return $responseObject;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    // public function createCrousel(Request $request)
+    // {
+       
 
+    //     $requestData = $request->all();
 
+    //     // ✅ Remove "example" if body_text is empty
+    //     foreach ($requestData['components'] as &$component) {
+    //         if (
+    //             $component['type'] === 'body' &&
+    //             isset($component['example']['body_text']) &&
+    //             empty($component['example']['body_text'][0])
+    //         ) {
+    //             unset($component['example']); // remove the whole example object
+    //         }
+    //     }
 
-    public function upload(Request $request)
+    //     // Guzzle client
+    //     $client = new Client();
+
+    //     $appId = $this->wabaId;
+    //     $accessToken = $this->accessToken; // or env('META_ACCESS_TOKEN')
+        
+    //     $url = "https://graph.facebook.com/{$this->apiVersion}/{$appId}/message_templates";
+        
+
+    //     try {
+    //         $response = $client->post($url, [
+    //             'headers' => [
+    //                 'Authorization' => 'Bearer ' . $accessToken,
+    //                 'Content-Type' => 'application/json',
+    //             ],
+    //             'json' => $requestData,
+    //         ]);
+
+    //         $responseBody = json_decode($response->getBody()->getContents(), true);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $responseBody,
+    //         ]);
+    //     } catch (\GuzzleHttp\Exception\ClientException $e) {
+    //         $errorBody = json_decode($e->getResponse()->getBody()->getContents(), true);
+    //         Log::error('❌ Meta API ClientException:', $errorBody);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => $errorBody,
+    //         ], $e->getCode());
+    //     } catch (\Exception $e) {
+    //         Log::error('❌ General Exception in createCrousel:', [
+    //             'message' => $e->getMessage(),
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Unexpected server error.',
+    //         ], 500);
+    //     }
+    // }
+    
+    
+    public function createCrousel(Request $request)
+    {
+        // Log::info('Request JSON in Whatsapp Service: ' . json_encode($request->all()));
+
+        $requestData = $request->all();
+
+        // ✅ Remove "example" if body_text is empty
+        foreach ($requestData['components'] as &$component) {
+            if (
+                $component['type'] === 'body' &&
+                isset($component['example']['body_text']) &&
+                empty($component['example']['body_text'][0])
+            ) {
+                unset($component['example']); // remove the whole example object
+            }
+        }
+        Log::info($requestData);
+        // Guzzle client
+        $client = new Client();
+
+        $appId = $this->wabaId;
+        $accessToken = $this->accessToken; // or env('META_ACCESS_TOKEN')
+        Log::info('Meta Access Token: ' . $accessToken);
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$appId}/message_templates";
+        Log::info('Meta API URL: ' . $url);
+
+        try {
+            $response = $client->post($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $requestData,
+            ]);
+
+            $responseBody = json_decode($response->getBody()->getContents(), true);
+
+            Log::info('✅ Meta API Success:', $responseBody);
+
+            return response()->json([
+                'success' => true,
+                'data' => $responseBody,
+            ]);
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $errorBody = json_decode($e->getResponse()->getBody()->getContents(), true);
+            Log::error('❌ Meta API ClientException:', $errorBody);
+
+            return response()->json([
+                'success' => false,
+                'error' => $errorBody,
+            ], $e->getCode());
+        } catch (\Exception $e) {
+            Log::error('❌ General Exception in createCrousel:', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Unexpected server error.',
+            ], 500);
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+        public function upload(Request $request)
     {
         $request->validate([
             'image' => 'required|file|mimes:jpg,jpeg,png|max:5120', // max 5MB
@@ -2079,73 +2018,72 @@ class WhatsappService
             'file_handle' => $uploadResponse->json('h'),
         ]);
     }
-
-
-    public function createCrousel(Request $request)
+    
+    
+    
+    
+    
+    
+    
+        public function uploadfile(Request $request)
     {
-        Log::info('Request JSON in Whatsapp Service: ' . json_encode($request->all()));
+        $request->validate([
+            'file' => 'required|file|max:10240' // 100MB max
+        ]);
 
-        $requestData = $request->all();
+        $file = $request->file('file');
+        Log::info('Uploading file: ' . $file->getClientOriginalName());
 
-        // ✅ Remove "example" if body_text is empty
-        foreach ($requestData['components'] as &$component) {
-            if (
-                $component['type'] === 'body' &&
-                isset($component['example']['body_text']) &&
-                empty($component['example']['body_text'][0])
-            ) {
-                unset($component['example']); // remove the whole example object
-            }
-        }
-
-        // Guzzle client
-        $client = new Client();
-
-        $appId = $this->wabaId;
-        $accessToken = $this->accessToken; // or env('META_ACCESS_TOKEN')
-        Log::info('Meta Access Token: ' . $accessToken);
-        $url = "https://graph.facebook.com/{$this->apiVersion}/{$appId}/message_templates";
-        Log::info('Meta API URL: ' . $url);
+        // Optional: store in temp/backup
+        $path = $file->store('uploads', 'public');
+        Log::info("Temp file stored at: storage/app/public/{$path}");
 
         try {
-            $response = $client->post($url, [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $accessToken,
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $requestData,
-            ]);
+            Log::info("Sending file to WhatsApp Cloud API...");
 
-            $responseBody = json_decode($response->getBody()->getContents(), true);
+            $response = \Illuminate\Support\Facades\Http::withToken($this->accessToken)
+                ->attach(
+                    'file',
+                    fopen($file->getRealPath(), 'r'),
+                    $file->getClientOriginalName() 
+                )
+                ->post("https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/media", [
+                    'messaging_product' => 'whatsapp',
+                    'type' => 'image', // You can make this dynamic
+                ]);
 
-            Log::info('✅ Meta API Success:', $responseBody);
+            $responseData = $response->json();
+            Log::info('WhatsApp API response:', $responseData);
 
-            return response()->json([
-                'success' => true,
-                'data' => $responseBody,
-            ]);
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $errorBody = json_decode($e->getResponse()->getBody()->getContents(), true);
-            Log::error('❌ Meta API ClientException:', $errorBody);
+            if ($response->successful() && isset($responseData['id'])) {
+                $mediaId = $responseData['id'];
+                $extension = $file->getClientOriginalExtension();
+                $fileName = "{$mediaId}.{$extension}";
 
-            return response()->json([
-                'success' => false,
-                'error' => $errorBody,
-            ], $e->getCode());
+                $storedPath = $file->storeAs("public", $fileName);
+                Log::info("File saved locally as: storage/app/{$storedPath}");
+
+                $publicUrl = asset("media/public/{$fileName}");
+                Log::info("Public URL: {$publicUrl}");
+
+                return response()->json([
+                    'media_id' => $mediaId,
+                    'public_url' => $publicUrl,
+                    'file_name' => $file->getClientOriginalName(),
+                ], 200);
+            } else {
+                Log::error("Failed to upload to WhatsApp", $responseData);
+                return response()->json([
+                    'error' => 'Failed to upload media to WhatsApp',
+                    'details' => $responseData
+                ], 500);
+            }
         } catch (\Exception $e) {
-            Log::error('❌ General Exception in createCrousel:', [
-                'message' => $e->getMessage(),
-            ]);
-
+            Log::error("Exception during upload: " . $e->getMessage());
             return response()->json([
-                'success' => false,
-                'error' => 'Unexpected server error.',
+                'error' => 'Exception occurred during upload',
+                'message' => $e->getMessage()
             ], 500);
         }
     }
-
-
-
-
-
 }
