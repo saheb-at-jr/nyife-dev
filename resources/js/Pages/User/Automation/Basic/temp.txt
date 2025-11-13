@@ -6,7 +6,7 @@ The updated UI must be in Vue.js, fully responsive, mobile-friendly and does not
 
 For reference, I’ve attached the current existing codebase. Focus solely on improving the user interface, not the logic or functionality.
 
-Note : UI must be completely new look and layout without altering any existing functionality also use this color #ff5100 as primary color for better and consistent color design. you can use vue lucide icon if you want to use it. also 
+Note : Code Must be in Vue.js and UI must be completely new look and layout without altering any existing functionality also use this color #ff5100 as primary color for better and consistent color design. you can use vue lucide icon if you want to use it. also 
 provide the code for the new UI in four steps. first step provide complete updated Ui Then second step provide the first script then third step provide the second script and last step provide the third script for styling.
 
 
