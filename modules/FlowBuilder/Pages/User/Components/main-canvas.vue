@@ -41,13 +41,13 @@ onMounted(() => {
   if (props.flow.metadata) {
     const savedData = JSON.parse(props.flow.metadata);
     // console.log('Loading flow data from database:', savedData);
-    
+
     // Debug: Check for action nodes
     if (savedData.nodes) {
       const actionNodes = savedData.nodes.filter(node => node.type === 'action');
       // console.log('Action nodes found:', actionNodes);
     }
-    
+
     setNodes(savedData.nodes || []);
     setEdges(savedData.edges || []);
     setViewport(savedData.viewport || []);
@@ -79,7 +79,7 @@ watch(
     if (actionNodes.length > 0) {
       // console.log('Action nodes updated:', actionNodes);
     }
-    
+
     saveNodesAndEdges();
   },
   { deep: true }
@@ -90,27 +90,27 @@ onConnect((params) => {
   // For all nodes except the first one, exit handles should only connect to one target
   const sourceNode = findNode(params.source);
   const targetNode = findNode(params.target);
-  
+
   // Skip constraint for the first node (start node)
   if (sourceNode && sourceNode.type === 'start') {
     addEdges(params);
     return;
   }
-  
+
   // For all other nodes, ensure exit handles only connect to one target
   if (params.source && params.target) {
     // Remove any existing edges that start from the same source handle
-    const existingEdges = edges.value.filter(edge => 
-      edge.source === params.source && 
+    const existingEdges = edges.value.filter(edge =>
+      edge.source === params.source &&
       edge.sourceHandle === params.sourceHandle
     );
-    
+
     // Remove existing connections from the same source
     if (existingEdges.length > 0) {
       const edgesToRemove = existingEdges.map(edge => edge.id);
       setEdges(edges.value.filter(edge => !edgesToRemove.includes(edge.id)));
     }
-    
+
     // Add the new connection
     addEdges(params);
   } else {
@@ -131,7 +131,7 @@ const getDefaultConfig = (actionType: string) => {
     case 'remove_from_group':
       return { group_id: '' }
     case 'update_contact':
-      return { 
+      return {
         target_field: '', // The field to save the user's message to
         invalid_email_message: 'Please provide a valid email address.', // Default message for invalid emails
         fields: { // Keep for backward compatibility
@@ -150,8 +150,8 @@ const getDefaultConfig = (actionType: string) => {
         }
       }
     case 'send_email':
-      return { 
-        subject: '', 
+      return {
+        subject: '',
         body: '',
         smtp_host: '',
         smtp_port: 587,
@@ -165,14 +165,14 @@ const getDefaultConfig = (actionType: string) => {
     case 'webhook':
       return { url: '', method: 'POST' }
     case 'ai_response':
-      return { 
+      return {
         prompt: '',
         proceed_condition: 'always',
         confidence_threshold: 0.8,
         low_confidence_message: ''
       }
     case 'conditional':
-      return { 
+      return {
         condition_type: 'message_contains',
         field_name: '',
         field_operator: 'equals',
@@ -210,16 +210,16 @@ function handleOnDrop(event: DragEvent) {
   //console.log(nodes.value.length);
   //console.log(nodes.value)
 
-  const lastNodeId = nodes.value.length 
-  ? Math.max(...nodes.value.map(node => parseInt(node.id, 10))) + 1 
-  : 1;
+  const lastNodeId = nodes.value.length
+    ? Math.max(...nodes.value.map(node => parseInt(node.id, 10))) + 1
+    : 1;
 
   let newNode: any
 
   // Handle action nodes differently
   if (type && type.startsWith('action-')) {
     const actionType = type.replace('action-', '').replace(/-/g, '_')
-    
+
     newNode = {
       id: (lastNodeId + 1).toString(),
       type: 'action', // Always use 'action' type for backend compatibility
@@ -283,10 +283,10 @@ function handleOnDragOver(event: DragEvent) {
       <Background />
     </VueFlow>
   </div>
-  <!--<div class="h-1/2">
+  <!-- <div class="h-1/2">
     {{ nodes }}
-  </div>-->
-  
+  </div> -->
+
 </template>
 
 <style>

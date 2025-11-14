@@ -22,27 +22,27 @@ createInertiaApp({
     // Define paths to the components
     const pages = import.meta.glob('./Pages/**/*.vue');
     const modulePages = import.meta.glob('../../modules/**/Pages/**/*.vue');
-    
+
     // Check if the name refers to a module component
     const [moduleName, pageName] = name.split('::');
-    
+
     if (pageName) {
       const key = `../../modules/${moduleName}/Pages/${pageName}.vue`;
       const component = modulePages[key];
-      
+
       if (component) {
         const resolvedComponent = await component();
         return resolvedComponent.default || resolvedComponent;
       }
     }
-    
+
     // Otherwise, resolve from the standard Pages directory
     const component = pages[`./Pages/${name}.vue`];
     if (component) {
       const resolvedComponent = await component();
       return resolvedComponent.default || resolvedComponent;
     }
-    
+
     throw new Error(`Page not found: ${name}`);
   },
   setup({ el, App, props, plugin }) {
